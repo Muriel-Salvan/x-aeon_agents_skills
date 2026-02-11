@@ -1,4 +1,5 @@
 {
+  "branches": ["main"],
   "plugins": [
     ["@semantic-release/exec", {
       "analyzeCommitsCmd": "bundle exec sem_ver_git --from \"${lastRelease.gitTag}\" --output semantic_release_analyze | tail -n 1",
