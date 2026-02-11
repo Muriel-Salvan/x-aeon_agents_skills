@@ -1,0 +1,2 @@
+# Don't commit the lock file: it's a library, not an application
+Gemfile.lock

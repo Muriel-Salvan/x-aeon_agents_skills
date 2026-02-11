@@ -17,6 +17,7 @@ module XAeonAgentsSkills
     db = SQLite3::Database.new(state_db)
     db.results_as_hash = true
     row = db.get_first_row("SELECT value FROM ItemTable WHERE key = ?", "saoudrizwan.claude-dev")
+    db.close
     raise 'Key \'saoudrizwan.claude-dev\' not found in database.' unless row
 
     "Cline (#{JSON.parse(row['value'])['actModeOpenRouterModelId']})"
