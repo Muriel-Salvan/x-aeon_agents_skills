@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'x-aeon_agents_skills'
   spec.version       = XAeonAgentsSkills::VERSION
   spec.summary       = 'AI agents skills to be used for X-Aeon projects'
-  spec.homepage      = 'https://github.com/Muriel-Salvan/TODO'
+  spec.homepage      = 'https://github.com/Muriel-Salvan/x-aeon_agents_skills'
   spec.license       = 'BSD-3-Clause'
 
   spec.author        = 'Muriel Salvan'
