@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+# Executable to generate skill files from ERB templates
+
+require 'erb'
+require 'x-aeon_agents_skills/gen_helpers'
+
+# Find all .erb files in the skills directory
+erb_files = Dir.glob(File.join(File.expand_path('../skills', __dir__), '**', '*.erb'))
+puts "Found #{erb_files.size} ERB template(s) to process..."
+puts
+
+erb_files.each do |erb_file|
+  output_file = erb_file.sub(/\.erb$/, '')
+  puts "Processing: #{erb_file}"
+  puts "  Output:   #{output_file}"
+  begin
+    erb = ERB.new(File.read(erb_file), trim_mode: '-')
+    # Use filename for better error reporting
+    erb.filename = erb_file
+    File.write(output_file, erb.result)
+    puts '  Status:   ✓ Generated successfully'
+  rescue StandardError => e
+    puts "  Status:   ✗ Error - #{e.message}\n    #{e.backtrace.first}"
+  end
+  puts
+end
+
+puts 'Done!'

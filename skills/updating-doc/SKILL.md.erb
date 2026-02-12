@@ -7,16 +7,7 @@ description: Update the documentation of the project. Use when a new development
 
 When updating documentation, follow those steps.
 
-## Create Execution Checklist (MANDATORY)
-
-- Before executing anything, create a checklist with ALL steps of this skill.
-- The checklist MUST include ALL numbered steps explicitly.
-- The checklist MUST be displayed to the USER at the beginning of the skill execution, and at the end of each step.
-- Mark each item as completed only after execution and successful completion of the item itself.
-- Do NOT skip any item.
-- If an item cannot be executed, explicitly explain why.
-- NEVER mark the skill as completed while any item from the Execution Checklist remains open.
-
+<%= XAeonAgentsSkills::GenHelpers.init_skill_checklist %>
 
 ## 1. Inform the USER
 
@@ -36,11 +27,4 @@ When updating documentation, follow those steps.
 - Devise the hierarchical list of all Markdown headers that are in the README file, of all levels. Don't forget about headers that you may have added in previous steps.
 - ALWAYS make sure that the section "Table of Contents" of the README file is listing exactly all the headers as local links to their section, and indented in accordance with their hierarchical level in the file.
 
-## Final Verification (MANDATORY)
-
-Before declaring the task complete:
-
-- Re-list all numbered steps from the Execution Checklist.
-- Confirm each one was executed.
-- If any step was not executed, execute it now.
-
+<%= XAeonAgentsSkills::GenHelpers.validate_skill_checklist %>
