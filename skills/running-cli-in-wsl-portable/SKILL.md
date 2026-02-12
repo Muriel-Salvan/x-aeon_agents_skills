@@ -15,4 +15,4 @@ The original bash command to be run is later referenced as {original_cli}.
 ## 2. Run the command line with the right prefix
 
 - Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use the command line `{skill_path}\scripts\wsl_portable_bash.cmd "{original_cli}"`.
+- ALWAYS use `cli: {skill_path}\scripts\wsl_portable_bash.cmd "{original_cli}"`.

@@ -13,9 +13,9 @@ When implementing a Github issue, follow those steps.
 
 ## 2. Get issue requirements
 
-- ALWAYS use the command `ask_followup_question` to ask the USER which Github issue should be implemented, unless the USER already gave you this information in the prompt.
+- ALWAYS use `agent: ask_followup_question` to ask the USER which Github issue should be implemented, unless the USER already gave you this information in the prompt.
 - Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use the CLI command `ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this Github issue.
+- ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this Github issue.
 
 ## 3. Come up with an implementation plan
 
@@ -26,3 +26,7 @@ When implementing a Github issue, follow those steps.
 
 - ALWAYS perform all the agreed steps from the implementation plan to implement the issue.
 - ALWAYS perform a final verification of the implementation plan against all the actions you did. If you think some steps of the implementation plan were not implemented properly or are missing, fix it or inform the USER about those missing steps.
+
+## 5. Validate all production quality checks
+
+- ALWAYS use `skill: validating-production-quality` before attempting task completition to make sure that all needed quality gates are ok.

@@ -26,6 +26,7 @@ When creating a Pull Request, follow those steps.
 ## 4. Create the Pull Request between the current branch and main
 
 - Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS create a Pull Request using the command `ruby {skill_path}/scripts/create_pr {title} {pr_description_file}`. Use a meaningful title for this Pull Request.
-- NEVER use the `gh` CLI to create Pull Requests.
+- ALWAYS devise a meaningful title for this Pull Request, later references as {pr_title}.
+- ALWAYS use `cli: ruby {skill_path}/scripts/create_pr {pr_title} {pr_description_file}` to create the Pull Request.
+- NEVER use `cli: gh` to create Pull Requests.
 - ALWAYS delete the temporary description file {pr_description_file} once the Pull Request has been created.
