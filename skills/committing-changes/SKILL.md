@@ -1,6 +1,6 @@
 ---
 name: committing-changes
-description: Commits changes and pushes them on Github. Use when development and testing has been done and changes are ready to be committed and pushed to Github.
+description: Commits changes and pushes them on GitHub. Use when development and testing has been done and changes are ready to be committed and pushed to GitHub.
 ---
 
 # Committing changes
@@ -29,6 +29,6 @@ When committing changes, follow those steps.
 - NEVER use `cli: git commit` directly.
 - ALWAYS delete the temporary description file {description_file} once the git commit has been done.
 
-## 5. Push this commit on Github
+## 5. Push this commit on GitHub
 
-- ALWAYS use `cli: git push github` to push the commit on Github.
+- ALWAYS use `cli: git push github` to push the commit on GitHub.

@@ -18,16 +18,16 @@ When syncing the current branch on its base, follow these steps.
 
 ## 3. Fetch the base branch from the github remote
 
-- ALWAYS use `cli: git fetch --all` to retrieve the github remote's base branch.
+- ALWAYS use `cli: git fetch --all` to retrieve the GitHub remote's base branch.
 
 ## 4. Rebase the branch
 
-- ALWAYS use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the github remote.
+- ALWAYS use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the GitHub remote.
 - NEVER use `cli: git merge`.
 - ALWAYS fix any conflict you see during the rebase, and continue the rebase using `cli: git rebase --continue` until all your commits have been rebased properly.
 - If you don't know how to solve a conflict, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the git conflict.
 
 ## 5. Push the rebased branch
 
-- ALWAYS push your rebased branch to github using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
+- ALWAYS push your rebased branch to GitHub using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
 - If the push with `--force-with-lease` option failed, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the issue. It could be that another user contributed to the branch.

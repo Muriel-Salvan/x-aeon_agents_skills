@@ -1,25 +1,25 @@
 ---
 name: implementing-github-issue
-description: Implements what is described in a Github issue. Use when the USER is asking you to implement a Github issue.
+description: Implements what is described in a GitHub issue. Use when the USER is asking you to implement a GitHub issue.
 ---
 
-# Implementing a Github issue changes
+# Implementing a GitHub issue changes
 
-When implementing a Github issue, follow those steps.
+When implementing a GitHub issue, follow those steps.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am implementing a Github issue".
+- ALWAYS inform the user that you are running this skill, saying "SKILL: I am implementing a GitHub issue".
 
 ## 2. Get issue requirements
 
-- ALWAYS use `agent: ask_followup_question` to ask the USER which Github issue should be implemented, unless the USER already gave you this information in the prompt.
+- ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be implemented, unless the USER already gave you this information in the prompt.
 - Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this Github issue.
+- ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
 
 ## 3. Come up with an implementation plan
 
-- ALWAYS analyze the current code structure and content to understand how the Github issue should be implemented.
+- ALWAYS analyze the current code structure and content to understand how the GitHub issue should be implemented.
 - ALWAYS analyze all the rules that you should adhere to when implementing a task.
 
 ## 4. Implement the issue following the implementation plan
@@ -29,4 +29,4 @@ When implementing a Github issue, follow those steps.
 
 ## 5. Validate all production quality checks
 
-- ALWAYS use `skill: validating-production-quality` before attempting task completition to make sure that all needed quality gates are ok.
+- ALWAYS use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are ok.

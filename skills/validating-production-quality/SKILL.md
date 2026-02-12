@@ -29,5 +29,5 @@ When validating production quality for the task at hand, follow those steps.
 
 ## 5. Make sure a Pull Request is created for the current branch
 
-- ALWAYS check on the corresponding Github project if there is already a Pull Request created for the current branch.
+- ALWAYS check on the corresponding GitHub project if there is already a Pull Request created for the current branch.
 - If there isn't any Pull Request for the current branch, ALWAYS use `skill: creating-pull-request` to create one.
