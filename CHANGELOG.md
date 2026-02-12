@@ -1,3 +1,10 @@
+# [v1.0.1](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.0...v1.0.1) (2026-02-12 12:58:21)
+
+### Patches
+
+* [docs: add skill writing guidelines and command prefix standards](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/14b22fc5fcff923615ac98b85693727334e7bf38)
+* [feat(skills): add creating-pull-request skill and refine commit workflow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/cd3fc5257b0ca3ee32e45aef77859023f248182f)
+
 # [v0.0.1](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/...v0.0.1) (2026-02-11 16:56:34)
 
 ### Patches
