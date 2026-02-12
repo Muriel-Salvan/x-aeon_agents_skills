@@ -1,3 +1,10 @@
+# [v1.0.2](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.1...v1.0.2) (2026-02-12 13:54:28)
+
+### Patches
+
+* [docs(creating-pull-request): clarify gh CLI wrapper requirement](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/9c48dbd1a43d54b814aaa2c74057b723d240e868)
+* [docs: standardize GitHub capitalization across skill documentation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/15c1acc6e874d2ad394eb98374284c4d3f3ce79b)
+
 # [v1.0.1](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.0...v1.0.1) (2026-02-12 12:58:21)
 
 ### Patches
