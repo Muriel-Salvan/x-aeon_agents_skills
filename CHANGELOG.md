@@ -1,3 +1,9 @@
+# [v1.0.3](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.2...v1.0.3) (2026-02-12 14:48:48)
+
+### Patches
+
+* [docs: clarify skill instructions for issues, paths, TOC and validation steps](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/4431f6080e2cb01388f1dc2095da33632e1264f4)
+
 # [v1.0.2](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.1...v1.0.2) (2026-02-12 13:54:28)
 
 ### Patches
