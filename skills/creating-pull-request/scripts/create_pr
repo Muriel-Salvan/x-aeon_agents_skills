@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# Usage: create_pr <title> <pr_description_file>
+
+require 'tmpdir'
+require 'x-aeon_agents_skills'
+
+title = ARGV[0]
+pr_description_file = ARGV[1]
+
+raise 'Missing Pull Request title' if title.nil?
+raise 'Missing Pull Request description file' if pr_description_file.nil?
+
+Dir.mktmpdir do |temp_dir|
+  description_file = "#{temp_dir}/description.txt"
+  File.write(description_file, File.read(pr_description_file) + XAeonAgentsSkills.agent_signature)
+  system "gh pr create --title \"#{title}\" --body-file \"#{description_file}\"", exception: true
+end
+
+puts
+puts 'Pull Request created successfully'
