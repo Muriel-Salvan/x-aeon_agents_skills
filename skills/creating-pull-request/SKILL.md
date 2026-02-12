@@ -28,5 +28,5 @@ When creating a Pull Request, follow those steps.
 - Find this skill directory path, later referenced as {skill_path}.
 - ALWAYS devise a meaningful title for this Pull Request, later references as {pr_title}.
 - ALWAYS use `cli: ruby {skill_path}/scripts/create_pr {pr_title} {pr_description_file}` to create the Pull Request.
-- NEVER use `cli: gh` to create Pull Requests.
+- NEVER use `cli: gh` directly to create Pull Requests; the script wrapper must be used to handle multiline descriptions and append the AI agent signature to the Pull Request description.
 - ALWAYS delete the temporary description file {pr_description_file} once the Pull Request has been created.
