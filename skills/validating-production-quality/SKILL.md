@@ -7,15 +7,15 @@ description: Validates that the task is following all production-grade quality c
 
 When validating production quality for the task at hand, follow those steps.
 
-## Create Execution Checklist (MANDATORY)
+## Create the validating-production-quality Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist with ALL steps of this skill.
-- The checklist MUST include ALL numbered steps explicitly.
-- The checklist MUST be displayed to the USER at the beginning of the skill execution, and at the end of each step.
-- Mark each item as completed only after execution and successful completion of the item itself.
+- Before executing anything, create a checklist named validating-production-quality Execution Checklist with ALL steps of this skill.
+- The validating-production-quality Execution Checklist MUST include ALL numbered steps explicitly.
+- The validating-production-quality Execution Checklist MUST be displayed to the USER.
+- After completing each step of this skill, mark the item in the validating-production-quality Execution Checklist as completed, and display again the validating-production-quality Execution Checklist to the USER.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
-- NEVER mark the skill as completed while any item from the Execution Checklist remains open.
+- NEVER mark the skill as completed while any item from the validating-production-quality Execution Checklist remains open.
 
 
 ## 1. Inform the USER
@@ -50,7 +50,7 @@ When validating production quality for the task at hand, follow those steps.
 
 Before declaring the task complete:
 
-- Re-list all numbered steps from the Execution Checklist.
+- Re-list all numbered steps from the validating-production-quality Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
 

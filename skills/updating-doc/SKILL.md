@@ -7,15 +7,15 @@ description: Update the documentation of the project. Use when a new development
 
 When updating documentation, follow those steps.
 
-## Create Execution Checklist (MANDATORY)
+## Create the updating-doc Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist with ALL steps of this skill.
-- The checklist MUST include ALL numbered steps explicitly.
-- The checklist MUST be displayed to the USER at the beginning of the skill execution, and at the end of each step.
-- Mark each item as completed only after execution and successful completion of the item itself.
+- Before executing anything, create a checklist named updating-doc Execution Checklist with ALL steps of this skill.
+- The updating-doc Execution Checklist MUST include ALL numbered steps explicitly.
+- The updating-doc Execution Checklist MUST be displayed to the USER.
+- After completing each step of this skill, mark the item in the updating-doc Execution Checklist as completed, and display again the updating-doc Execution Checklist to the USER.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
-- NEVER mark the skill as completed while any item from the Execution Checklist remains open.
+- NEVER mark the skill as completed while any item from the updating-doc Execution Checklist remains open.
 
 
 ## 1. Inform the USER
@@ -40,7 +40,7 @@ When updating documentation, follow those steps.
 
 Before declaring the task complete:
 
-- Re-list all numbered steps from the Execution Checklist.
+- Re-list all numbered steps from the updating-doc Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
 

@@ -9,15 +9,15 @@ module XAeonAgentsSkills
     # * String: The execution checklist section
     def self.init_skill_checklist
       <<~EO_Markdown
-        ## Create Execution Checklist (MANDATORY)
+        ## Create the #{generating_skill} Execution Checklist (MANDATORY)
 
-        - Before executing anything, create a checklist with ALL steps of this skill.
-        - The checklist MUST include ALL numbered steps explicitly.
-        - The checklist MUST be displayed to the USER at the beginning of the skill execution, and at the end of each step.
-        - Mark each item as completed only after execution and successful completion of the item itself.
+        - Before executing anything, create a checklist named #{generating_skill} Execution Checklist with ALL steps of this skill.
+        - The #{generating_skill} Execution Checklist MUST include ALL numbered steps explicitly.
+        - The #{generating_skill} Execution Checklist MUST be displayed to the USER.
+        - After completing each step of this skill, mark the item in the #{generating_skill} Execution Checklist as completed, and display again the #{generating_skill} Execution Checklist to the USER.
         - Do NOT skip any item.
         - If an item cannot be executed, explicitly explain why.
-        - NEVER mark the skill as completed while any item from the Execution Checklist remains open.
+        - NEVER mark the skill as completed while any item from the #{generating_skill} Execution Checklist remains open.
       EO_Markdown
     end
 
@@ -31,10 +31,20 @@ module XAeonAgentsSkills
 
         Before declaring the task complete:
 
-        - Re-list all numbered steps from the Execution Checklist.
+        - Re-list all numbered steps from the #{generating_skill} Execution Checklist.
         - Confirm each one was executed.
         - If any step was not executed, execute it now.
       EO_Markdown
+    end
+
+    # Return the skill being generated
+    #
+    # Result::
+    # * String: Skill name being generated
+    def self.generating_skill
+      skill_found = caller.find { |stack_trace| stack_trace =~ /\/skills\/([^\/]+)\/.+\.erb/ }
+      raise "Unable to find generated skill among stack:\n#{caller.join("\n")}" if skill_found.nil?
+      Regexp.last_match[1]
     end
 
   end
