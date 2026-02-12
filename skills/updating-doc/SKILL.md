@@ -22,5 +22,5 @@ When updating documentation, follow those steps.
 
 ## 4. Update the README table of content
 
-- ALWAYS make sure the table of content of the README file is still up-to-date: every section (all Markdown headers) should be mentioned, as a link and following the precise hierarchy of sections with indentation.
-- ALWAYS correct the table of content of the README file if you think it is not up-to-date, even if it does not concern your task.
+- Devise the hierarchical list of all Markdown headers that are in the README file, of all levels. Don't forget about headers that you may have added in previous steps.
+- ALWAYS make sure that the section "Table of Contents" of the README file is listing exactly all the headers as local links to their section, and indented in accordance with their hierarchical level in the file.

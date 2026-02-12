@@ -13,8 +13,8 @@ When creating a Pull Request, follow those steps.
 
 ## 2. Devise the list of GitHub issues linked to this Pull Request
 
-- ALWAYS ask the USER which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
-- Use any information from the previous USER prompts to know which additional issues are closed by or related to this Pull Request.
+- ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
+- Also use any information from the previous USER prompts to know which additional issues are closed by or related to this Pull Request.
 
 ## 3. Create a temporary file with a good description for the Pull Request
 
