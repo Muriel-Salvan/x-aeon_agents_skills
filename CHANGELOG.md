@@ -1,3 +1,9 @@
+# [v1.0.4](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.3...v1.0.4) (2026-02-12 19:10:01)
+
+### Patches
+
+* [feat: add ERB templating system for skills generation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/47da216f23623d28c37fddae5d6d3eae712c9c55)
+
 # [v1.0.3](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.2...v1.0.3) (2026-02-12 14:48:48)
 
 ### Patches
