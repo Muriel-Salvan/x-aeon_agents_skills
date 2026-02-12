@@ -1,3 +1,9 @@
+# [v1.0.5](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.4...v1.0.5) (2026-02-12 19:35:11)
+
+### Patches
+
+* [feat(gen_helpers): add skill-specific naming to execution checklists](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/6c3c71b5a1740c37f277e2c938bf9d181d77f743)
+
 # [v1.0.4](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.3...v1.0.4) (2026-02-12 19:10:01)
 
 ### Patches
