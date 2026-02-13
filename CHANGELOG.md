@@ -1,3 +1,9 @@
+# [v1.0.7](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.6...v1.0.7) (2026-02-13 17:34:02)
+
+### Patches
+
+* [refactor: reorganize GitHub issue implementation workflow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/060f17c95cdf58710b4d37eae106c5a4e1686a2b)
+
 # [v1.0.6](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.5...v1.0.6) (2026-02-13 17:00:24)
 
 ### Patches
