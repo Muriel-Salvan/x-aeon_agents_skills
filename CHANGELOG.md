@@ -1,3 +1,11 @@
+# [v1.0.6](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.5...v1.0.6) (2026-02-13 17:00:24)
+
+### Patches
+
+* [test: add gen_helpers_spec.rb with specs for skill checklist generation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/52227c1a582d48e9dafc5f4e25810dc1607cbbca)
+* [feat: add define_ordered_todo_list helper for auto-numbering skill sections](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/bf05d62fbfa5a6d7a80f61523174c8430d42182e)
+* [refactor: separate skills source and generated output directories](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/2ee3e9ee6ff8df235eae107b3d6ccbbe05b935e9)
+
 # [v1.0.5](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.4...v1.0.5) (2026-02-12 19:35:11)
 
 ### Patches
