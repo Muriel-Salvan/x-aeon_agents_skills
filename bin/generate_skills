@@ -3,25 +3,46 @@
 # Executable to generate skill files from ERB templates
 
 require 'erb'
+require 'fileutils'
+require 'pathname'
 require 'x-aeon_agents_skills/gen_helpers'
 
-# Find all .erb files in the skills directory
-erb_files = Dir.glob(File.join(File.expand_path('../skills', __dir__), '**', '*.erb'))
-puts "Found #{erb_files.size} ERB template(s) to process..."
-puts
-
-erb_files.each do |erb_file|
-  output_file = erb_file.sub(/\.erb$/, '')
-  puts "Processing: #{erb_file}"
-  puts "  Output:   #{output_file}"
-  begin
-    erb = ERB.new(File.read(erb_file), trim_mode: '-')
+# Define possible transformations based on the file extension
+TRANSFORMATIONS = {
+  '.erb' => proc do |src_file|
+    erb = ERB.new(File.read(src_file), trim_mode: '-')
     # Use filename for better error reporting
-    erb.filename = erb_file
-    File.write(output_file, erb.result)
-    puts '  Status:   ✓ Generated successfully'
+    erb.filename = src_file
+    erb.result
+  end
+}
+
+# Define source and destination directories
+src_dir = File.expand_path('skills.src')
+src_pathname = Pathname.new(src_dir)
+dest_dir = File.expand_path('skills')
+
+# Create the destination directory if it doesn't exist
+FileUtils.mkdir_p(dest_dir)
+
+Dir.glob(File.join(src_dir, '**', '*')).select { |f| File.file?(f) }.each do |src_file|
+  # Calculate the relative path from source directory
+  relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
+
+  file_ext = File.extname(relative_path)
+  dst_file = File.join(dest_dir, TRANSFORMATIONS.key?(file_ext) ? relative_path.sub(/#{Regexp.escape(file_ext)}$/, '') : relative_path)
+  puts "Processing: #{relative_path}"
+  puts "    Output: #{dst_file}"
+  begin
+    FileUtils.mkdir_p(File.dirname(dst_file))
+    if TRANSFORMATIONS.key?(file_ext)
+      File.write(dst_file, TRANSFORMATIONS[file_ext].call(src_file))
+    else
+      FileUtils.cp(src_file, dst_file)
+    end
+    puts '    Status: ✓ Processed successfully'
   rescue StandardError => e
-    puts "  Status:   ✗ Error - #{e.message}\n    #{e.backtrace.first}"
+    puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
   end
   puts
 end

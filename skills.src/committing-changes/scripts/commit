@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+# Usage: commit <description_file>
+
+require 'tmpdir'
+require 'x-aeon_agents_skills'
+
+description_file = ARGV[0]
+
+raise 'Missing description file' if description_file.nil?
+
+Dir.mktmpdir do |temp_dir|
+  comment_file = "#{temp_dir}/comment.txt"
+  File.write(comment_file, File.read(description_file) + XAeonAgentsSkills.agent_signature)
+  system "git commit --file \"#{comment_file}\"", exception: true
+end
+
+puts
+puts 'Git commit created successfully'

@@ -42,7 +42,7 @@ module XAeonAgentsSkills
     # Result::
     # * String: Skill name being generated
     def self.generating_skill
-      skill_found = caller.find { |stack_trace| stack_trace =~ /\/skills\/([^\/]+)\/.+\.erb/ }
+      skill_found = caller.find { |stack_trace| stack_trace =~ /\/skills\.src\/([^\/]+)\/.+\.erb/ }
       raise "Unable to find generated skill among stack:\n#{caller.join("\n")}" if skill_found.nil?
       Regexp.last_match[1]
     end
