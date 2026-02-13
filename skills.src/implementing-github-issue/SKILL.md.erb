@@ -4,9 +4,12 @@ description: Implements what is described in a GitHub issue. Use when the USER i
 ---
 
 <% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Implementing a GitHub issue') do -%>
-  ## Get issue requirements
+  ## Get issue number
 
   - ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be implemented, unless the USER already gave you this information in the prompt.
+
+  ## Get issue requirements
+
   - Find this skill directory path, later referenced as {skill_path}.
   - ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
 

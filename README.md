@@ -17,6 +17,7 @@ This repository defines a set of AI agents skills that are used for X-Aeon proje
     * Use Markdown for the skill's content.
     * Use imperative verbs (ex: `Read the README file to know about the CLI usage`).
     * Separate ordered steps in the skill's content using Markdown's headers (ex: `## 5. Perform data analysis`), and give details of this step using bullet points.
+    * Don't mix several commands in 1 step. Split steps if several commands are involved.
     * Use `{variable_name}` to identify placeholders.
     * Be clear and consistent about commands: always use backticks to identify a command, and use a prefix for the command type. Here are the prefixes in use:
       * `cli: `: Used for command-line tools. Ex: ``Use `cli: ls -la` to list all the files``.
