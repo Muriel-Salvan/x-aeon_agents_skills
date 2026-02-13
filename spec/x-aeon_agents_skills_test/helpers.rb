@@ -1,12 +1,50 @@
-# frozen_string_literal: true
-
 require 'sqlite3'
 require 'json'
 require 'fileutils'
+require 'tmpdir'
 
 module XAeonAgentsSkillsTest
 
   module Helpers
+
+    # Create a temporary workspace with skills.src directory
+    # The skills are defined as a hash: skill_name => { file_path => content }
+    # Example: my_skill: { 'SKILL.md' => 'content', 'scripts/test' => 'ls' }
+    #
+    # Parameters::
+    # * *skills* (Hash): Hash of skill names to their file contents
+    # * *&block* (Proc): Code block to execute with the workspace directory
+    def with_skills_src(**skills)
+      # Create a temporary workspace directory
+      Dir.mktmpdir('test_skills_workspace') do |workspace_dir|
+        @workspace_dir = workspace_dir
+        skills_src_dir = File.join(@workspace_dir, 'skills.src')
+        skills.each do |skill_name, files|
+          skill_dir = File.join(skills_src_dir, skill_name.to_s)
+          files.each do |file_path, content|
+            full_file_path = File.join(skill_dir, file_path)
+            FileUtils.mkdir_p(File.dirname(full_file_path))
+            File.write(full_file_path, content)
+          end
+        end
+        yield @workspace_dir
+      end
+    end
+
+    # Run the generate_skills executable from the workspace directory
+    # Assumes @workspace_dir is set by with_skills_src
+    #
+    # Returns::
+    # * String: The output from the generate_skills command
+    def run_generate_skills
+      full_script_path = File.expand_path('./bin/generate_skills')
+      output = nil
+      Dir.chdir(@workspace_dir) do
+        output = `ruby "#{full_script_path}" 2>&1`
+        raise "Command failed: #{output}" unless $?.success?
+      end
+      output
+    end
 
     # Helper method to temporarily set an environment variable
     # Uses begin...ensure to guarantee the original value is restored

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'spec_helper'
 require 'tmpdir'
 require 'x-aeon_agents_skills_test/helpers'
