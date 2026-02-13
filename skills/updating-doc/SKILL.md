@@ -3,7 +3,7 @@ name: updating-doc
 description: Update the documentation of the project. Use when a new development has been completed or when the USER is asking for documentation to be updated.
 ---
 
-# Updating doc
+# Updating documentation
 
 When updating documentation, follow those steps.
 
@@ -16,7 +16,6 @@ When updating documentation, follow those steps.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the updating-doc Execution Checklist remains open.
-
 
 ## 1. Inform the USER
 
@@ -43,4 +42,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the updating-doc Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-

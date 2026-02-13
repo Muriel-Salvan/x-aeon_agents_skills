@@ -5,7 +5,7 @@ description: Validates that the task is following all production-grade quality c
 
 # Validating production quality
 
-When validating production quality for the task at hand, follow those steps.
+When validating production quality, follow those steps.
 
 ## Create the validating-production-quality Execution Checklist (MANDATORY)
 
@@ -16,7 +16,6 @@ When validating production quality for the task at hand, follow those steps.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the validating-production-quality Execution Checklist remains open.
-
 
 ## 1. Inform the USER
 
@@ -53,4 +52,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the validating-production-quality Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-

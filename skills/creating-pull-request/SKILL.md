@@ -3,7 +3,7 @@ name: creating-pull-request
 description: Creates a Pull Request for the current git branch on GitHub. Use when a Pull Request needs to be created to track the current feature branch changes on GitHub.
 ---
 
-# Creating Pull Request
+# Creating a Pull Request
 
 When creating a Pull Request, follow those steps.
 
@@ -17,10 +17,9 @@ When creating a Pull Request, follow those steps.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the creating-pull-request Execution Checklist remains open.
 
-
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am creating a Pull Request on GitHub".
+- ALWAYS inform the user that you are running this skill, saying "SKILL: I am creating a Pull Request".
 
 ## 2. Devise the list of GitHub issues linked to this Pull Request
 
@@ -49,4 +48,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the creating-pull-request Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-

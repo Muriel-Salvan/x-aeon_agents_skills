@@ -3,36 +3,26 @@ name: committing-changes
 description: Commits changes and pushes them on GitHub. Use when development and testing has been done and changes are ready to be committed and pushed to GitHub.
 ---
 
-# Committing changes
+<% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Committing changes') do -%>
+  ## Stage all the files that should be part of the commit
 
-When committing changes, follow those steps.
+  - Identify all the files that make sense to commit altogether as part of 1 commit.
+  - ALWAYS use `cli: git add <file1> <file2> ... <fileN>` to stage those identified files.
+  - NEVER use `cli: git add --all`, because some files may be modified by the USER and should not be part of your commit.
 
-<%= XAeonAgentsSkills::GenHelpers.init_skill_checklist %>
+  ## Create a temporary file with the commit description
 
-## 1. Inform the USER
+  - Devise a meaningful commit comment that summarizes the changes you are going to commit.
+  - ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./tmp/commits`.
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am committing changes".
+  ## Create the commit
 
-## 2. Stage all the files that should be part of the commit
+  - Find this skill directory path, later referenced as {skill_path}.
+  - ALWAYS use `cli: ruby {skill_path}/scripts/commit {description_file}` to create the git commit.
+  - NEVER use `cli: git commit` directly.
+  - ALWAYS delete the temporary description file {description_file} once the git commit has been done.
 
-- Identify all the files that make sense to commit altogether as part of 1 commit.
-- ALWAYS use `cli: git add <file1> <file2> ... <fileN>` to stage those identified files.
-- NEVER use `cli: git add --all`, because some files may be modified by the USER and should not be part of your commit.
+  ## Push this commit on GitHub
 
-## 3. Create a temporary file with the commit description
-
-- Devise a meaningful commit comment that summarizes the changes you are going to commit.
-- ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./tmp/commits`.
-
-## 4. Create the commit
-
-- Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use `cli: ruby {skill_path}/scripts/commit {description_file}` to create the git commit.
-- NEVER use `cli: git commit` directly.
-- ALWAYS delete the temporary description file {description_file} once the git commit has been done.
-
-## 5. Push this commit on GitHub
-
-- ALWAYS use `cli: git push github` to push the commit on GitHub.
-
-<%= XAeonAgentsSkills::GenHelpers.validate_skill_checklist %>
+  - ALWAYS use `cli: git push github` to push the commit on GitHub.
+<% end -%>

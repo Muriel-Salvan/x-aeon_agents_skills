@@ -17,7 +17,6 @@ When committing changes, follow those steps.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the committing-changes Execution Checklist remains open.
 
-
 ## 1. Inform the USER
 
 - ALWAYS inform the user that you are running this skill, saying "SKILL: I am committing changes".
@@ -51,4 +50,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the committing-changes Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-

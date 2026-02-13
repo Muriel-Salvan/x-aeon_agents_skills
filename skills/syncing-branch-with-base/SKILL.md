@@ -3,9 +3,9 @@ name: syncing-branch-with-base
 description: Syncs the current branch with its base. Use when the base branch of the current branch may have diverged and you want to be sure that the current branch gets all latest changes of its base. This Skill is the canonical way to keep a branch up-to-date with its base. It must be used instead of merging the base branch, and always performs a rebase.
 ---
 
-# Syncing branch with base
+# Syncing the current branch with its base
 
-When syncing the current branch on its base, follow these steps.
+When syncing the current branch with its base, follow those steps.
 
 ## Create the syncing-branch-with-base Execution Checklist (MANDATORY)
 
@@ -16,7 +16,6 @@ When syncing the current branch on its base, follow these steps.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the syncing-branch-with-base Execution Checklist remains open.
-
 
 ## 1. Inform the USER
 
@@ -50,4 +49,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the syncing-branch-with-base Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-

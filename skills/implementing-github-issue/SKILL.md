@@ -3,7 +3,7 @@ name: implementing-github-issue
 description: Implements what is described in a GitHub issue. Use when the USER is asking you to implement a GitHub issue.
 ---
 
-# Implementing a GitHub issue changes
+# Implementing a GitHub issue
 
 When implementing a GitHub issue, follow those steps.
 
@@ -16,7 +16,6 @@ When implementing a GitHub issue, follow those steps.
 - Do NOT skip any item.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the implementing-github-issue Execution Checklist remains open.
-
 
 ## 1. Inform the USER
 
@@ -49,4 +48,3 @@ Before declaring the task complete:
 - Re-list all numbered steps from the implementing-github-issue Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
-
