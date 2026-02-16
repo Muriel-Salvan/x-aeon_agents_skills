@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+# Install skills from a Skills specification file.
+# skills is to openskills what bundler is to gem.
+
+require 'x-aeon_agents_skills/skills_cli'
+
+XAeonAgentsSkills::SkillsCli.start(ARGV)
