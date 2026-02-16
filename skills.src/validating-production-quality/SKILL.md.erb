@@ -1,6 +1,8 @@
 ---
 name: validating-production-quality
 description: Validates that the task is following all production-grade quality checks. Use before attempting task completion on a task or when the USER asks for it.
+metadata:
+  dependencies: updating-doc, committing-changes, syncing-branch-with-base, creating-pull-request
 ---
 
 <% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Validating production quality') do -%>
