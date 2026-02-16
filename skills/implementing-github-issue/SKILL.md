@@ -1,6 +1,8 @@
 ---
 name: implementing-github-issue
 description: Implements what is described in a GitHub issue. Use when the USER is asking you to implement a GitHub issue.
+metadata:
+  dependencies: validating-production-quality
 ---
 
 # Implementing a GitHub issue
@@ -21,23 +23,26 @@ When implementing a GitHub issue, follow those steps.
 
 - ALWAYS inform the user that you are running this skill, saying "SKILL: I am implementing a GitHub issue".
 
-## 2. Get issue requirements
+## 2. Get issue number
 
 - ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be implemented, unless the USER already gave you this information in the prompt.
+
+## 3. Get issue requirements
+
 - Find this skill directory path, later referenced as {skill_path}.
 - ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
 
-## 3. Come up with an implementation plan
+## 4. Come up with an implementation plan
 
 - ALWAYS analyze the current code structure and content to understand how the GitHub issue should be implemented.
 - ALWAYS analyze all the rules that you should adhere to when implementing a task.
 
-## 4. Implement the issue following the implementation plan
+## 5. Implement the issue following the implementation plan
 
 - ALWAYS perform all the agreed steps from the implementation plan to implement the issue.
 - ALWAYS perform a final verification of the implementation plan against all the actions you did. If you think some steps of the implementation plan were not implemented properly or are missing, fix it or inform the USER about those missing steps.
 
-## 5. Validate all production quality checks
+## 6. Validate all production quality checks
 
 - ALWAYS use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are ok.
 
