@@ -1,3 +1,9 @@
+# [v1.0.8](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.7...v1.0.8) (2026-02-16 17:19:33)
+
+### Patches
+
+* [feat(skills): add dependency metadata to skill definitions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/f3c1a440444ff77997645b3f2ae434339026d02d)
+
 # [v1.0.7](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.6...v1.0.7) (2026-02-13 17:34:02)
 
 ### Patches
