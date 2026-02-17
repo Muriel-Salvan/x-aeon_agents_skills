@@ -3,7 +3,7 @@ name: creating-pull-request
 description: Creates a Pull Request for the current git branch on GitHub. Use this when a Pull Request needs to be created to track the current feature branch changes on GitHub.
 ---
 
-<% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Creating a Pull Request') do -%>
+<% define_ordered_todo_list('Creating a Pull Request') do -%>
   ## Devise the list of GitHub issues linked to this Pull Request
 
   - ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.

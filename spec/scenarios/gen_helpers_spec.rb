@@ -17,53 +17,19 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
     end
   end
 
-  describe 'init_skill_checklist' do
-
-    it 'generates the execution checklist initialization section' do
-      expect(process_erb('<%= XAeonAgentsSkills::GenHelpers.init_skill_checklist %>')).to eq <<~EXPECTED
-        ## Create the test_skill Execution Checklist (MANDATORY)
-
-        - Before executing anything, create a checklist named test_skill Execution Checklist with ALL steps of this skill.
-        - The test_skill Execution Checklist MUST include ALL numbered steps explicitly.
-        - The test_skill Execution Checklist MUST be displayed to the USER.
-        - After completing each step of this skill, mark the item in the test_skill Execution Checklist as completed, and display again the test_skill Execution Checklist to the USER.
-        - Do NOT skip any item.
-        - If an item cannot be executed, explicitly explain why.
-        - NEVER mark the skill as completed while any item from the test_skill Execution Checklist remains open.
-      EXPECTED
-    end
-
-  end
-
-  describe 'validate_skill_checklist' do
-
-    it 'generates the final verification section' do
-      expect(process_erb('<%= XAeonAgentsSkills::GenHelpers.validate_skill_checklist %>')).to eq <<~EXPECTED
-        ## Final Verification (MANDATORY)
-
-        Before declaring the task complete:
-
-        - Re-list all numbered steps from the test_skill Execution Checklist.
-        - Confirm each one was executed.
-        - If any step was not executed, execute it now.
-      EXPECTED
-    end
-
-  end
-
   describe 'define_ordered_todo_list' do
 
     it 'generates a full ordered list with checklist tracking instructions' do
       expect(
         process_erb(
           <<~EO_ERB
-            <% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Numbered Skill') do -%>
-            ## First Action
-            - Do the first action
-            ## Second Action
-            - Do the second action
-            ## Third Action
-            - Do the third action
+            <% define_ordered_todo_list('Numbered Skill') do -%>
+              ## First Action
+              - Do the first action
+              ## Second Action
+              - Do the second action
+              ## Third Action
+              - Do the third action
             <% end -%>
           EO_ERB
         )
@@ -109,7 +75,7 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
       expect(
         process_erb(
           <<~EO_ERB
-            <% XAeonAgentsSkills::GenHelpers.define_ordered_todo_list('Empty Skill') do -%>
+            <% define_ordered_todo_list('Empty Skill') do -%>
             <% end -%>
           EO_ERB
         )
@@ -142,6 +108,14 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
         - Confirm each one was executed.
         - If any step was not executed, execute it now.
       EXPECTED
+    end
+
+  end
+
+  describe 'generating_skill' do
+
+    it 'returns the skill name being generated from the ERB file path' do
+      expect(process_erb('<%= generating_skill %>')).to eq 'test_skill'
     end
 
   end

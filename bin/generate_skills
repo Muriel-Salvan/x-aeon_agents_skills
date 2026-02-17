@@ -9,12 +9,7 @@ require 'x-aeon_agents_skills/gen_helpers'
 
 # Define possible transformations based on the file extension
 TRANSFORMATIONS = {
-  '.erb' => proc do |src_file|
-    erb = ERB.new(File.read(src_file), trim_mode: '-')
-    # Use filename for better error reporting
-    erb.filename = src_file
-    erb.result
-  end
+  '.erb' => proc { |src_file| XAeonAgentsSkills::GenHelpers::ErbEvaluator.new(src_file).result }
 }
 
 # Define source and destination directories
