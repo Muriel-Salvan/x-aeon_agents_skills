@@ -30,7 +30,7 @@ When committing changes, follow those steps.
 ## 3. Create a temporary file with the commit description
 
 - Devise a meaningful commit comment that summarizes the changes you are going to commit.
-- ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./tmp/commits`.
+- ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./.tmp_agents/commits`.
 
 ## 4. Create the commit
 

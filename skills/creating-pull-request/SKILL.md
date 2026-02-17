@@ -31,7 +31,7 @@ When creating a Pull Request, follow those steps.
 - ALWAYS devise a meaningful Pull Request description for all the changes that you have in the current branch, and for the task you want to achieve in this branch.
 - ALWAYS add a section in the Pull Request description that lists all GitHub issues closed by or related to this Pull Request (devised in step 2), with mentions like "Closes #{issue_id}" or "Relates to #{issue_id}".
 - ALWAYS add a section in the Pull Request description that contains the exact initial prompt of the USER for this task, and all USER inputs or precisions that you have received from the USER while implementing the task.
-- ALWAYS write the devised Pull Request description in a temporary file (later referenced as {pr_description_file}), inside the directory `./tmp/prs`.
+- ALWAYS write the devised Pull Request description in a temporary file (later referenced as {pr_description_file}), inside the directory `./.tmp_agents/prs`.
 
 ## 4. Create the Pull Request between the current branch and main
 

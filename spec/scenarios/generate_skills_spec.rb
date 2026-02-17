@@ -73,7 +73,7 @@ RSpec.describe 'generate_skills executable' do
           good_skill: { 'SKILL.md' => '# Good Skill', 'good.txt' => 'good content' },
           bad_skill: { 'error.erb' => '<%= undefined_method %>' }
         ) do |workspace_dir|
-          output = run_generate_skills
+          output = run_generate_skills(expect_failure: true)
           expect(File.exist?("#{workspace_dir}/skills/good_skill/SKILL.md")).to be true
           expect(File.exist?("#{workspace_dir}/skills/good_skill/good.txt")).to be true
           expect(File.read("#{workspace_dir}/skills/good_skill/good.txt")).to eq('good content')

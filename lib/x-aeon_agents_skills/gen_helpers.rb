@@ -3,6 +3,15 @@ module XAeonAgentsSkills
   # Helper methods for generating skill content
   module GenHelpers
 
+    # Return a default temporary folder that agents can use in a project.
+    # It's better to force it to the agents, as some models will try weird CLI commands to create temporary files otherwise.
+    #
+    # Result::
+    # * String: Temporary folder path
+    def tmp_path
+      '.tmp_agents'
+    end
+
     # Define an ordered todo list for a skill.
     # Captures the ERB block content, parses its ## sections, numbers them starting at 2
     # (section 1 "Inform the USER" is auto-generated), and wraps everything with the

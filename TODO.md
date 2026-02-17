@@ -1,5 +1,4 @@
 * Make the current rules as part of a skill.
-* Make the tmp folder location part of an ERB helper.
 * Write a proper README file.
 * Use templates to better guide the format of commit comments and PR descriptions.
 * Add the reviewing PR skills.

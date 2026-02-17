@@ -20,6 +20,7 @@ dest_dir = File.expand_path('skills')
 # Create the destination directory if it doesn't exist
 FileUtils.mkdir_p(dest_dir)
 
+failed = false
 Dir.glob(File.join(src_dir, '**', '*')).select { |f| File.file?(f) }.each do |src_file|
   # Calculate the relative path from source directory
   relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
@@ -38,8 +39,15 @@ Dir.glob(File.join(src_dir, '**', '*')).select { |f| File.file?(f) }.each do |sr
     puts '    Status: ✓ Processed successfully'
   rescue StandardError => e
     puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
+    failed = true
   end
   puts
 end
 
-puts 'Done!'
+puts
+if failed
+  puts 'Skills generated with some errors (see above).'
+  exit 1
+else
+  puts 'Skills generated successfully.'
+end
