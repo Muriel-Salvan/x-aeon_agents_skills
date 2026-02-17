@@ -1,6 +1,6 @@
 ---
 name: updating-doc
-description: Update the documentation of the project. Use when a new development has been completed or when the USER is asking for documentation to be updated.
+description: Update the documentation of the project. What this does is update the README file of the project, its CLI usage and its Table of Content. Use this when a new development has been completed or when the USER is asking for documentation or README to be updated.
 ---
 
 # Updating documentation

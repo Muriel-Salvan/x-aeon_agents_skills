@@ -1,11 +1,4 @@
-# frozen_string_literal: true
-
-require 'spec_helper'
-require 'x-aeon_agents_skills_test/helpers'
-
 RSpec.describe 'generate_skills executable' do
-
-  include XAeonAgentsSkillsTest::Helpers
 
   describe 'basic functionality' do
 

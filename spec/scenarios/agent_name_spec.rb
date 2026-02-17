@@ -1,10 +1,6 @@
-require 'spec_helper'
 require 'tmpdir'
-require 'x-aeon_agents_skills_test/helpers'
 
 RSpec.describe XAeonAgentsSkills do
-
-  include XAeonAgentsSkillsTest::Helpers
 
   describe '.agent_name' do
 
