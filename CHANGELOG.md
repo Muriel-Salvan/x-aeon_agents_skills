@@ -1,3 +1,11 @@
+# [v1.0.10](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.9...v1.0.10) (2026-02-17 16:37:02)
+
+### Patches
+
+* [feat: add skillkit manifest and installation script](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/347d4df36b58589ab30a7ec78a5662888e6b1dc7)
+* [feat: rename Skills.spec to Skillfile and add initial skill configuration](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/543a632931a85a42c8a948964dbbc33e4c4fe664)
+* [feat: add skills installation CLI with Skills.spec DSL support](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/1c56e8698e52e77d7a903b7d1502ea30b732d935)
+
 # [v1.0.9](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.8...v1.0.9) (2026-02-16 17:21:40)
 
 ### Patches
