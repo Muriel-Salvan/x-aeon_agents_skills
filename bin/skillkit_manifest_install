@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+# Install skills from the .skills manifest file, along with all dependent skills recursively.
+# Dependencies are defined in the YAML frontmatter of the SKILL.md file, in the metadata.dependencies property.
+# It is a comma-separated (with ignored white spaces) list of dependency info of the format "[repo-slug:]skill-name".
+# By default the repo slug is the same as the skill itself.
+# For example: anthropic/skills:skill-creator, my-skill, other-owner/other-repo:other-skill
+
+require 'front_matter_parser'
+
+# This should be using `skillkit manifest install --yes`, however this command is currently broken:
+# ➜  skillkit manifest install --yes
+#
+# ◇ SkillKit │ Install from Manifest
+#
+# Installing 2 source(s):
+#   ● anthropic/skills
+#   ● Muriel-Salvan/x-aeon_agents_skills
+#
+# │
+# ◇  Failed: anthropic/skills
+# spawnSync skillkit ENOENT
+# │
+# ◇  Failed: Muriel-Salvan/x-aeon_agents_skills
+# spawnSync skillkit ENOENT
+# │
+# ◆  Manifest installation complete
+#
+# TODO: Refactor this with system 'skillkit manifest install --yes' when this bug will be fixed.
+
+# Install skills using skillkit.
+# Install also skills dependencies recursively.
+#
+# Parameters::
+# * *repo* (String): Repository
+# * *skills* (Array<String>): Skills list to install
+def install_skills(repo, skills)
+  # TODO: Adapt to other agents than Cline
+  puts "Install skills #{repo} / #{skills.join(',')}..."
+  system "skillkit install #{repo} --yes --skills=#{skills.join(',')} --agent=cline", exception: true
+  # Get all dependencies, per repo
+  deps_per_repo = {}
+  skills.each do |skill|
+    deps = FrontMatterParser::Parser.parse_file(".cline/skills/#{skill}/SKILL.md").front_matter.dig('metadata', 'dependencies')
+    unless deps.nil?
+      deps.split(',').map(&:strip).each do |skill_dep|
+        skill_dep = "#{repo}:#{skill_dep}" unless skill_dep.include?(':')
+        skill_dep_repo, skill_dep_name = skill_dep.match(/^([^:]+):(.+)$/)[1..2]
+        unless File.exist?(".cline/skills/#{skill_dep_name}/SKILL.md")
+          deps_per_repo[skill_dep_repo] = [] unless deps_per_repo.key?(skill_dep_repo)
+          deps_per_repo[skill_dep_repo] << skill_dep_name unless deps_per_repo[skill_dep_repo].include?(skill_dep_name)
+        end
+      end
+    end
+  end
+  # Install those dependencies
+  deps_per_repo.each do |dep_repo, dep_skills|
+    install_skills(dep_repo, dep_skills)
+  end
+end
+
+original_no_color = ENV['NO_COLOR']
+ENV['NO_COLOR'] = '1'
+begin
+  list_lines = `skillkit manifest`.split("\n")
+ensure
+  ENV['NO_COLOR'] = original_no_color
+end
+list_lines = list_lines[list_lines.index('Skills:') + 1..-1]
+list_lines[0..list_lines.index('') - 1].each_slice(2) do |repo_desc, skills_desc|
+  install_skills(repo_desc[4..-1].strip, skills_desc[12..-1].split(',').map(&:strip))
+end
+
+puts
+puts 'Skills identified in the skillkit manifest and their dependencies have been installed successfully'

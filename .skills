@@ -1,0 +1,11 @@
+version: 1
+skills:
+  - source: anthropics/skills
+    skills:
+      - skill-creator
+    enabled: true
+  - source: Muriel-Salvan/x-aeon_agents_skills
+    skills:
+      - implementing-github-issue
+    enabled: true
+updatedAt: 2026-02-17T14:06:55.952Z
