@@ -7,9 +7,9 @@ module XAeonAgentsSkills
 
   class SkillsCli < Thor
 
-    desc 'install', 'Install skills as defined in the Skills.spec file'
+    desc 'install', 'Install skills as defined in the Skillfile file'
     def install
-      skills_file = File.expand_path('./Skills.spec')
+      skills_file = File.expand_path('./Skillfile')
       dsl = SkillsDsl.new
       dsl.instance_eval(File.read(skills_file), skills_file)
       dsl.skills.each do |skill|
