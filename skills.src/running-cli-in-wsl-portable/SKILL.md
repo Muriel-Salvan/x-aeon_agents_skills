@@ -1,6 +1,6 @@
 ---
 name: running-cli-in-wsl-portable
-description: Runs Bash command lines in a Portable installation under WSL. Use when a command line should be run under a WSL portable environment.
+description: Runs Bash command lines in a Portable installation under WSL. What this does is execute the command line inside a Portable bash installation in WSL. Use this when a command line should be run under a WSL portable environment.
 ---
 
 # Running CLI in WSL Portable

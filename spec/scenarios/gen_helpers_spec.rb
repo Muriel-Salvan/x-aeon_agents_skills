@@ -1,9 +1,4 @@
-require 'spec_helper'
-require 'x-aeon_agents_skills_test/helpers'
-
 RSpec.describe 'GenHelpers in generate_skills executable' do
-
-  include XAeonAgentsSkillsTest::Helpers
 
   # Helper method that creates a skill with ERB content, runs generate_skills,
   # and returns the generated SKILL.md output

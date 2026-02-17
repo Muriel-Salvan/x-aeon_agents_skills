@@ -1,6 +1,6 @@
 ---
 name: implementing-github-issue
-description: Implements what is described in a GitHub issue. Use when the USER is asking you to implement a GitHub issue.
+description: Implements what is described in a GitHub issue. What this does is read the Github issue content, devise an implementation plan, execute it and validate production qualiy gates. Use this when the USER is asking you to implement a GitHub issue.
 metadata:
   dependencies: validating-production-quality
 ---

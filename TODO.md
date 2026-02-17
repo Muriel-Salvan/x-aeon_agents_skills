@@ -22,4 +22,3 @@
   * Use Plan and Act modes.
   * Different models have different behaviors: well-formed prompts are very important but even when it is well written, some models won't follow prompt instructions, especially when those instructions become large (like test + doc + commit + push).
 * Check anthropic's skill-creator skill: https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md
-* Move the skills executable into its own Rubygem, handling bundled skills.

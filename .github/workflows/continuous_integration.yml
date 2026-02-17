@@ -16,6 +16,12 @@ jobs:
           ruby-version: '3.4'
           bundler-cache: true
 
+      - name: Install Node
+        uses: actions/setup-node@v6
+
+      - name: Install skillkit
+        run: npm install -g skillkit@latest
+
       - name: Run unit tests
         run: bundle exec rspec --format documentation
 

@@ -1,6 +1,6 @@
 ---
 name: creating-pull-request
-description: Creates a Pull Request for the current git branch on GitHub. Use when a Pull Request needs to be created to track the current feature branch changes on GitHub.
+description: Creates a Pull Request for the current git branch on GitHub. Use this when a Pull Request needs to be created to track the current feature branch changes on GitHub.
 ---
 
 # Creating a Pull Request
