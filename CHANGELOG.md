@@ -1,3 +1,9 @@
+# [v1.0.11](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.10...v1.0.11) (2026-02-17 16:41:56)
+
+### Patches
+
+* [feat(ci): add Node and skillkit to CI pipeline, improve skill descriptions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/ce22db56283378b0ba7941229803639484bdf59c)
+
 # [v1.0.10](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.9...v1.0.10) (2026-02-17 16:37:02)
 
 ### Patches
