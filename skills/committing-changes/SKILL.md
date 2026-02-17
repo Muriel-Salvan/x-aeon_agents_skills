@@ -19,7 +19,7 @@ When committing changes, follow those steps.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am committing changes".
+- ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.
 
 ## 2. Stage all the files that should be part of the commit
 
@@ -30,16 +30,19 @@ When committing changes, follow those steps.
 ## 3. Create a temporary file with the commit description
 
 - Devise a meaningful commit comment that summarizes the changes you are going to commit.
-- ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./.tmp_agents/commits`.
+- ALWAYS use `agent: write_to_file` tool to write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./.tmp_agents/commits`.
 
 ## 4. Create the commit
 
 - Find this skill directory path, later referenced as {skill_path}.
 - ALWAYS use `cli: ruby {skill_path}/scripts/commit {description_file}` to create the git commit.
 - NEVER use `cli: git commit` directly.
+
+## 5. Delete the temporary commit description file
+
 - ALWAYS delete the temporary description file {description_file} once the git commit has been done.
 
-## 5. Push this commit on GitHub
+## 6. Push this commit on GitHub
 
 - ALWAYS use `cli: git push github` to push the commit on GitHub.
 

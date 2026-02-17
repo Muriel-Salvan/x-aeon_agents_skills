@@ -13,16 +13,19 @@ description: Commits changes and pushes them on GitHub. What this does is stage 
   ## Create a temporary file with the commit description
 
   - Devise a meaningful commit comment that summarizes the changes you are going to commit.
-  - ALWAYS write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./<%= tmp_path %>/commits`.
+  - ALWAYS use `agent: write_to_file` tool to write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./<%= tmp_path %>/commits`.
 
   ## Create the commit
 
   - Find this skill directory path, later referenced as {skill_path}.
   - ALWAYS use `cli: ruby {skill_path}/scripts/commit {description_file}` to create the git commit.
   - NEVER use `cli: git commit` directly.
+
+  ## Delete the temporary commit description file
+
   - ALWAYS delete the temporary description file {description_file} once the git commit has been done.
 
   ## Push this commit on GitHub
 
   - ALWAYS use `cli: git push github` to push the commit on GitHub.
-<% end -%>
+  <% end -%>

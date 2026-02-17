@@ -1,0 +1,23 @@
+---
+name: analyzing-github-issue
+description: Analyzes requirements described in a GitHub issue. What this does is read the Github issue content and devise an implementation plan. Use this when the USER is asking you to analyze a GitHub issue or get requirements from it. You should use this skill in PLAN mode.
+agent: Plan
+metadata:
+  dependencies: validating-production-quality
+---
+
+<% define_ordered_todo_list('Implementing a GitHub issue') do -%>
+  ## Get issue number (can be done during PLAN mode)
+
+  - ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be implemented, unless the USER already gave you this information in the prompt.
+
+  ## Get issue requirements (can be done during PLAN mode)
+
+  - Find this skill directory path, later referenced as {skill_path}.
+  - ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
+
+  ## Come up with an implementation plan (can be done during PLAN mode)
+
+  - ALWAYS analyze the current code structure and content to understand how the GitHub issue should be implemented.
+  - ALWAYS analyze all the rules that you should adhere to when implementing a task.
+<% end -%>

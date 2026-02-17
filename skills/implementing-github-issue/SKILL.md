@@ -1,8 +1,8 @@
 ---
 name: implementing-github-issue
-description: Implements what is described in a GitHub issue. What this does is read the Github issue content, devise an implementation plan, execute it and validate production qualiy gates. Use this when the USER is asking you to implement a GitHub issue.
+description: Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the USER is asking you to implement a GitHub issue.
 metadata:
-  dependencies: validating-production-quality
+  dependencies: analyzing-github-issue, validating-production-quality
 ---
 
 # Implementing a GitHub issue
@@ -21,30 +21,20 @@ When implementing a GitHub issue, follow those steps.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am implementing a GitHub issue".
+- ALWAYS tell the USER "SKILL: I am implementing a GitHub issue" to inform the USER that you are running this skill.
 
-## 2. Get issue number
+## 2. Analyze the Github issue requirements to get an implementation plan (can be done during PLAN mode)
 
-- ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be implemented, unless the USER already gave you this information in the prompt.
+- ALWAYS use `skill: analyzing-github-issue` to get a full implementation plan. This plan will take into consideration requirements from the issue, USER inputs and the project's context.
 
-## 3. Get issue requirements
-
-- Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
-
-## 4. Come up with an implementation plan
-
-- ALWAYS analyze the current code structure and content to understand how the GitHub issue should be implemented.
-- ALWAYS analyze all the rules that you should adhere to when implementing a task.
-
-## 5. Implement the issue following the implementation plan
+## 3. Implement the issue following the implementation plan
 
 - ALWAYS perform all the agreed steps from the implementation plan to implement the issue.
 - ALWAYS perform a final verification of the implementation plan against all the actions you did. If you think some steps of the implementation plan were not implemented properly or are missing, fix it or inform the USER about those missing steps.
 
-## 6. Validate all production quality checks
+## 4. Validate all production quality checks
 
-- ALWAYS use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are ok.
+- ALWAYS use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are passing.
 
 ## Final Verification (MANDATORY)
 

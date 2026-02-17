@@ -19,7 +19,7 @@ When syncing the current branch with its base, follow those steps.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am syncing the current branch with its base".
+- ALWAYS tell the USER "SKILL: I am syncing the current branch with its base" to inform the USER that you are running this skill.
 
 ## 2. Find the base branch name
 

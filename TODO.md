@@ -5,14 +5,8 @@
 * Extract the generate_skills executable into a generic Rubygem that generates skills following agents best practices
 * Add Ruby rules:
   - NEVER add frozen_string_literal comment in files.
-* In the update doc skill, don't ask anymore to check for TOC updates outside the task scope.
-* In the PR and commits skills: make deletion of temp files a full step.
-* In the PR and commits skills: precise the exact tool write_to_file to generate the files so that they don't try CLI generation.
-* In the implement-github-issue skill, make it clear that first 4 sections are to be executed in PLAN mode. Naybe come up with skills that are PLAN mode only?
 * Add a conventions skill that explains conventions used:
   * Commands with skill/agent/cli prefixes.
-* In the validate production skill, move the semilinearity check in a step in itself.
-* In all skills: the inform the user should mention the tool to be used instead of "say".
 * Ideas for blog post:
   * Very difficult to evaluate model's accuracy as it changes a lot over short periodes of time (cf the monitoring site).
   * Repeatitive safe guard rails on check lists and validations, hence need for prompt generation and optimization.

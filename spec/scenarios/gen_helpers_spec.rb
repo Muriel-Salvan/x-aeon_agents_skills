@@ -50,7 +50,7 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
 
         ## 1. Inform the USER
 
-        - ALWAYS inform the user that you are running this skill, saying "SKILL: I am numbered Skill".
+        - ALWAYS tell the USER "SKILL: I am numbered Skill" to inform the USER that you are running this skill.
 
         ## 2. First Action
         - Do the first action
@@ -96,7 +96,7 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
 
         ## 1. Inform the USER
 
-        - ALWAYS inform the user that you are running this skill, saying "SKILL: I am empty Skill".
+        - ALWAYS tell the USER "SKILL: I am empty Skill" to inform the USER that you are running this skill.
 
 
 
@@ -124,6 +124,14 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
 
     it 'returns the default temporary folder path for agents' do
       expect(process_erb('<%= tmp_path %>')).to eq '.tmp_agents'
+    end
+
+  end
+
+  describe 'announce_skill' do
+
+    it 'returns the announcement instruction with the skill description' do
+      expect(process_erb('<%= announce_skill("committing changes") %>')).to eq 'ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.'
     end
 
   end

@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+# Usage: issue_details <issue_number>
+
+require 'json'
+
+issue_number = Integer(ARGV[0])
+
+system "gh issue view #{issue_number} --json=number,title,body,comments,labels,state,url", exception: true

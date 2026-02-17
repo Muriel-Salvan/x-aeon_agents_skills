@@ -19,7 +19,7 @@ When updating documentation, follow those steps.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am updating documentation".
+- ALWAYS tell the USER "SKILL: I am updating documentation" to inform the USER that you are running this skill.
 
 ## 2. Check the existing README content
 

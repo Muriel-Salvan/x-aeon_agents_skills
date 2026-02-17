@@ -3,6 +3,14 @@ module XAeonAgentsSkills
   # Helper methods for generating skill content
   module GenHelpers
 
+    # Return the prompt to announce that the agent is working on a skill
+    #
+    # Parameters::
+    # * *skill_desc* (String): Short skill description
+    def announce_skill(skill_desc)
+      "ALWAYS tell the USER \"SKILL: I am #{skill_desc}\" to inform the USER that you are running this skill."
+    end
+
     # Return a default temporary folder that agents can use in a project.
     # It's better to force it to the agents, as some models will try weird CLI commands to create temporary files otherwise.
     #
@@ -46,20 +54,20 @@ module XAeonAgentsSkills
       end
 
       # Build the intro name (lowercase first character)
-      intro_name = skill_human_name[0].downcase + skill_human_name[1..]
+      skill_desc = skill_human_name[0].downcase + skill_human_name[1..]
 
       # Compose the full output and append directly to ERB buffer
       # (we use <% %> not <%= %> since standard ERB doesn't support <%= method do %>)
       erb_buffer << <<~EO_Markdown
         # #{skill_human_name}
 
-        When #{intro_name}, follow those steps.
+        When #{skill_desc}, follow those steps.
 
         #{init_skill_checklist.rstrip}
 
         ## 1. Inform the USER
 
-        - ALWAYS inform the user that you are running this skill, saying "SKILL: I am #{intro_name}".
+        - #{announce_skill(skill_desc)}
 
         #{numbered_sections.join("\n\n")}
 

@@ -10,7 +10,7 @@ The original bash command to be run is later referenced as {original_cli}.
 
 ## 1. Inform the USER
 
-- ALWAYS inform the user that you are running this skill, saying "SKILL: I am running a command under WSL Portable environment".
+- <%= announce_skill('running a command under WSL Portable environment') >
 
 ## 2. Run the command line with the right prefix
 
