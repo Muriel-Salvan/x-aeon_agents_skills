@@ -5,9 +5,11 @@ description: Creates a Pull Request for the current git branch on GitHub. Use th
 
 # Creating a Pull Request
 
+## Sequential steps to be followed when using this skill
+
 When creating a Pull Request, follow those steps.
 
-## Create the creating-pull-request Execution Checklist (MANDATORY)
+### Create the creating-pull-request Execution Checklist (MANDATORY)
 
 - Before executing anything, create a checklist named creating-pull-request Execution Checklist with ALL steps of this skill.
 - The creating-pull-request Execution Checklist MUST include ALL numbered steps explicitly.
@@ -17,37 +19,87 @@ When creating a Pull Request, follow those steps.
 - If an item cannot be executed, explicitly explain why.
 - NEVER mark the skill as completed while any item from the creating-pull-request Execution Checklist remains open.
 
-## 1. Inform the USER
+### 1. Inform the USER
 
 - ALWAYS tell the USER "SKILL: I am creating a Pull Request" to inform the USER that you are running this skill.
 
-## 2. Devise the list of GitHub issues linked to this Pull Request
+### 2. Devise the list of GitHub issues linked to this Pull Request
 
 - ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
 - Also use any information from the previous USER prompts to know which additional issues are closed by or related to this Pull Request.
 
-## 3. Create a temporary file with a good description for the Pull Request
+### 3. Create a temporary file with a good description for the Pull Request
 
 - ALWAYS devise a meaningful Pull Request description for all the changes that you have in the current branch, and for the task you want to achieve in this branch.
 - ALWAYS add a section in the Pull Request description that lists all GitHub issues closed by or related to this Pull Request (devised in step 2), with mentions like "Closes #{issue_id}" or "Relates to #{issue_id}".
 - ALWAYS add a section in the Pull Request description that contains the exact initial prompt of the USER for this task, and all USER inputs or precisions that you have received from the USER while implementing the task.
 - ALWAYS use `agent: write_to_file` tool to write the devised Pull Request description in a temporary file (later referenced as {pr_description_file}), inside the directory `./.tmp_agents/prs`.
 
-## 4. Create the Pull Request between the current branch and main
+Example of a Pull Request description:
+```markdown
+This PR implements conditional debug logging in STDOUT.
+
+## Changes
+
+- Modified `lib/my_class.rb` to check for `DEBUG=1` environment variable.
+- Updated `README.md` with instructions on how to use the new debugging feature.
+
+## Related Issues
+
+- Closes #29
+- Relates to #28
+
+## Original Request
+
+> Add support to debug mode to implement issue 29.
+> No need to modify the tests.
+```
+
+### 4. Create the Pull Request between the current branch and main
 
 - Find this skill directory path, later referenced as {skill_path}.
 - ALWAYS devise a meaningful title for this Pull Request, later references as {pr_title}.
 - ALWAYS use `cli: ruby {skill_path}/scripts/create_pr {pr_title} {pr_description_file}` to create the Pull Request.
 - NEVER use `cli: gh` directly to create Pull Requests; the script wrapper must be used to handle multiline descriptions and append the AI agent signature to the Pull Request description.
 
-## 5. Delete the temporary description file
+Example:
+```bash
+ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" ./.tmp_agents/prs/pr_desc.txt
+```
+
+### 5. Delete the temporary description file
 
 - ALWAYS delete the temporary description file {pr_description_file} once the Pull Request has been created.
 
-## Final Verification (MANDATORY)
+Example:
+```bash
+rm ./.tmp_agents/prs/pr_desc.txt
+```
+
+### Final Verification (MANDATORY)
 
 Before declaring the task complete:
 
 - Re-list all numbered steps from the creating-pull-request Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
+
+## When to use it
+
+- You MUST use it every time the USER asks you to create a Pull Request.
+- You MUST use it every time another skill specifically mentions `skill: creating-pull-request`.
+- You can use it every time you need to create a Pull Request.
+
+## Usage and code examples
+
+Those examples are given for a Linux environment. Adapt them if you are running in a Windows environment.
+
+### Creating a Pull Request for a branch already pushed
+
+This skill should perform the following commands:
+```bash
+# Use agent tool ask_followup_question to ask the USER about Github issue numbers that relate to this Pull Request
+# Use agent tool write_to_file to create file ././.tmp_agents/prs/pr_desc.txt
+ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" ./.tmp_agents/prs/pr_desc.txt
+rm ./.tmp_agents/prs/pr_desc.txt
+```

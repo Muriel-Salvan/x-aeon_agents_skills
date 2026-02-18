@@ -1,19 +1,20 @@
----
-name: updating-doc
-description: Update the documentation of the project. What this does is update the README file of the project, its CLI usage and its Table of Content. Use this when a new development has been completed or when the USER is asking for documentation or README to be updated.
----
+<%= frontmatter(
+  description: 'Update the documentation of the project. What this does is update the README file of the project, its CLI usage and its Table of Content. Use this when a new development has been completed or when the USER is asking for documentation or README to be updated.'
+) %>
 
-<% define_ordered_todo_list('Updating documentation') do -%>
-  ## Check the existing README content
+# <%= skill_goal 'Updating documentation' %>
+
+<% define_ordered_todo_list do -%>
+  ### Check the existing README content
 
   - ALWAYS read the existing README content and think about which parts of it should be updated with the task you just implemented.
   - ALWAYS adapt the content to what is relevant for the task you implemented.
 
-  ## Update the README CLI usage section
+  ### Update the README CLI usage section
 
   - ALWAYS check if the real CLI options are documented correctly in the Usage section of the README file.
 
-  ## Update the README table of content
+  ### Update the README table of content
 
   - Devise the hierarchical list of all Markdown headers that are in the README file, of all levels. Don't forget about headers that you may have added in previous steps.
   - ALWAYS make sure that the section "Table of Contents" of the README file is listing exactly all the headers as local links to their section, and indented in accordance with their hierarchical level in the file.

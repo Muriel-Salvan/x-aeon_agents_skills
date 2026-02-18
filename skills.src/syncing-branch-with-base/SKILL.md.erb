@@ -1,26 +1,27 @@
----
-name: syncing-branch-with-base
-description: Syncs the current branch with its base. What this does is check the remote base branch, rebase the current one on the updated base and push it back to the remote. Use this when the base branch of the current branch may have diverged and you want to be sure that the current branch gets all latest changes of its base. This Skill is the canonical way to keep a branch up-to-date with its base. It must be used instead of merging the base branch, and always performs a rebase.
----
+<%= frontmatter(
+  description: 'Syncs the current branch with its base. What this does is check the remote base branch, rebase the current one on the updated base and push it back to the remote. Use this when the base branch of the current branch may have diverged and you want to be sure that the current branch gets all latest changes of its base. This Skill is the canonical way to keep a branch up-to-date with its base. It must be used instead of merging the base branch, and always performs a rebase.'
+) %>
 
-<% define_ordered_todo_list('Syncing the current branch with its base') do -%>
-  ## Find the base branch name
+# <%= skill_goal 'Syncing the current branch with its base' %>
+
+<% define_ordered_todo_list do -%>
+  ### Find the base branch name
 
   - By default the base branch name is `main`.
   - The base branch name is later referenced as {base_branch}.
 
-  ## Fetch the base branch from the github remote
+  ### Fetch the base branch from the github remote
 
   - ALWAYS use `cli: git fetch --all` to retrieve the GitHub remote's base branch.
 
-  ## Rebase the branch
+  ### Rebase the branch
 
   - ALWAYS use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the GitHub remote.
   - NEVER use `cli: git merge`.
   - ALWAYS fix any conflict you see during the rebase, and continue the rebase using `cli: git rebase --continue` until all your commits have been rebased properly.
   - If you don't know how to solve a conflict, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the git conflict.
 
-  ## Push the rebased branch
+  ### Push the rebased branch
 
   - ALWAYS push your rebased branch to GitHub using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
   - If the push with `--force-with-lease` option failed, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the issue. It could be that another user contributed to the branch.

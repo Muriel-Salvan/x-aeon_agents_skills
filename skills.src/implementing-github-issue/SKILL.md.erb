@@ -1,21 +1,39 @@
----
-name: implementing-github-issue
-description: Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the USER is asking you to implement a GitHub issue.
-metadata:
-  dependencies: analyzing-github-issue, validating-production-quality
----
+<%= frontmatter(
+  description: 'Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the USER is asking you to implement a GitHub issue.',
+  metadata: {
+    dependencies: 'analyzing-github-issue, validating-production-quality',
+    skip_quality_checks: 'Structure, Specificity'
+  }
+) %>
 
-<% define_ordered_todo_list('Implementing a GitHub issue') do -%>
-  ## Analyze the Github issue requirements to get an implementation plan (can be done during PLAN mode)
+# <%= skill_goal 'Implementing a GitHub issue' %>
+
+<% define_ordered_todo_list do -%>
+  ### Analyze the Github issue requirements to get an implementation plan (can be done during PLAN mode)
 
   - ALWAYS use `skill: analyzing-github-issue` to get a full implementation plan. This plan will take into consideration requirements from the issue, USER inputs and the project's context.
 
-  ## Implement the issue following the implementation plan
+  ### Implement the issue following the implementation plan
 
   - ALWAYS perform all the agreed steps from the implementation plan to implement the issue.
   - ALWAYS perform a final verification of the implementation plan against all the actions you did. If you think some steps of the implementation plan were not implemented properly or are missing, fix it or inform the USER about those missing steps.
 
-  ## Validate all production quality checks
+  ### Validate all production quality checks
 
   - ALWAYS use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are passing.
 <% end -%>
+
+## When to use it
+
+- You MUST use it every time the USER asks you to implement a Github issue.
+- You MUST use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- You can use it every time you need to implement a Github issue.
+
+## Usage and code examples
+
+### Implementing a Github issue
+
+This skill should perform the following steps:
+1. Use the skill named analyzing-github-issue to get an implementation plan
+2. Execute all the steps that are identified in the implementation plan
+3. Use the skill named validating-production-quality to check all production quality gates

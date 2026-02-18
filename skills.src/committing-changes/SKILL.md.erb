@@ -1,31 +1,73 @@
----
-name: committing-changes
-description: Commits changes and pushes them on GitHub. What this does is stage relevant files, create a git commit and push it on Github. Use this when development and testing has been done and changes are ready to be committed and pushed to GitHub.
----
+<%= frontmatter(
+  description: 'Commits changes and pushes them on GitHub. What this does is stage relevant files, create a git commit and push it on Github. Use this when development and testing has been done and changes are ready to be committed and pushed to GitHub.'
+) %>
 
-<% define_ordered_todo_list('Committing changes') do -%>
-  ## Stage all the files that should be part of the commit
+# <%= skill_goal 'Committing changes' %>
+
+<% define_ordered_todo_list do -%>
+  ### Stage all the files that should be part of the commit
 
   - Identify all the files that make sense to commit altogether as part of 1 commit.
-  - ALWAYS use `cli: git add <file1> <file2> ... <fileN>` to stage those identified files.
+  - ALWAYS use `cli: git add {file1} {file2} ... {fileN}` to stage those identified files.
   - NEVER use `cli: git add --all`, because some files may be modified by the USER and should not be part of your commit.
 
-  ## Create a temporary file with the commit description
+  Example:
+  ```bash
+  git add lib/my_lib/my_class.rb README.md
+  ```
+
+  ### Create a temporary file with the commit description
 
   - Devise a meaningful commit comment that summarizes the changes you are going to commit.
-  - ALWAYS use `agent: write_to_file` tool to write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `./<%= tmp_path %>/commits`.
+  - ALWAYS use `agent: write_to_file` tool to write the commit comment in a temporary file (later referenced as {description_file}), inside the directory `<%= tmp_path %>/commits`.
 
-  ## Create the commit
+  ### Create the commit
 
   - Find this skill directory path, later referenced as {skill_path}.
   - ALWAYS use `cli: ruby {skill_path}/scripts/commit {description_file}` to create the git commit.
   - NEVER use `cli: git commit` directly.
 
-  ## Delete the temporary commit description file
+  Example:
+  ```bash
+  ruby .cline/skills/<%= skill_name %>/scripts/commit <%= tmp_path %>/commits/commit_desc.txt
+  ```
+
+  ### Delete the temporary commit description file
 
   - ALWAYS delete the temporary description file {description_file} once the git commit has been done.
 
-  ## Push this commit on GitHub
+  Example:
+  ```bash
+  rm <%= tmp_path %>/commits/commit_desc.txt
+  ```
+
+  ### Push this commit on GitHub
 
   - ALWAYS use `cli: git push github` to push the commit on GitHub.
+
+  Example:
+  ```bash
+  git push github
+  ```
   <% end -%>
+
+## When to use it
+
+- You MUST use it every time the USER asks you to commit your changes.
+- You MUST use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- You can use it every time you need to commit your changes.
+
+## Usage and code examples
+
+Those examples are given for a Linux environment. Adapt them if you are running in a Windows environment.
+
+### When project code, docs and tests were modified
+
+If you modified `lib/my_lib/my_class.rb`, `README.md` and `spec/scenarios/my_tests.rb` files for the task, this skill should perform the following commands:
+```bash
+git add lib/my_lib/my_class.rb README.md spec/scenarios/my_tests.rb
+# Use agent tool write_to_file to create file ./<%= tmp_path %>/commits/commit_desc.txt
+ruby {skill_path}/scripts/commit ./<%= tmp_path %>/commits/commit_desc.txt
+rm ./<%= tmp_path %>/commits/commit_desc.txt
+git push github
+```

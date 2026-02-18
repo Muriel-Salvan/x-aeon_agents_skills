@@ -23,22 +23,23 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
       expect(
         process_erb(
           <<~EO_ERB
-            <% define_ordered_todo_list('Numbered Skill') do -%>
-              ## First Action
+            <% skill_goal('Numbered Skill') -%>
+            <% define_ordered_todo_list do -%>
+              ### First Action
               - Do the first action
-              ## Second Action
+              ### Second Action
               - Do the second action
-              ## Third Action
+              ### Third Action
               - Do the third action
             <% end -%>
           EO_ERB
         )
       ).to eq <<~EXPECTED
-        # Numbered Skill
+        ## Sequential steps to be followed when using this skill
 
         When numbered Skill, follow those steps.
 
-        ## Create the test_skill Execution Checklist (MANDATORY)
+        ### Create the test_skill Execution Checklist (MANDATORY)
 
         - Before executing anything, create a checklist named test_skill Execution Checklist with ALL steps of this skill.
         - The test_skill Execution Checklist MUST include ALL numbered steps explicitly.
@@ -48,20 +49,20 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
         - If an item cannot be executed, explicitly explain why.
         - NEVER mark the skill as completed while any item from the test_skill Execution Checklist remains open.
 
-        ## 1. Inform the USER
+        ### 1. Inform the USER
 
         - ALWAYS tell the USER "SKILL: I am numbered Skill" to inform the USER that you are running this skill.
 
-        ## 2. First Action
+        ### 2. First Action
         - Do the first action
 
-        ## 3. Second Action
+        ### 3. Second Action
         - Do the second action
 
-        ## 4. Third Action
+        ### 4. Third Action
         - Do the third action
 
-        ## Final Verification (MANDATORY)
+        ### Final Verification (MANDATORY)
 
         Before declaring the task complete:
 
@@ -75,16 +76,17 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
       expect(
         process_erb(
           <<~EO_ERB
-            <% define_ordered_todo_list('Empty Skill') do -%>
+            <% skill_goal('Empty Skill') -%>
+            <% define_ordered_todo_list do -%>
             <% end -%>
           EO_ERB
         )
       ).to eq <<~EXPECTED
-        # Empty Skill
+        ## Sequential steps to be followed when using this skill
 
         When empty Skill, follow those steps.
 
-        ## Create the test_skill Execution Checklist (MANDATORY)
+        ### Create the test_skill Execution Checklist (MANDATORY)
 
         - Before executing anything, create a checklist named test_skill Execution Checklist with ALL steps of this skill.
         - The test_skill Execution Checklist MUST include ALL numbered steps explicitly.
@@ -94,13 +96,13 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
         - If an item cannot be executed, explicitly explain why.
         - NEVER mark the skill as completed while any item from the test_skill Execution Checklist remains open.
 
-        ## 1. Inform the USER
+        ### 1. Inform the USER
 
         - ALWAYS tell the USER "SKILL: I am empty Skill" to inform the USER that you are running this skill.
 
 
 
-        ## Final Verification (MANDATORY)
+        ### Final Verification (MANDATORY)
 
         Before declaring the task complete:
 
@@ -112,10 +114,10 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
 
   end
 
-  describe 'generating_skill' do
+  describe 'skill_name' do
 
     it 'returns the skill name being generated from the ERB file path' do
-      expect(process_erb('<%= generating_skill %>')).to eq 'test_skill'
+      expect(process_erb('<%= skill_name %>')).to eq 'test_skill'
     end
 
   end
@@ -123,7 +125,7 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
   describe 'tmp_path' do
 
     it 'returns the default temporary folder path for agents' do
-      expect(process_erb('<%= tmp_path %>')).to eq '.tmp_agents'
+      expect(process_erb('<%= tmp_path %>')).to eq './.tmp_agents'
     end
 
   end
@@ -131,7 +133,7 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
   describe 'announce_skill' do
 
     it 'returns the announcement instruction with the skill description' do
-      expect(process_erb('<%= announce_skill("committing changes") %>')).to eq 'ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.'
+      expect(process_erb('<% skill_goal("committing changes") %><%= announce_skill %>')).to eq 'ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.'
     end
 
   end

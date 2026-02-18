@@ -1,14 +1,49 @@
+require 'yaml'
+
 module XAeonAgentsSkills
 
   # Helper methods for generating skill content
   module GenHelpers
 
-    # Return the prompt to announce that the agent is working on a skill
+    # Generate the YAML frontmatter block for a skill file.
+    # The name is automatically derived from skill_name.
     #
     # Parameters::
-    # * *skill_desc* (String): Short skill description
-    def announce_skill(skill_desc)
-      "ALWAYS tell the USER \"SKILL: I am #{skill_desc}\" to inform the USER that you are running this skill."
+    # * *description* (String): Description of the skill
+    # * *metadata* (Hash or nil): Optional metadata key-value pairs
+    #
+    # Result::
+    # * String: The complete YAML frontmatter block (including --- delimiters)
+    def frontmatter(description:, metadata: nil)
+      data = { 'name' => skill_name, 'description' => description }
+      data['metadata'] = metadata.transform_keys(&:to_s) if metadata
+      YAML.dump(data, line_width: -1).chomp + "\n---"
+    end
+
+    # Define or get the skill goal to be used in ERB templates
+    #
+    # Parameters::
+    # * *goal_desc* (String or nil): The skill goal, or nil to retrieve the previously set skill goal [default = nil]
+    # Result::
+    # * String: The skill goal
+    def skill_goal(goal_desc = nil)
+      @skill_goal = goal_desc unless goal_desc.nil?
+      @skill_goal
+    end
+
+    # Get the skill goal as a sentence
+    # Prerequisite: skill_goal should be set before.
+    #
+    # Result::
+    # * String: The skill goal as useable inside a sentence
+    def skill_goal_sentence
+      "#{@skill_goal[0].downcase}#{@skill_goal[1..]}"
+    end
+
+    # Return the prompt to announce that the agent is working on a skill.
+    # Prerequisite: skill_goal should be set before.
+    def announce_skill
+      "ALWAYS tell the USER \"SKILL: I am #{skill_goal_sentence}\" to inform the USER that you are running this skill."
     end
 
     # Return a default temporary folder that agents can use in a project.
@@ -17,7 +52,7 @@ module XAeonAgentsSkills
     # Result::
     # * String: Temporary folder path
     def tmp_path
-      '.tmp_agents'
+      './.tmp_agents'
     end
 
     # Define an ordered todo list for a skill.
@@ -26,9 +61,8 @@ module XAeonAgentsSkills
     # standard skill header, checklist initialization, and final verification sections.
     #
     # Parameters::
-    # * *skill_human_name* (String): Human-readable name of the skill (e.g. 'Committing changes')
     # * *block* (Proc): ERB block containing the markdown sections
-    def define_ordered_todo_list(skill_human_name, &block)
+    def define_ordered_todo_list(&block)
       # Capture the ERB block content using buffer manipulation
       erb_buffer = eval('_erbout', block.binding)
       saved_content = erb_buffer.dup
@@ -40,34 +74,33 @@ module XAeonAgentsSkills
       # Dedent the captured content: remove common leading whitespace
       lines = captured.lines
       min_indent = lines.reject { |l| l.strip.empty? }.map { |l| l.match(/^(\s*)/)[1].length }.min || 0
-      content = lines.map { |l| l.strip.empty? ? "\n" : l[min_indent..] }.join.strip
-
       # Split into sections by ## headings
-      sections = content.split(/^(?=## )/).reject { |s| s.strip.empty? }
-
       # Number sections starting from 2 and strip trailing whitespace
       step_number = 2
-      numbered_sections = sections.map do |section|
-        numbered = section.sub(/^## /, "## #{step_number}. ").rstrip
-        step_number += 1
-        numbered
-      end
-
-      # Build the intro name (lowercase first character)
-      skill_desc = skill_human_name[0].downcase + skill_human_name[1..]
+      numbered_sections = lines.
+        map { |l| l.strip.empty? ? "\n" : l[min_indent..] }.
+        join.
+        strip.
+        split(/^(?=### )/).
+        reject { |s| s.strip.empty? }.
+        map do |section|
+          numbered = section.sub(/^### /, "### #{step_number}. ").rstrip
+          step_number += 1
+          numbered
+        end
 
       # Compose the full output and append directly to ERB buffer
       # (we use <% %> not <%= %> since standard ERB doesn't support <%= method do %>)
       erb_buffer << <<~EO_Markdown
-        # #{skill_human_name}
+        ## Sequential steps to be followed when using this skill
 
-        When #{skill_desc}, follow those steps.
+        When #{skill_goal_sentence}, follow those steps.
 
         #{init_skill_checklist.rstrip}
 
-        ## 1. Inform the USER
+        ### 1. Inform the USER
 
-        - #{announce_skill(skill_desc)}
+        - #{announce_skill}
 
         #{numbered_sections.join("\n\n")}
 
@@ -79,7 +112,7 @@ module XAeonAgentsSkills
     #
     # Result::
     # * String: Skill name being generated
-    def generating_skill
+    def skill_name
       current_erb_file.match(/\/skills\.src\/([^\/]+)\//)[1]
     end
 
@@ -126,15 +159,15 @@ module XAeonAgentsSkills
     # * String: The execution checklist section
     def init_skill_checklist
       <<~EO_Markdown
-        ## Create the #{generating_skill} Execution Checklist (MANDATORY)
+        ### Create the #{skill_name} Execution Checklist (MANDATORY)
 
-        - Before executing anything, create a checklist named #{generating_skill} Execution Checklist with ALL steps of this skill.
-        - The #{generating_skill} Execution Checklist MUST include ALL numbered steps explicitly.
-        - The #{generating_skill} Execution Checklist MUST be displayed to the USER.
-        - After completing each step of this skill, mark the item in the #{generating_skill} Execution Checklist as completed, and display again the #{generating_skill} Execution Checklist to the USER.
+        - Before executing anything, create a checklist named #{skill_name} Execution Checklist with ALL steps of this skill.
+        - The #{skill_name} Execution Checklist MUST include ALL numbered steps explicitly.
+        - The #{skill_name} Execution Checklist MUST be displayed to the USER.
+        - After completing each step of this skill, mark the item in the #{skill_name} Execution Checklist as completed, and display again the #{skill_name} Execution Checklist to the USER.
         - Do NOT skip any item.
         - If an item cannot be executed, explicitly explain why.
-        - NEVER mark the skill as completed while any item from the #{generating_skill} Execution Checklist remains open.
+        - NEVER mark the skill as completed while any item from the #{skill_name} Execution Checklist remains open.
       EO_Markdown
     end
 
@@ -144,11 +177,11 @@ module XAeonAgentsSkills
     # * String: The final verification section
     def validate_skill_checklist
       <<~EO_Markdown
-        ## Final Verification (MANDATORY)
+        ### Final Verification (MANDATORY)
 
         Before declaring the task complete:
 
-        - Re-list all numbered steps from the #{generating_skill} Execution Checklist.
+        - Re-list all numbered steps from the #{skill_name} Execution Checklist.
         - Confirm each one was executed.
         - If any step was not executed, execute it now.
       EO_Markdown
