@@ -1,3 +1,5 @@
+require 'x-aeon_agents_skills/gen_helpers'
+
 RSpec.describe 'GenHelpers in generate_skills executable' do
 
   # Helper method that creates a skill with ERB content, runs generate_skills,
@@ -130,10 +132,85 @@ RSpec.describe 'GenHelpers in generate_skills executable' do
 
   end
 
+  describe 'frontmatter' do
+
+    it 'generates YAML frontmatter without metadata' do
+      expect(
+        process_erb('<%= frontmatter(description: "A test skill") %>')
+      ).to eq <<~EXPECTED.chomp
+        ---
+        name: test_skill
+        description: A test skill
+        ---
+      EXPECTED
+    end
+
+    it 'generates YAML frontmatter with metadata' do
+      expect(
+        process_erb('<%= frontmatter(description: "A test skill", metadata: { tool: "rspec", version: "3" }) %>')
+      ).to eq <<~EXPECTED.chomp
+        ---
+        name: test_skill
+        description: A test skill
+        metadata:
+          tool: rspec
+          version: '3'
+        ---
+      EXPECTED
+    end
+
+  end
+
+  describe 'skill_goal' do
+
+    it 'sets and returns the goal when a goal_desc argument is given' do
+      expect(
+        process_erb('<%= skill_goal("Implementing a feature") %>')
+      ).to eq 'Implementing a feature'
+    end
+
+    it 'retrieves the previously set goal when called without argument' do
+      expect(
+        process_erb('<% skill_goal("Fixing a bug") %><%= skill_goal %>')
+      ).to eq 'Fixing a bug'
+    end
+
+  end
+
+  describe 'skill_goal_sentence' do
+
+    it 'returns the skill goal with the first character lowercased' do
+      expect(
+        process_erb('<% skill_goal("Running the tests") %><%= skill_goal_sentence %>')
+      ).to eq 'running the tests'
+    end
+
+  end
+
   describe 'announce_skill' do
 
     it 'returns the announcement instruction with the skill description' do
-      expect(process_erb('<% skill_goal("committing changes") %><%= announce_skill %>')).to eq 'ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.'
+      expect(process_erb('<% skill_goal("Committing changes") %><%= announce_skill %>')).to eq 'ALWAYS tell the USER "SKILL: I am committing changes" to inform the USER that you are running this skill.'
+    end
+
+  end
+
+  describe 'skill_config' do
+
+    it 'returns an empty Hash when no config file exists for the skill' do
+      with_skills_src(test_skill: { 'SKILL.md.erb' => '' }) do |workspace_dir|
+        Dir.chdir(workspace_dir) do
+          expect(XAeonAgentsSkills::GenHelpers.skill_config('test_skill')).to eq({})
+        end
+      end
+    end
+
+    it 'returns the parsed YAML Hash when a config file exists' do
+      with_skills_src(test_skill: { '.skill_config.yml' => "---\nskip_quality_checks: 'Structure, Specificity'\n" }) do |workspace_dir|
+        Dir.chdir(workspace_dir) do
+          expect(XAeonAgentsSkills::GenHelpers.skill_config('test_skill')).to eq({ 'skip_quality_checks' => 'Structure, Specificity' })
+        end
+      end
     end
 
   end

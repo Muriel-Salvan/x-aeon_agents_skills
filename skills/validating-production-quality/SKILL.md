@@ -30,6 +30,11 @@ When validating production quality, follow those steps.
 - ALWAYS run all test scenarios.
 - ALWAYS fix all the failures that you see in the tests output.
 
+For example, in a Python project:
+```bash
+python -m unittest
+```
+
 ### 3. Update documentation
 
 - ALWAYS use `skill: updating-doc` to update the project documentation.
@@ -47,10 +52,23 @@ When validating production quality, follow those steps.
 - ALWAYS check that there is no merge commit between the current branch and its base.
 - IF you find any merge commit, THEN ALWAYS remove them by rebasing the branch in a linear way, using `cli: git rebase`, and push again to the Github remote using `--force-with-lease` option.
 
+Example, in case of merge commits found:
+```bash
+git log --oneline --ancestry-path main..my_branch
+git rebase main
+git push github --force-with-lease
+```
+
 ### 7. Create a Pull Request for the current branch
 
 - ALWAYS check on the corresponding GitHub project if there is already a Pull Request created for the current branch.
 - IF there isn't any Pull Request for the current branch, THEN ALWAYS use `skill: creating-pull-request` to create one.
+
+Example to check for a Pull Request:
+```bash
+gh pr list
+# Execute skill creating-pull-request if our branch is not in this list
+```
 
 ### Final Verification (MANDATORY)
 
@@ -59,3 +77,34 @@ Before declaring the task complete:
 - Re-list all numbered steps from the validating-production-quality Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
+
+## When to use it
+
+- You MUST use it every time the USER asks you to validate production quality gates.
+- You MUST use it every time another skill specifically mentions `skill: validating-production-quality`.
+- You can use it just before attempting completion of a task that is a full production-grade feature or bug fix.
+
+## Usage and code examples
+
+### Before attempting completion on a task
+
+```bash
+# 1. Check tests
+python -m unittest
+# Fix any failing test
+
+# 2. Run skill updating-doc.
+
+# 3. Run skill committing-changes.
+
+# 4. Run skill syncing-branch-with-base
+
+# 5. Remove merge commits
+git log --oneline --ancestry-path main..my_branch
+git rebase main
+git push github --force-with-lease
+
+# 6. Create Pull Request if not already present
+gh pr list
+# Run skill creating-pull-request
+```

@@ -21,28 +21,30 @@ dest_dir = File.expand_path('skills')
 FileUtils.mkdir_p(dest_dir)
 
 failed = false
-Dir.glob(File.join(src_dir, '**', '*')).select { |f| File.file?(f) }.each do |src_file|
-  # Calculate the relative path from source directory
-  relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
+Dir.glob(File.join(src_dir, '**', '*'), File::FNM_DOTMATCH).
+  select { |f| File.file?(f) && File.basename(f) != '.skill_config.yml' }.
+  each do |src_file|
+    # Calculate the relative path from source directory
+    relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
 
-  file_ext = File.extname(relative_path)
-  dst_file = File.join(dest_dir, TRANSFORMATIONS.key?(file_ext) ? relative_path.sub(/#{Regexp.escape(file_ext)}$/, '') : relative_path)
-  puts "Processing: #{relative_path}"
-  puts "    Output: #{dst_file}"
-  begin
-    FileUtils.mkdir_p(File.dirname(dst_file))
-    if TRANSFORMATIONS.key?(file_ext)
-      File.write(dst_file, TRANSFORMATIONS[file_ext].call(src_file))
-    else
-      FileUtils.cp(src_file, dst_file)
+    file_ext = File.extname(relative_path)
+    dst_file = File.join(dest_dir, TRANSFORMATIONS.key?(file_ext) ? relative_path.sub(/#{Regexp.escape(file_ext)}$/, '') : relative_path)
+    puts "Processing: #{relative_path}"
+    puts "    Output: #{dst_file}"
+    begin
+      FileUtils.mkdir_p(File.dirname(dst_file))
+      if TRANSFORMATIONS.key?(file_ext)
+        File.write(dst_file, TRANSFORMATIONS[file_ext].call(src_file))
+      else
+        FileUtils.cp(src_file, dst_file)
+      end
+      puts '    Status: ✓ Processed successfully'
+    rescue StandardError => e
+      puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
+      failed = true
     end
-    puts '    Status: ✓ Processed successfully'
-  rescue StandardError => e
-    puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
-    failed = true
+    puts
   end
-  puts
-end
 
 puts
 if failed

@@ -108,6 +108,18 @@ module XAeonAgentsSkills
       EO_Markdown
     end
 
+    # Return the skill config hash from its .skill_config.yml file, if it exists.
+    #
+    # Parameters::
+    # * *skill_name* (String): The skill name (matching a directory under skills.src/)
+    #
+    # Result::
+    # * Hash: The YAML config hash, or an empty Hash if no config file exists
+    def self.skill_config(skill_name)
+      skill_config_file = "skills.src/#{skill_name}/.skill_config.yml"
+      File.exist?(skill_config_file) ? YAML.load_file(skill_config_file) : {}
+    end
+
     # Return the skill being generated
     #
     # Result::

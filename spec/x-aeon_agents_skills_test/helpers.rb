@@ -75,6 +75,22 @@ module XAeonAgentsSkillsTest
       end
     end
 
+    # Helper method to temporarily disable CLI colors
+    # Sets NO_COLOR=1 to disable colored output in CLI commands
+    # Uses begin...ensure to guarantee the original value is restored
+    #
+    # Parameters::
+    # * *&block* (Proc): Code block to execute without CLI colors
+    def without_cli_colors
+      original_no_color = ENV['NO_COLOR']
+      ENV['NO_COLOR'] = '1'
+      begin
+        yield
+      ensure
+        ENV['NO_COLOR'] = original_no_color
+      end
+    end
+
     # Helper method to setup a VSCode SQLite database with test data
     # Creates the database file, table structure, and inserts items
     #

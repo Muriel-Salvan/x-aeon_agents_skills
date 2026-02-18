@@ -28,14 +28,68 @@ When updating documentation, follow those steps.
 - ALWAYS read the existing README content and think about which parts of it should be updated with the task you just implemented.
 - ALWAYS adapt the content to what is relevant for the task you implemented.
 
-### 3. Update the README CLI usage section
+For example, if README.md has such a section:
+```markdown
+## Main features
+
+This executable processes input data files (*.csv) to output statistics.
+```
+and you just implemented a feature adding a timeout feature,
+then you should update this README section like this:
+```markdown
+## Main features
+
+This executable processes input data files (*.csv) to output statistics.
+
+### 3. Timeout
+
+If processing a file takes more than a given number of seconds, then processing stops and an error is returned (timeout behaviour).
+```
+
+### 4. Update the README CLI usage section
 
 - ALWAYS check if the real CLI options are documented correctly in the Usage section of the README file.
 
-### 4. Update the README table of content
+For example, if README.md has such a section:
+```markdown
+## CLI options
+
+* `--process FILE`: Specify the file to process
+```
+and you just implemented a feature adding a CLI timeout option,
+then you should update this README section like this:
+```markdown
+## CLI options
+
+* `--process FILE`: Specify the file to process
+* `--timeout SECS`: Specify the number of seconds before processing times out (default: 60)
+```
+
+### 5. Update the README table of content
 
 - Devise the hierarchical list of all Markdown headers that are in the README file, of all levels. Don't forget about headers that you may have added in previous steps.
 - ALWAYS make sure that the section "Table of Contents" of the README file is listing exactly all the headers as local links to their section, and indented in accordance with their hierarchical level in the file.
+
+For example, if README.md has such a section:
+```markdown
+## Table of Content
+
+- [Main features](#main_features)
+- [CLI options](#cli_options)
+- [Testing](#testing)
+- [License](#license)
+```
+and you just add a sub-section describing the timeout feature,
+then you should update this README section like this:
+```markdown
+## Table of Content
+
+- [Main features](#main_features)
+  - [Timeout](#timeout)
+- [CLI options](#cli_options)
+- [Testing](#testing)
+- [License](#license)
+```
 
 ### Final Verification (MANDATORY)
 
@@ -44,3 +98,75 @@ Before declaring the task complete:
 - Re-list all numbered steps from the updating-doc Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
+
+## When to use it
+
+- You MUST use it every time the USER asks you to update documentation.
+- You MUST use it every time another skill specifically mentions `skill: updating-doc`.
+- You can use it every time you think documentation should be updated after implementing some changes in the code or tests.
+
+## Usage and code examples
+
+### Updating various sections of README.md when implementing a timeout feature
+
+If README.md has this content before running this skill:
+```markdown
+# Data processing
+
+## Table of Content
+
+- [Main features](#main_features)
+- [CLI options](#cli_options)
+- [Testing](#testing)
+- [License](#license)
+
+## Main features
+
+This executable processes input data files (*.csv) to output statistics.
+
+## CLI options
+
+* `--process FILE`: Specify the file to process
+
+## Testing
+
+Run `rspec`.
+
+## License
+
+* BSD.
+```
+Then README.md should have this kind of content after running this skill:
+Before:
+```markdown
+# Data processing
+
+## Table of Content
+
+- [Main features](#main_features)
+  - [Timeout](#timeout)
+- [CLI options](#cli_options)
+- [Testing](#testing)
+- [License](#license)
+
+## Main features
+
+This executable processes input data files (*.csv) to output statistics.
+
+### Timeout
+
+If processing a file takes more than a given number of seconds, then processing stops and an error is returned (timeout behaviour).
+
+## CLI options
+
+* `--process FILE`: Specify the file to process
+* `--timeout SECS`: Specify the number of seconds before processing times out (default: 60)
+
+## Testing
+
+Run `rspec`.
+
+## License
+
+* BSD.
+```

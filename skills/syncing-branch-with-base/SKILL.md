@@ -32,6 +32,11 @@ When syncing the current branch with its base, follow those steps.
 
 - ALWAYS use `cli: git fetch --all` to retrieve the GitHub remote's base branch.
 
+Example:
+```bash
+git fetch --all
+```
+
 ### 4. Rebase the branch
 
 - ALWAYS use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the GitHub remote.
@@ -39,10 +44,24 @@ When syncing the current branch with its base, follow those steps.
 - ALWAYS fix any conflict you see during the rebase, and continue the rebase using `cli: git rebase --continue` until all your commits have been rebased properly.
 - If you don't know how to solve a conflict, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the git conflict.
 
+Example:
+```bash
+git rebase github/main
+# Fix potential conflicts in files
+git rebase --continue
+# Use agent tool ask_followup_question about new potential conflicts that you don't understand how to solve
+git rebase --continue
+```
+
 ### 5. Push the rebased branch
 
 - ALWAYS push your rebased branch to GitHub using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
 - If the push with `--force-with-lease` option failed, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the issue. It could be that another user contributed to the branch.
+
+Example:
+```bash
+git push github --force-with-lease
+```
 
 ### Final Verification (MANDATORY)
 
@@ -51,3 +70,41 @@ Before declaring the task complete:
 - Re-list all numbered steps from the syncing-branch-with-base Execution Checklist.
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
+
+## When to use it
+
+- You MUST use it every time the USER asks you to sync the branch with its base.
+- You MUST use it every time another skill specifically mentions `skill: syncing-branch-with-base`.
+- You can use it every time you realize the base branch has divereged and you want to get the current branch up-to-date with its base.
+
+## Usage and code examples
+
+Those examples are given for a Linux environment. Adapt them if you are running in a Windows environment.
+
+### Syncing the branch on main when there are not conflicts
+
+```bash
+git fetch --all
+git rebase github/main
+git push github --force-with-lease
+```
+
+### Syncing the branch on main when there are some conflicts on *.rb files that you can solve by yourself
+
+```bash
+git fetch --all
+git rebase github/main
+# Solve conflicts on *.rb files
+git rebase --continue
+git push github --force-with-lease
+```
+
+### Syncing the branch on main when there are some conflicts on *.rb files that you can't solve by yourself
+
+```bash
+git fetch --all
+git rebase github/main
+# Use agent tool ask_followup_question about new potential conflicts that you don't understand on *.rb
+git rebase --continue
+git push github --force-with-lease
+```
