@@ -34,12 +34,13 @@ This repository defines a set of AI agents skills that are used for X-Aeon proje
     * A skill is better followed when it consists only in a sequence of easily identified steps (like a workflow). Don't use vague guidelines in a skill.
     * When another skill is performing a sub-task of your skill, reference it explicitely, like ``Use `skill: skill_name` to perform this action`` instead of `Perform this action`. Don't rely on the model understanding that `skill_name` was the right skill to perform the action.
     * Always ask the agent to inform the user about executing the skill.
+    * Any step that can be coded and automated with a tool should be implemented in a tool. Never rely on the guarantee that models will follow steps, unless they are implemented in a tool.
 
 ## General principles
 
 Those principles allow for a safe agent interaction, while keeping its agility.
 
-* The USER sets the branch for the agent, in a worktree.
+* The user sets the branch for the agent, in a worktree.
 * Agents should never switch branches.
 * Agents automatically push their changes to the github remote, and create a Pull Request for their branch.
 * Agents can rebase their branch.

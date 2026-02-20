@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+require 'json'
+
+repo_info = JSON.parse(`gh repo view --json owner,name`)
+repo_owner = repo_info['owner']['login']
+repo_name = repo_info['name']
+puts "Repository Github handle: #{repo_owner}/#{repo_name}"
+
+branch = `git branch --show-current`.strip
+puts "Branch name: #{branch}"
+
+prs_list = JSON.parse(`gh pr list --head #{branch} --json number`).map { |elem| elem['number'] }
+puts "Found #{prs_list.size} Pull Requests dealing with this branch (numbers #{prs_list.join(', ')})"
+
+prs_list.each do |pr_number|
+  puts "Unresolved review threads and comments found on Pull Request ##{pr_number}:"
+  # Inspired by https://stackoverflow.com/questions/55713929/list-all-unresolved-pull-request-comments
+  pr_json = JSON.parse(`gh api graphql -f owner="#{repo_owner}" -f repo="#{repo_name}" -F pr="#{pr_number}" -F query=@"#{__dir__}/gh_comments.gql`)['data']['repository']['pullRequest']
+  # Filter out the resolved discussions
+  pr_json['reviewThreads']['edges'].select! { |review_thread| !review_thread['node']['isResolved'] }
+  puts JSON.pretty_generate(pr_json)
+  puts
+end

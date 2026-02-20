@@ -1,0 +1,64 @@
+# Schema: https://raw.githubusercontent.com/octokit/graphql-schema/master/schema.graphql
+
+query FetchReviewComments($owner: String!, $repo: String!, $pr: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $pr) {
+      url
+      reviewDecision
+      reviewThreads(first: 100) {
+        edges {
+          node {
+            isResolved
+            comments(first: 100) {
+              totalCount
+              nodes {
+                databaseId
+                pullRequestReview {
+                  createdAt
+                  author {
+                    login
+                  }
+                  body
+                  commit {
+                    oid
+                    message
+                  }
+                }
+                url
+                createdAt
+                state
+                replyTo {
+                  databaseId
+                  createdAt
+                  author {
+                    login
+                  }
+                  body
+                }
+                author {
+                  login
+                }
+                body
+                subjectType
+                path
+                commit {
+                  oid
+                  message
+                }
+                line
+                startLine
+                originalCommit {
+                  oid
+                  message
+                }
+                originalLine
+                originalStartLine
+                diffHunk
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

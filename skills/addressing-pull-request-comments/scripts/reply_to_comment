@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+# Usage: reply_to_comment <pull_request_number> <comment_database_id> <reply_body_file>
+
+require 'json'
+require 'tmpdir'
+require 'x-aeon_agents_skills'
+
+pull_request_number = Integer(ARGV[0])
+comment_database_id = Integer(ARGV[1])
+reply_body_file = ARGV[2]
+
+raise 'Missing reply body file' if reply_body_file.nil?
+
+repo_info = JSON.parse(`gh repo view --json owner,name`)
+repo_owner = repo_info['owner']['login']
+repo_name = repo_info['name']
+puts "Repository Github handle: #{repo_owner}/#{repo_name}"
+
+branch = `git branch --show-current`.strip
+puts "Branch name: #{branch}"
+
+Dir.mktmpdir do |temp_dir|
+  body_file = "#{temp_dir}/body.txt"
+  File.write(body_file, "[#{XAeonAgentsSkills.agent_name}] " + File.read(reply_body_file))
+  system "gh api repos/#{repo_owner}/#{repo_name}/pulls/#{pull_request_number}/comments/#{comment_database_id}/replies -X POST -F body=@#{body_file}", exception: true
+end
+
+puts
+puts 'Reply posted successfully'
