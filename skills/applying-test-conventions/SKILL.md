@@ -11,6 +11,8 @@ description: Applies idiomatic test conventions, structure, and best practices w
 
 ## Conventions to be followed when testing
 
+Those conventions use examples using Ruby, but are applicable to any programming language and test framework.
+
 ### Rule: Always write concise scenarios with a 3-steps structure: setup, run and expect
 
 Always respect this structure for a test scenario:
