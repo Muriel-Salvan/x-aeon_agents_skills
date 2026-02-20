@@ -1,0 +1,91 @@
+## Conventions for Ruby variables usage
+
+<%= rule(
+  'Avoid defining local variables that are used only once',
+  description: 'Try to use the variable value directly where it is needed.',
+  bad: <<~EO_Example,
+    src_path = '/src_dir/my_file.txt'
+    base_name = File.basename(src_path)
+    dst_dir_name = '/dst_dir'
+    dst_path = dst_dir_name + '/' + base_name
+    FileUtils.mv src_path, dst_path
+  EO_Example
+  good: <<~EO_Example,
+    src_path = '/src_dir/my_file.txt'
+    FileUtils.mv src_path, "/dst_dir/\#{File.basename(src_path)}"
+  EO_Example
+  rationale: 'Single-use variables add unnecessary cognitive overhead and clutter. Inline expressions that are only used once make the code flow clearer and reduce the number of names readers need to track.'
+) %>
+
+<%= rule(
+  'Prefer using chained calls over explicit variable definitions between steps',
+  bad: <<~EO_Example,
+    all_items = query('SELECT * FROM TABLE')
+    filtered_items = all_items.select { |e| e.country == 'ES' }
+    grouped_items = filtered_items.group_by { |e| e.city }
+    cities = grouped_items.map { |city, city_items| "\#{city} has \#{city_items.size} items" }
+    output = cities.join(', ')
+    puts output
+  EO_Example
+  good: <<~EO_Example,
+    puts(
+      query('SELECT * FROM TABLE').
+        select { |e| e.country == 'ES' }.
+        group_by { |e| e.city }.
+        map { |city, city_items| "\#{city} has \#{city_items.size} items" }.
+        join(', ')
+    )
+  EO_Example
+  rationale: 'Method chaining creates a clear pipeline of data transformations that reads naturally from left to right. It eliminates intermediate variables that serve no purpose beyond holding temporary state, making the data flow more explicit.'
+) %>
+
+<%= rule(
+  'Avoid using global variables',
+  bad: <<~EO_Example,
+    $my_var = 42
+  EO_Example
+  good: <<~EO_Example,
+    my_var = 42
+  EO_Example
+  rationale: 'Global variables create hidden dependencies and make code difficult to reason about and test. Local variables or constants provide the same functionality with clear, limited scope.'
+) %>
+
+<%= rule(
+  'Limit the scope of variables',
+  description: 'Do not use instance variables when local variables are enough',
+  bad: <<~EO_Example,
+    class MyClass
+
+      attr_reader :states
+
+      def initialize
+        @states = []
+      end
+
+      def check_changes
+        @changes = State.get_changes
+        @changes = 'No change' if @changes.empty?
+        @states << @changes
+      end
+
+    end
+  EO_Example
+  good: <<~EO_Example,
+    class MyClass
+
+      attr_reader :states
+
+      def initialize
+        @states = []
+      end
+
+      def check_changes
+        changes = State.get_changes
+        changes = 'No change' if changes.empty?
+        @states << changes
+      end
+
+    end
+  EO_Example
+  rationale: 'Limiting variable scope to the minimum necessary reduces side effects and makes code easier to understand and refactor. Instance variables persist state that may not need to be shared across method calls.'
+) %>

@@ -1,0 +1,21 @@
+## Conventions for Ruby strings
+
+<%= rule(
+  'Prefer using HEREDOC strings for multiline strings instead of Array or repetitive statements',
+  bad: <<~EO_Example,
+    puts 'Statistics:'
+    puts "* Number of elements: \#{nbr}"
+    puts "* Average value: \#{average}"
+    puts "* Sum: \#{sum}"
+    puts
+  EO_Example
+  good: <<~EO_Example,
+    puts <<~EO_Output
+      Statistics:
+      * Number of elements: \#{nbr}
+      * Average value: \#{average}
+      * Sum: \#{sum}
+    EO_Output
+  EO_Example
+  rationale: 'HEREDOC syntax provides cleaner, more readable multiline strings that preserve formatting naturally. It reduces repetitive calls and makes the output structure visually clear in the code.'
+) %>

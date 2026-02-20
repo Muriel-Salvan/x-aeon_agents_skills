@@ -1,0 +1,42 @@
+---
+name: applying-ruby-conventions
+description: Applies idiomatic Ruby conventions, structure, and best practices when writing or modifying Ruby code. What this does is defining a set of rules to follow when dealing with any Ruby file. Use this when the user is asking to create, edit, refactor, or review Ruby files or when the project contains Ruby source code.
+---
+
+# Applying Ruby conventions
+
+## Inform the user
+
+- Always tell the user "SKILL: I am applying Ruby conventions" to inform the user that you are running this skill.
+
+## Conventions to be followed with Ruby files
+
+### All Ruby files
+
+See [references/conventions-for-all-ruby-files.md](references/conventions-for-all-ruby-files.md)
+
+### Ruby classes and modules
+
+See [references/conventions-for-ruby-classes-and-modules.md](references/conventions-for-ruby-classes-and-modules.md)
+
+### Ruby variables usage
+
+See [references/conventions-for-ruby-variables-usage.md](references/conventions-for-ruby-variables-usage.md)
+
+### Ruby strings
+
+See [references/conventions-for-ruby-strings.md](references/conventions-for-ruby-strings.md)
+
+### Ruby methods
+
+See [references/conventions-for-ruby-methods.md](references/conventions-for-ruby-methods.md)
+
+### Ruby exceptions handling
+
+See [references/conventions-for-ruby-exceptions-handling.md](references/conventions-for-ruby-exceptions-handling.md)
+
+## When to use it
+
+- Always use it every time the user asks you to use Ruby conventions.
+- Always use it every time another skill specifically mentions `skill: applying-ruby-conventions`.
+- Always use it every time you need to write or modify Ruby code.

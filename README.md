@@ -23,12 +23,13 @@ This repository defines a set of AI agents skills that are used for X-Aeon proje
       * `cli: `: Used for command-line tools. Ex: ``Use `cli: ls -la` to list all the files``.
       * `agent: `: Used for agent commands. Ex: ``Use `agent: ask_followup_question` to ask the USER about the intent``.
       * `skill: `: Used for skills. Ex: ``Use `skill: creating-pull-request` to create the PR for {branch}``.
-    * Use some capital words in a consistent way:
-      * `USER` represents the developer asking the agent to perform a task.
-      * `ALWAYS` is used to emphasize that a specific step is mandatory (ex.: ``ALWAYS use `cli: gh` to gather issue information``).
-      * `NEVER` is used to emphasize that a specific step should never be done (ex.: ``NEVER use `cli: gh` to create a PR``).
-      * `IF` ... `THEN` ... `ELSE` are used to clearly identify some branching decisions.
-      * `PLAN` and `ACT` modes refer to precisely the 2 ways of executing skills by the agents.
+    * Don't use capital wordings as it adds emotional noise and is different from non-capitalized tokens used during LLMs training.
+    * Use some wording in a consistent way. Those words are inspired by https://github.com/rohitg00/skillkit/blob/39b94534ec1c3698c0dec3a005744dafa99e63e9/packages/core/src/quality/index.ts
+      * `User` represents the developer asking the agent to perform a task.
+      * `Always` is used to emphasize that a specific step is mandatory (ex.: ``Always use `cli: gh` to gather issue information``).
+      * `Never` is used to emphasize that a specific step should never be done (ex.: ``Never use `cli: gh` to create a PR``).
+      * `If` ... `then` ... `else` are used to clearly identify some branching decisions.
+      * `Plan` and `Act` modes refer to precisely the 2 ways of executing skills by the agents.
   * About skill semantics:
     * A skill is better followed when it consists only in a sequence of easily identified steps (like a workflow). Don't use vague guidelines in a skill.
     * When another skill is performing a sub-task of your skill, reference it explicitely, like ``Use `skill: skill_name` to perform this action`` instead of `Perform this action`. Don't rely on the model understanding that `skill_name` was the right skill to perform the action.

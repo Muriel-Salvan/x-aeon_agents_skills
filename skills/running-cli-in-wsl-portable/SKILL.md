@@ -10,14 +10,14 @@ description: Runs Bash command lines in a Portable installation under WSL. What 
 When running a bash command under a WSL portable environment, follow those steps.
 The original bash command to be run is later referenced as {original_cli}.
 
-### 1. Inform the USER
+### 1. Inform the user
 
-- ALWAYS tell the USER "SKILL: I am running CLI in WSL Portable" to inform the USER that you are running this skill.
+- Always tell the user "SKILL: I am running CLI in WSL Portable" to inform the user that you are running this skill.
 
 ### 2. Run the command line with the right prefix
 
 - Find this skill directory absolute path, later referenced as {skill_absolute_path}.
-- ALWAYS use `cli: {skill_absolute_path}\scripts\wsl_portable_bash.cmd "{original_cli}"`.
+- Always use `cli: {skill_absolute_path}\scripts\wsl_portable_bash.cmd "{original_cli}"`.
 - Be careful that the path to the script should be absolute and using anti-slashes (`\`). However the argument will be executed under WSL, so it should follow Linux conventions, with file paths using slashes (`/`).
 
 Example:
@@ -31,10 +31,10 @@ C:\my-repo\.cline\skills\running-cli-in-wsl-portable\scripts\wsl_portable_bash.c
 
 ## When to use it
 
-- You MUST use it every time the USER asks you to run a CLI command using the WSL Portable environment.
-- You MUST use it every time another skill specifically mentions `skill: running-cli-in-wsl-portable`.
-- You can use it every time you need to run a CLI command that needs a WSL Portable environment.
-- NEVER use this skill when you are under a Linux environment.
+- Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
+- Always use it every time another skill specifically mentions `skill: running-cli-in-wsl-portable`.
+- Always use it every time you need to run a CLI command that needs a WSL Portable environment.
+- Never use this skill when you are under a Linux environment.
 
 ## Usage and code examples
 

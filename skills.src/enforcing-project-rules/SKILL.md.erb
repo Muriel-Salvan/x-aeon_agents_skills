@@ -1,0 +1,38 @@
+<%= frontmatter(description: 'Enforces project-level operational rules that govern how the agent interacts with the workspace, CLI, and version control. What this does is enumerating governance rules that you should always follow when working in a project. Use this in ALL tasks executed inside a repository to ensure compliance with project constraints such as working directory rules and git branch restrictions.') %>
+
+# <%= skill_goal 'Enforcing project rules' %>
+
+## Inform the user
+
+- <%= announce_skill %>
+
+## Non-negotiable Rules and Constraints to follow (MANDATORY)
+
+<%= rule(
+  'Execute all CLI commands from the workspace\'s root directory',
+  type: :bash,
+  bad: <<~EO_Example,
+    cd scripts
+    ./run_tests ../spec/*_spec.rb
+  EO_Example
+  good: <<~EO_Example,
+    ./scripts/run_tests spec/*_spec.rb
+  EO_Example
+  rationale: 'The API entry points and tools of a repository all have a consistent usage that does not depend on the caller context. Everything starts from the workspace root directory.'
+) %>
+
+<%= rule(
+  'Use only the git branch that is already checked out',
+  type: :bash,
+  bad: <<~EO_Example,
+    git checkout {another_branch}
+    git switch {another_branch}
+  EO_Example
+  rationale: 'The current branch gives you a safe space to modify files without impacting other branches.'
+) %>
+
+## When to use it
+
+- Always use it every time the user asks you to follow project rules.
+- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time you implement a task in a project.

@@ -3,8 +3,6 @@
 * Use templates to better guide the format of commit comments and PR descriptions.
 * Add the reviewing PR skills.
 * Extract the generate_skills executable into a generic Rubygem that generates skills following agents best practices
-* Add Ruby rules:
-  - NEVER add frozen_string_literal comment in files.
 * Add a conventions skill that explains conventions used:
   * Commands with skill/agent/cli prefixes.
 * Ideas for blog post:

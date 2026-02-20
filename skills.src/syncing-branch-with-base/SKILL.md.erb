@@ -10,7 +10,7 @@
 
   ### Fetch the base branch from the github remote
 
-  - ALWAYS use `cli: git fetch --all` to retrieve the GitHub remote's base branch.
+  - Always use `cli: git fetch --all` to retrieve the GitHub remote's base branch.
 
   Example:
   ```bash
@@ -19,10 +19,10 @@
 
   ### Rebase the branch
 
-  - ALWAYS use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the GitHub remote.
-  - NEVER use `cli: git merge`.
-  - ALWAYS fix any conflict you see during the rebase, and continue the rebase using `cli: git rebase --continue` until all your commits have been rebased properly.
-  - If you don't know how to solve a conflict, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the git conflict.
+  - Always use `cli: git rebase github/{base_branch}` to bring your branch on top of its base as on the GitHub remote.
+  - Never use `cli: git merge`.
+  - Always fix any conflict you see during the rebase, and continue the rebase using `cli: git rebase --continue` until all your commits have been rebased properly.
+  - If you don't know how to solve a conflict, then always use `agent: ask_followup_question` to ask the user to help you solve the git conflict.
 
   Example:
   ```bash
@@ -35,8 +35,8 @@
 
   ### Push the rebased branch
 
-  - ALWAYS push your rebased branch to GitHub using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
-  - If the push with `--force-with-lease` option failed, ALWAYS use `agent: ask_followup_question` to ask the USER to help you solve the issue. It could be that another user contributed to the branch.
+  - Always push your rebased branch to GitHub using the `--force-with-lease` option: `cli: git push github --force-with-lease`.
+  - If the push with `--force-with-lease` option failed, then always use `agent: ask_followup_question` to ask the user to help you solve the issue. It could be that another user contributed to the branch.
 
   Example:
   ```bash
@@ -46,9 +46,9 @@
 
 ## When to use it
 
-- You MUST use it every time the USER asks you to sync the branch with its base.
-- You MUST use it every time another skill specifically mentions `skill: <%= skill_name %>`.
-- You can use it every time you realize the base branch has divereged and you want to get the current branch up-to-date with its base.
+- Always use it every time the user asks you to sync the branch with its base.
+- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Use it every time you realize the base branch has divereged and you want to get the current branch up-to-date with its base.
 
 ## Usage and code examples
 

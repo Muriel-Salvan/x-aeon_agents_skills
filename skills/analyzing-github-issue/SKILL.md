@@ -1,6 +1,6 @@
 ---
 name: analyzing-github-issue
-description: Analyzes requirements described in a GitHub issue. What this does is read the Github issue content and devise an implementation plan. Use this when the USER is asking you to analyze a GitHub issue or get requirements from it. You can use this skill in PLAN mode.
+description: Analyzes requirements described in a GitHub issue. What this does is read the GitHub issue content and devise an implementation plan. Use this when the user is asking you to analyze a GitHub issue or get requirements from it. Use this skill also in Plan mode.
 metadata:
   agent: Plan
   dependencies: validating-production-quality
@@ -14,33 +14,33 @@ When implementing a GitHub issue, follow those steps.
 
 ### Create the analyzing-github-issue Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist named analyzing-github-issue Execution Checklist with ALL steps of this skill.
-- The analyzing-github-issue Execution Checklist MUST include ALL numbered steps explicitly.
-- The analyzing-github-issue Execution Checklist MUST be displayed to the USER.
-- After completing each step of this skill, mark the item in the analyzing-github-issue Execution Checklist as completed, and display again the analyzing-github-issue Execution Checklist to the USER.
-- Do NOT skip any item.
+- Before executing anything, create a checklist named analyzing-github-issue Execution Checklist with all steps of this skill.
+- The analyzing-github-issue Execution Checklist must include all numbered steps explicitly.
+- The analyzing-github-issue Execution Checklist must be displayed to the user.
+- After completing each step of this skill, mark the item in the analyzing-github-issue Execution Checklist as completed, and display again the analyzing-github-issue Execution Checklist to the user.
+- Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
-- NEVER mark the skill as completed while any item from the analyzing-github-issue Execution Checklist remains open.
+- Never mark the skill as completed while any item from the analyzing-github-issue Execution Checklist remains open.
 
-### 1. Inform the USER
+### 1. Inform the user
 
-- ALWAYS tell the USER "SKILL: I am implementing a GitHub issue" to inform the USER that you are running this skill.
+- Always tell the user "SKILL: I am implementing a GitHub issue" to inform the user that you are running this skill.
 
-### 2. Get issue number (can be done during PLAN mode)
+### 2. Get issue number (can be done during Plan mode)
 
-- ALWAYS use `agent: ask_followup_question` to ask the USER which GitHub issue should be analyzed, unless the USER already gave you this information in the prompt.
+- Always use `agent: ask_followup_question` to ask the user which GitHub issue should be analyzed, unless the user already gave you this information in the prompt.
 
-### 3. Get issue requirements (can be done during PLAN mode)
+### 3. Get issue requirements (can be done during Plan mode)
 
 - Find this skill directory path, later referenced as {skill_path}.
-- ALWAYS use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
+- Always use `cli: ruby {skill_path}/scripts/issue_details {issue_number}` to retrieve all the details of this GitHub issue.
 
 Example with expected output as JSON:
 ```bash
 ruby .cline/skills/analyzing-github-issue/scripts/issue_details 29
-# => {"body":"# This is the Github issue body ...","comments":[],"labels":[],"number":29,"state":"OPEN","title":"This is the Github issue title","url":"https://github.com/my-user/my-repo/issues/29"}
+# => {"body":"# This is the GitHub issue body ...","comments":[],"labels":[],"number":29,"state":"OPEN","title":"This is the GitHub issue title","url":"https://github.com/my-user/my-repo/issues/29"}
 ```
-Example of an error case with a non-existing Github issue:
+Example of an error case with a non-existing GitHub issue:
 ```bash
 ruby .cline/skills/analyzing-github-issue/scripts/issue_details 29
 # GraphQL: Could not resolve to an issue or pull request with the number of 29. (repository.issue)
@@ -48,10 +48,10 @@ ruby .cline/skills/analyzing-github-issue/scripts/issue_details 29
 #       from .cline/skills/analyzing-github-issue/scripts/issue_details:9:in '<main>'
 ```
 
-### 4. Come up with an implementation plan (can be done during PLAN mode)
+### 4. Come up with an implementation plan (can be done during Plan mode)
 
-- ALWAYS analyze the current code structure and content to understand how the GitHub issue should be implemented.
-- ALWAYS analyze all the rules that you should adhere to when implementing a task.
+- Always analyze the current code structure and content to understand how the GitHub issue should be implemented.
+- Always analyze all the rules that you should adhere to when implementing a task.
 
 ### Final Verification (MANDATORY)
 
@@ -63,26 +63,26 @@ Before declaring the task complete:
 
 ## When to use it
 
-- This skill can be used during PLAN mode and is totally safe.
-- You MUST use it every time the USER asks you to analyze a given Github issue.
-- You MUST use it every time another skill specifically mentions `skill: analyzing-github-issue`.
-- You can use it every time you need to analyze a Github issue to gather requirements.
+- This skill can be used during Plan mode and is totally safe.
+- Always use it every time the user asks you to analyze a given GitHub issue.
+- Always use it every time another skill specifically mentions `skill: analyzing-github-issue`.
+- Always use it every time you need to analyze a GitHub issue to gather requirements.
 
 ## Usage and code examples
 
 Those examples are given for a Linux environment. Adapt them if you are running in a Windows environment.
 
-### When asked to analyze a Github issue
+### When asked to analyze a GitHub issue
 
-If the USER asked you to analyze a Github issue without specifying the number, this skill should perform the following commands:
+If the user asked you to analyze a GitHub issue without specifying the number, this skill should perform the following commands:
 ```bash
-# Use agent tool ask_followup_question to get the Github issue number from the USER
+# Use agent tool ask_followup_question to get the GitHub issue number from the user
 ruby .cline/skills/analyzing-github-issue/scripts/issue_details 42
 ```
 
-### When asked to analyze the Github issue number 42
+### When asked to analyze the GitHub issue number 42
 
-If the USER asked you to analyze the Github issue number 42, this skill should perform the following commands:
+If the user asked you to analyze the GitHub issue number 42, this skill should perform the following commands:
 ```bash
 ruby .cline/skills/analyzing-github-issue/scripts/issue_details 42
 ```

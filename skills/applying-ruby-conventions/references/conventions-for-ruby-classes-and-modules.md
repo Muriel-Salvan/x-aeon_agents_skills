@@ -1,0 +1,110 @@
+## Conventions for Ruby classes and modules
+
+### Rule: Define classes and modules in dedicated files (1 class or module per file) that follow the modules and class names in its path, using snake_case for files and paths
+
+#### Example: Correct
+
+```ruby
+# File: lib/my_ruby_project/plugins/my_class.rb
+module MyRubyProject
+
+  module Plugins
+
+    class MyClass
+      # ... Content of MyClass ...
+    end
+
+  end
+
+end
+```
+
+#### Rationale
+
+This ensures a clear file structure that maps directly to the module/class hierarchy, making code organization predictable and maintainable.
+
+### Rule: Define public methods at the beginning of a class, followed by the private keyword, and followed by the private methods
+
+#### Example: Correct
+
+```ruby
+class MyClass
+
+  def public_method_1
+    # ...
+  end
+
+  def public_method_2
+    # ...
+  end
+
+  private
+
+  def private_method_1
+    # ...
+  end
+
+  def private_method_2
+    # ...
+  end
+
+end
+```
+
+#### Rationale
+
+This creates a clear visual separation between public and private APIs, making the class interface immediately obvious to readers.
+
+### Rule: Never add module names to class names, constants and class method calls when used inside the module itself
+
+#### Example: Incorrect
+
+```ruby
+require 'my_app/database'
+require 'my_app/plugins/client'
+
+module MyApp
+
+  module Plugins
+
+    class Server
+
+      def init
+        MyApp::Database.init_db
+        @client = MyApp::Plugins::Client.new(@ipv4)
+      end
+
+    end
+
+  end
+
+end
+```
+
+#### Example: Correct
+
+```ruby
+require 'my_app/database'
+require 'my_app/plugins/client'
+
+module MyApp
+
+  module Plugins
+
+    class Server
+
+      def init
+        Database.init_db
+        @client = Client.new(@ipv4)
+      end
+
+    end
+
+  end
+
+end
+```
+
+#### Rationale
+
+Ruby's constant lookup mechanism automatically resolves constants within the current module namespace. Explicit module prefixes inside the same module add unnecessary verbosity without adding clarity.

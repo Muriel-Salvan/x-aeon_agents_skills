@@ -43,7 +43,7 @@ module XAeonAgentsSkills
     # Return the prompt to announce that the agent is working on a skill.
     # Prerequisite: skill_goal should be set before.
     def announce_skill
-      "ALWAYS tell the USER \"SKILL: I am #{skill_goal_sentence}\" to inform the USER that you are running this skill."
+      "Always tell the user \"SKILL: I am #{skill_goal_sentence}\" to inform the user that you are running this skill."
     end
 
     # Return a default temporary folder that agents can use in a project.
@@ -53,6 +53,52 @@ module XAeonAgentsSkills
     # * String: Temporary folder path
     def tmp_path
       './.tmp_agents'
+    end
+
+    # Generate a rule documentation block with examples and rationale.
+    #
+    # Parameters::
+    # * *title* (String): The rule title
+    # * *description* (String or nil): The additional description [default: nil]
+    # * *type* (Symbol): The code block language type (e.g., :bash, :ruby) [default: :ruby]
+    # * *bad* (String or nil): The incorrect example [default: nil]
+    # * *good* (String or nil): The correct example [default: nil]
+    # * *rationale* (String or nil): The explanation for why this rule exists [default: nil]
+    #
+    # Result::
+    # * String: The formatted markdown documentation for the rule
+    def rule(title, description: nil, type: :ruby, bad: nil, good: nil, rationale: nil)
+      markdown_sections = [
+        <<~EO_Markdown
+          ### Rule: #{title}#{description.nil? ? '' : "\n\n#{description.strip}"}
+        EO_Markdown
+      ]
+      unless bad.nil?
+        markdown_sections << <<~EO_Markdown
+          #### Example: Incorrect
+
+          ```#{type}
+          #{bad.strip}
+          ```
+        EO_Markdown
+      end
+      unless good.nil?
+        markdown_sections << <<~EO_Markdown
+          #### Example: Correct
+
+          ```#{type}
+          #{good.strip}
+          ```
+        EO_Markdown
+      end
+      unless rationale.nil?
+        markdown_sections << <<~EO_Markdown
+          #### Rationale
+
+          #{rationale}
+        EO_Markdown
+      end
+      markdown_sections.join("\n").strip
     end
 
     # Define an ordered todo list for a skill.
@@ -98,7 +144,7 @@ module XAeonAgentsSkills
 
         #{init_skill_checklist.rstrip}
 
-        ### 1. Inform the USER
+        ### 1. Inform the user
 
         - #{announce_skill}
 
@@ -173,13 +219,13 @@ module XAeonAgentsSkills
       <<~EO_Markdown
         ### Create the #{skill_name} Execution Checklist (MANDATORY)
 
-        - Before executing anything, create a checklist named #{skill_name} Execution Checklist with ALL steps of this skill.
-        - The #{skill_name} Execution Checklist MUST include ALL numbered steps explicitly.
-        - The #{skill_name} Execution Checklist MUST be displayed to the USER.
-        - After completing each step of this skill, mark the item in the #{skill_name} Execution Checklist as completed, and display again the #{skill_name} Execution Checklist to the USER.
-        - Do NOT skip any item.
+        - Before executing anything, create a checklist named #{skill_name} Execution Checklist with all steps of this skill.
+        - The #{skill_name} Execution Checklist must include all numbered steps explicitly.
+        - The #{skill_name} Execution Checklist must be displayed to the user.
+        - After completing each step of this skill, mark the item in the #{skill_name} Execution Checklist as completed, and display again the #{skill_name} Execution Checklist to the user.
+        - Do not skip any item.
         - If an item cannot be executed, explicitly explain why.
-        - NEVER mark the skill as completed while any item from the #{skill_name} Execution Checklist remains open.
+        - Never mark the skill as completed while any item from the #{skill_name} Execution Checklist remains open.
       EO_Markdown
     end
 

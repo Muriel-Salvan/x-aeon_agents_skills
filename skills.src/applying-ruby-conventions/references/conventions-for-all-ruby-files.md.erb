@@ -1,0 +1,9 @@
+## Conventions for all Ruby files
+
+<%= rule(
+  'Never add frozen_string_literal comment in files',
+  bad: <<~EO_Example,
+    # frozen_string_literal: true
+  EO_Example
+  rationale: 'The frozen_string_literal magic comment is not needed in modern Ruby versions and should be removed when found.'
+) %>

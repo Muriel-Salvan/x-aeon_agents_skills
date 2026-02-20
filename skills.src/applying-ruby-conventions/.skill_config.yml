@@ -1,0 +1,4 @@
+---
+# This skill is split in many reference files that quality checks ignores.
+# TODO: Remove those skips when skillkit will be able to parse reference files.
+skip_quality_checks: Structure, Specificity, Average score

@@ -123,6 +123,23 @@ module XAeonAgentsSkillsTest
       yield
     end
 
+    # Helper method that creates a skill with ERB content, runs generate_skills,
+    # and returns the generated SKILL.md output
+    #
+    # Parameters::
+    # * *erb_content* (String): The ERB content for SKILL.md.erb
+    # * *additional_files* (Hash): Optional additional files to include in the skill
+    #
+    # Returns::
+    # * String: The content of the generated SKILL.md file
+    def process_erb(erb_content, additional_files = {})
+      files = { 'SKILL.md.erb' => erb_content }.merge(additional_files)
+      with_skills_src(test_skill: files) do |workspace_dir|
+        run_generate_skills
+        File.read("#{workspace_dir}/skills/test_skill/SKILL.md")
+      end
+    end
+
   end
 
 end
