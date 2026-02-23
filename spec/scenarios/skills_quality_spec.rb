@@ -10,10 +10,18 @@ RSpec.describe 'Generated skills quality' do
     Advanced: 90,
     'Average score': 90
   }
+  SKILLS_TEST_DIR = 'skills.test'
 
-  Dir.glob('skills/*').each do |skill_path|
+  before(:context) do
+    # Generate skills for tests
+    FileUtils.rm_rf SKILLS_TEST_DIR
+    expect(`bundle exec ruby bin/generate_skills #{SKILLS_TEST_DIR}`).to include 'Skills generated successfully.'
+  end
 
-    context "validating skill #{skill_path}" do
+  Dir.glob('skills.src/*').map { |skill_path| File.basename(skill_path) }.each do |skill_name|
+    skill_path = "#{SKILLS_TEST_DIR}/#{skill_name}"
+
+    context "validating skill #{skill_name}" do
 
       it "has a compliance score of at least #{COMPLIANCE_SCORE_THRESHOLD}%" do
         check_output = without_cli_colors { `skillkit skillmd check #{skill_path} --verbose` }

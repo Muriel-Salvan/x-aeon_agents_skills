@@ -112,4 +112,29 @@ RSpec.describe 'generate_skills executable' do
 
   end
 
+  describe 'custom destination directory' do
+
+    context 'with custom destination directory' do
+      it 'generates skills to the specified custom directory' do
+        with_skills_src(my_skill: { 'SKILL.md' => '# My Skill' }) do |workspace_dir|
+          run_generate_skills('my_custom_skills')
+          expect(File.directory?("#{workspace_dir}/my_custom_skills")).to be true
+          expect(File.exist?("#{workspace_dir}/my_custom_skills/my_skill/SKILL.md")).to be true
+          expect(File.directory?("#{workspace_dir}/skills")).to be false
+        end
+      end
+    end
+
+    context 'with nested custom destination directory' do
+      it 'creates nested directories as needed' do
+        with_skills_src(my_skill: { 'SKILL.md' => '# My Skill' }) do |workspace_dir|
+          run_generate_skills('output/generated/skills')
+          expect(File.directory?("#{workspace_dir}/output/generated/skills")).to be true
+          expect(File.exist?("#{workspace_dir}/output/generated/skills/my_skill/SKILL.md")).to be true
+        end
+      end
+    end
+
+  end
+
 end

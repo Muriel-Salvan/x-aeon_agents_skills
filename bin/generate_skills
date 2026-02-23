@@ -1,11 +1,31 @@
 #!/usr/bin/env ruby
 
-# Executable to generate skill files from ERB templates
+# Executable to generate skill files from ERB templates.
 
 require 'erb'
 require 'fileutils'
 require 'pathname'
 require 'x-aeon_agents_skills/gen_helpers'
+
+# Parse command-line options
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  exec_name = File.basename(__FILE__)
+  opts.banner = "Usage: #{exec_name} [OPTIONS] [DEST_DIR]"
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    puts
+    puts "Examples:"
+    puts "  #{exec_name}                   # Generate skills to 'skills' directory"
+    puts "  #{exec_name} my_skills         # Generate skills to 'my_skills' directory"
+    exit 0
+  end
+end.parse!
+
+# Use provided destination directory or default to 'skills'
+dest_dir_arg = ARGV.shift || 'skills'
 
 # Define possible transformations based on the file extension
 TRANSFORMATIONS = {
@@ -15,7 +35,7 @@ TRANSFORMATIONS = {
 # Define source and destination directories
 src_dir = File.expand_path('skills.src')
 src_pathname = Pathname.new(src_dir)
-dest_dir = File.expand_path('skills')
+dest_dir = File.expand_path(dest_dir_arg)
 
 # Create the destination directory if it doesn't exist
 FileUtils.mkdir_p(dest_dir)
