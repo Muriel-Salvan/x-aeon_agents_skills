@@ -3,10 +3,13 @@
 # <%= skill_goal 'Creating a Pull Request' %>
 
 <% define_ordered_todo_list do -%>
-  ### Devise the list of GitHub issues linked to this Pull Request
+  ### Ask the user about additional list of GitHub issues linked to this Pull Request
 
   - Always use `agent: ask_followup_question` to ask the user which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
-  - Also use any information from the previous user prompts to know which additional issues are closed by or related to this Pull Request.
+
+  ### Devise the list of GitHub issues linked to this Pull Request
+
+  - Use the information from all the user prompts to know which additional issues are closed by or related to this Pull Request.
 
   ### Create a temporary file with a good description for the Pull Request
 

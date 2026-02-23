@@ -48,6 +48,7 @@ def install_skills(repo, skills, agent)
   # TODO: Adapt to other agents than Cline
   puts "Install skills #{repo} / #{skills.join(',')}..."
   system "skillkit install #{repo} --yes --skills=#{skills.join(',')} --agent=#{agent}", exception: true
+  fix_skills_metadata(skills, agent)
   skills_dir = AGENTS[agent][:skills_dir]
   # Get all dependencies, per repo
   deps_per_repo = {}
@@ -67,6 +68,26 @@ def install_skills(repo, skills, agent)
   # Install those dependencies
   deps_per_repo.each do |dep_repo, dep_skills|
     install_skills(dep_repo, dep_skills, agent)
+  end
+end
+
+# Fix the .skillkit.json file that sets an invalid subpath property when installing skills.
+# The subpath should contain the skills/ directory, otherwise 'skillkit update' fails to retrieve the skill at the source.
+# TODO: Remove this method when skillkit will have fixed the JSON content.
+#
+# * *skills* (Array<String>): Skills list to install
+# * *agent* (Symbol): Agent to be used
+def fix_skills_metadata(skills, agent)
+  require 'json'
+  skills_dir = AGENTS[agent][:skills_dir]
+  skills.each do |skill_name|
+    json_file = "#{skills_dir}/#{skill_name}/.skillkit.json"
+    json = JSON.parse(File.read(json_file))
+    unless json['subpath'].start_with?('skills/')
+      json['subpath'] = "skills/#{json['subpath']}"
+      puts "Fix subpath of #{json_file}"
+      File.write(json_file, JSON.pretty_generate(json))
+    end
   end
 end
 

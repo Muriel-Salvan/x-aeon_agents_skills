@@ -23,12 +23,15 @@ When creating a Pull Request, follow those steps.
 
 - Always tell the user "SKILL: I am creating a Pull Request" to inform the user that you are running this skill.
 
-### 2. Devise the list of GitHub issues linked to this Pull Request
+### 2. Ask the user about additional list of GitHub issues linked to this Pull Request
 
 - Always use `agent: ask_followup_question` to ask the user which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
-- Also use any information from the previous user prompts to know which additional issues are closed by or related to this Pull Request.
 
-### 3. Create a temporary file with a good description for the Pull Request
+### 3. Devise the list of GitHub issues linked to this Pull Request
+
+- Use the information from all the user prompts to know which additional issues are closed by or related to this Pull Request.
+
+### 4. Create a temporary file with a good description for the Pull Request
 
 - Always devise a meaningful Pull Request description for all the changes that you have in the current branch, and for the task you want to achieve in this branch.
 - Always add a section in the Pull Request description that lists all GitHub issues closed by or related to this Pull Request (devised in step 2), with mentions like "Closes #{issue_id}" or "Relates to #{issue_id}".
@@ -55,7 +58,7 @@ This PR implements conditional debug logging in STDOUT.
 > No need to modify the tests.
 ```
 
-### 4. Create the Pull Request between the current branch and main
+### 5. Create the Pull Request between the current branch and main
 
 - Find this skill directory path, later referenced as {skill_path}.
 - Always devise a meaningful title for this Pull Request, later references as {pr_title}.
@@ -67,7 +70,7 @@ Example:
 ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" ./.tmp_agents/prs/pr_desc.txt
 ```
 
-### 5. Delete the temporary description file
+### 6. Delete the temporary description file
 
 - Always delete the temporary description file {pr_description_file} once the Pull Request has been created.
 
