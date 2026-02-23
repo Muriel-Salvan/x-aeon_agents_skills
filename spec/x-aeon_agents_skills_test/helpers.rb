@@ -53,7 +53,7 @@ module XAeonAgentsSkillsTest
       full_script_path = File.expand_path('./bin/generate_skills')
       output = nil
       Dir.chdir(@workspace_dir) do
-        output = `ruby "#{full_script_path}"#{dest_dir ? " #{dest_dir}" : ''} 2>&1`
+        output = `ruby "#{full_script_path}"#{dest_dir ? " --output-dir #{dest_dir}" : ''} 2>&1`
         raise "Command failed: #{output}" if !$?.success? && !expect_failure
       end
       output

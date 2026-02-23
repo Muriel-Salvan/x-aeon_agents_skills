@@ -15,7 +15,7 @@ RSpec.describe 'Generated skills quality' do
   before(:context) do
     # Generate skills for tests
     FileUtils.rm_rf SKILLS_TEST_DIR
-    expect(`bundle exec ruby bin/generate_skills #{SKILLS_TEST_DIR}`).to include 'Skills generated successfully.'
+    expect(`bundle exec ruby bin/generate_skills --output-dir #{SKILLS_TEST_DIR}`).to include 'Skills generated successfully.'
   end
 
   Dir.glob('skills.src/*').map { |skill_path| File.basename(skill_path) }.each do |skill_name|

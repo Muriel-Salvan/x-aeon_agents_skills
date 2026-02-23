@@ -5,71 +5,63 @@
 require 'erb'
 require 'fileutils'
 require 'pathname'
+require 'thor'
 require 'x-aeon_agents_skills/gen_helpers'
 
-# Parse command-line options
-require 'optparse'
+class GenerateSkillsCLI < Thor
 
-options = {}
-OptionParser.new do |opts|
-  exec_name = File.basename(__FILE__)
-  opts.banner = "Usage: #{exec_name} [OPTIONS] [DEST_DIR]"
-  opts.on('-h', '--help', 'Show this help message') do
-    puts opts
-    puts
-    puts "Examples:"
-    puts "  #{exec_name}                   # Generate skills to 'skills' directory"
-    puts "  #{exec_name} my_skills         # Generate skills to 'my_skills' directory"
-    exit 0
-  end
-end.parse!
+  # Define possible transformations based on the file extension
+  TRANSFORMATIONS = {
+    '.erb' => proc { |src_file| XAeonAgentsSkills::GenHelpers::ErbEvaluator.new(src_file).result }
+  }
+  
+  desc 'generate', 'Generate skills (default task)'
+  option :output_dir, type: :string, default: 'skills', desc: 'Output directory for generated skills'
+  def generate
+    # Define source and destination directories
+    src_dir = File.expand_path('skills.src')
+    src_pathname = Pathname.new(src_dir)
+    dest_dir = File.expand_path(options['output_dir'])
 
-# Use provided destination directory or default to 'skills'
-dest_dir_arg = ARGV.shift || 'skills'
+    # Create the destination directory if it doesn't exist
+    FileUtils.mkdir_p(dest_dir)
 
-# Define possible transformations based on the file extension
-TRANSFORMATIONS = {
-  '.erb' => proc { |src_file| XAeonAgentsSkills::GenHelpers::ErbEvaluator.new(src_file).result }
-}
+    failed = false
+    Dir.glob(File.join(src_dir, '**', '*'), File::FNM_DOTMATCH).
+      select { |f| File.file?(f) && File.basename(f) != '.skill_config.yml' }.
+      each do |src_file|
+        # Calculate the relative path from source directory
+        relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
 
-# Define source and destination directories
-src_dir = File.expand_path('skills.src')
-src_pathname = Pathname.new(src_dir)
-dest_dir = File.expand_path(dest_dir_arg)
-
-# Create the destination directory if it doesn't exist
-FileUtils.mkdir_p(dest_dir)
-
-failed = false
-Dir.glob(File.join(src_dir, '**', '*'), File::FNM_DOTMATCH).
-  select { |f| File.file?(f) && File.basename(f) != '.skill_config.yml' }.
-  each do |src_file|
-    # Calculate the relative path from source directory
-    relative_path = Pathname.new(src_file).relative_path_from(src_pathname).to_s
-
-    file_ext = File.extname(relative_path)
-    dst_file = File.join(dest_dir, TRANSFORMATIONS.key?(file_ext) ? relative_path.sub(/#{Regexp.escape(file_ext)}$/, '') : relative_path)
-    puts "Processing: #{relative_path}"
-    puts "    Output: #{dst_file}"
-    begin
-      FileUtils.mkdir_p(File.dirname(dst_file))
-      if TRANSFORMATIONS.key?(file_ext)
-        File.write(dst_file, TRANSFORMATIONS[file_ext].call(src_file))
-      else
-        FileUtils.cp(src_file, dst_file)
+        file_ext = File.extname(relative_path)
+        dst_file = File.join(dest_dir, TRANSFORMATIONS.key?(file_ext) ? relative_path.sub(/#{Regexp.escape(file_ext)}$/, '') : relative_path)
+        puts "Processing: #{relative_path}"
+        puts "    Output: #{dst_file}"
+        begin
+          FileUtils.mkdir_p(File.dirname(dst_file))
+          if TRANSFORMATIONS.key?(file_ext)
+            File.write(dst_file, TRANSFORMATIONS[file_ext].call(src_file))
+          else
+            FileUtils.cp(src_file, dst_file)
+          end
+          puts '    Status: ✓ Processed successfully'
+        rescue StandardError => e
+          puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
+          failed = true
+        end
+        puts
       end
-      puts '    Status: ✓ Processed successfully'
-    rescue StandardError => e
-      puts "    Status: ✗ Error - #{e.message}\n    #{e.backtrace.first}"
-      failed = true
-    end
-    puts
-  end
 
-puts
-if failed
-  puts 'Skills generated with some errors (see above).'
-  exit 1
-else
-  puts 'Skills generated successfully.'
+    puts
+    if failed
+      puts 'Skills generated with some errors (see above).'
+      exit 1
+    else
+      puts 'Skills generated successfully.'
+    end
+  end
+  default_task :generate
+
 end
+
+GenerateSkillsCLI.start(ARGV)

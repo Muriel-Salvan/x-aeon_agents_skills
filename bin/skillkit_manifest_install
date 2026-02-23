@@ -7,6 +7,7 @@
 # For example: anthropic/skills:skill-creator, my-skill, other-owner/other-repo:other-skill
 
 require 'front_matter_parser'
+require 'thor'
 
 # This should be using `skillkit manifest install --yes`, however this command is currently broken:
 # ➜  skillkit manifest install --yes
@@ -28,25 +29,35 @@ require 'front_matter_parser'
 #
 # TODO: Refactor this with system 'skillkit manifest install --yes' when this bug will be fixed.
 
+# Define all known agents
+AGENTS = {
+  cline: {
+    skills_dir: '.cline/skills'
+  }
+  # TODO: Add support to more agents
+}
+
 # Install skills using skillkit.
 # Install also skills dependencies recursively.
 #
 # Parameters::
 # * *repo* (String): Repository
 # * *skills* (Array<String>): Skills list to install
-def install_skills(repo, skills)
+# * *agent* (Symbol): Agent to be used
+def install_skills(repo, skills, agent)
   # TODO: Adapt to other agents than Cline
   puts "Install skills #{repo} / #{skills.join(',')}..."
-  system "skillkit install #{repo} --yes --skills=#{skills.join(',')} --agent=cline", exception: true
+  system "skillkit install #{repo} --yes --skills=#{skills.join(',')} --agent=#{agent}", exception: true
+  skills_dir = AGENTS[agent][:skills_dir]
   # Get all dependencies, per repo
   deps_per_repo = {}
   skills.each do |skill|
-    deps = FrontMatterParser::Parser.parse_file(".cline/skills/#{skill}/SKILL.md").front_matter.dig('metadata', 'dependencies')
+    deps = FrontMatterParser::Parser.parse_file("#{skills_dir}/#{skill}/SKILL.md").front_matter.dig('metadata', 'dependencies')
     unless deps.nil?
       deps.each do |skill_dep|
         skill_dep = "#{repo}:#{skill_dep}" unless skill_dep.include?(':')
         skill_dep_repo, skill_dep_name = skill_dep.match(/^([^:]+):(.+)$/)[1..2]
-        unless File.exist?(".cline/skills/#{skill_dep_name}/SKILL.md")
+        unless File.exist?("#{skills_dir}/#{skill_dep_name}/SKILL.md")
           deps_per_repo[skill_dep_repo] = [] unless deps_per_repo.key?(skill_dep_repo)
           deps_per_repo[skill_dep_repo] << skill_dep_name unless deps_per_repo[skill_dep_repo].include?(skill_dep_name)
         end
@@ -55,21 +66,32 @@ def install_skills(repo, skills)
   end
   # Install those dependencies
   deps_per_repo.each do |dep_repo, dep_skills|
-    install_skills(dep_repo, dep_skills)
+    install_skills(dep_repo, dep_skills, agent)
   end
 end
 
-original_no_color = ENV['NO_COLOR']
-ENV['NO_COLOR'] = '1'
-begin
-  list_lines = `skillkit manifest`.split("\n")
-ensure
-  ENV['NO_COLOR'] = original_no_color
-end
-list_lines = list_lines[list_lines.index('Skills:') + 1..-1]
-list_lines[0..list_lines.index('') - 1].each_slice(2) do |repo_desc, skills_desc|
-  install_skills(repo_desc[4..-1].strip, skills_desc[12..-1].split(',').map(&:strip))
+class SkillkitManifestInstallCLI < Thor
+
+  desc 'install', 'Install skills and their dependencies from the skillkit manifest (default task)'
+  option :agent, type: :string, default: 'cline', desc: 'Agent name to be used to install skills'
+  def install
+    original_no_color = ENV['NO_COLOR']
+    ENV['NO_COLOR'] = '1'
+    begin
+      list_lines = `skillkit manifest`.split("\n")
+    ensure
+      ENV['NO_COLOR'] = original_no_color
+    end
+    list_lines = list_lines[list_lines.index('Skills:') + 1..-1]
+    list_lines[0..list_lines.index('') - 1].each_slice(2) do |repo_desc, skills_desc|
+      install_skills(repo_desc[4..-1].strip, skills_desc[12..-1].split(',').map(&:strip), options['agent'].to_sym)
+    end
+
+    puts
+    puts 'Skills identified in the skillkit manifest and their dependencies have been installed successfully'
+  end
+  default_task :install
+
 end
 
-puts
-puts 'Skills identified in the skillkit manifest and their dependencies have been installed successfully'
+SkillkitManifestInstallCLI.start(ARGV)
