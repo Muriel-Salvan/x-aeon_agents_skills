@@ -2,7 +2,7 @@
 
 # Install skills from the .skills manifest file, along with all dependent skills recursively.
 # Dependencies are defined in the YAML frontmatter of the SKILL.md file, in the metadata.dependencies property.
-# It is a comma-separated (with ignored white spaces) list of dependency info of the format "[repo-slug:]skill-name".
+# It is a list of dependency info of the format "[repo-slug:]skill-name".
 # By default the repo slug is the same as the skill itself.
 # For example: anthropic/skills:skill-creator, my-skill, other-owner/other-repo:other-skill
 
