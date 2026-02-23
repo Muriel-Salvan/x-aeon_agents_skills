@@ -43,7 +43,7 @@ def install_skills(repo, skills)
   skills.each do |skill|
     deps = FrontMatterParser::Parser.parse_file(".cline/skills/#{skill}/SKILL.md").front_matter.dig('metadata', 'dependencies')
     unless deps.nil?
-      deps.split(',').map(&:strip).each do |skill_dep|
+      deps.each do |skill_dep|
         skill_dep = "#{repo}:#{skill_dep}" unless skill_dep.include?(':')
         skill_dep_repo, skill_dep_name = skill_dep.match(/^([^:]+):(.+)$/)[1..2]
         unless File.exist?(".cline/skills/#{skill_dep_name}/SKILL.md")

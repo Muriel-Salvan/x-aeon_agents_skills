@@ -3,7 +3,8 @@ name: analyzing-github-issue
 description: Analyzes requirements described in a GitHub issue. What this does is read the GitHub issue content and devise an implementation plan. Use this when the user is asking you to analyze a GitHub issue or get requirements from it. Use this skill also in Plan mode.
 metadata:
   agent: Plan
-  dependencies: validating-production-quality
+  dependencies:
+  - validating-production-quality
 ---
 
 # Implementing a GitHub issue

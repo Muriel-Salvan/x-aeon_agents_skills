@@ -2,7 +2,9 @@
 name: implementing-github-issue
 description: Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the user is asking you to implement a GitHub issue.
 metadata:
-  dependencies: analyzing-github-issue, validating-production-quality
+  dependencies:
+  - analyzing-github-issue
+  - validating-production-quality
 ---
 
 # Implementing a GitHub issue
