@@ -1,3 +1,9 @@
+# [v1.0.16](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.15...v1.0.16) (2026-02-23 20:31:23)
+
+### Patches
+
+* [fix(skillkit): correct subpath in installed skills metadata](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/10a5ea0a7f4bf9657cc70ca0d4b5acd972576e59)
+
 # [v1.0.15](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.14...v1.0.15) (2026-02-23 16:04:49)
 
 ### Patches
