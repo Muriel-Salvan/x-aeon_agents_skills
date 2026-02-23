@@ -1,3 +1,10 @@
+# [v1.0.13](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.12...v1.0.13) (2026-02-23 13:47:42)
+
+### Patches
+
+* [chore: make bin scripts executable](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/5854f48de87069efa497088c11639606ec906203)
+* [feat(generate_skills): add support for custom destination directory](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/040fe99e0720306511886977b96b0e1b115ee6ac)
+
 # [v1.0.12](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.11...v1.0.12) (2026-02-23 13:14:56)
 
 ### Patches

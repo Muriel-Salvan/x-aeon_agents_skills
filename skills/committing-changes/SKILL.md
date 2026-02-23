@@ -31,7 +31,7 @@ When committing changes, follow those steps.
 
 Example:
 ```bash
- git add lib/my_lib/my_class.rb README.md 
+git add lib/my_lib/my_class.rb README.md
 ```
 
 ### 3. Create a temporary file with the commit description
