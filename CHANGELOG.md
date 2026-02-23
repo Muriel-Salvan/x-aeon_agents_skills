@@ -1,3 +1,9 @@
+# [v1.0.14](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.13...v1.0.14) (2026-02-23 14:33:17)
+
+### Patches
+
+* [feat: add bin executables to gemspec and update dependency format docs](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/eab8c6057cf32d376e36504d3b028ec5e3f9b652)
+
 # [v1.0.13](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.12...v1.0.13) (2026-02-23 13:47:42)
 
 ### Patches
