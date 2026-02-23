@@ -1,3 +1,9 @@
+# [v1.0.15](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.14...v1.0.15) (2026-02-23 16:04:49)
+
+### Patches
+
+* [refactor(generate_skills): migrate CLI from optparse to Thor](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b3441edc3cebf49138a671ffd4dee9cfa9d08c03)
+
 # [v1.0.14](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.13...v1.0.14) (2026-02-23 14:33:17)
 
 ### Patches
