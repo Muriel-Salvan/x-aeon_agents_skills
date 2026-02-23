@@ -1,0 +1,4 @@
+---
+# This skill was inspired by https://github.com/cline/prompts/blob/main/workflows/self-improving-cline.md
+# The skill does not have any concrete commands
+skip_quality_checks: Specificity, Average score

@@ -22,7 +22,7 @@ RSpec.describe 'Generated skills quality' do
       end
 
       it 'has good quality scores' do
-        skipped_quality_checks = (XAeonAgentsSkills::GenHelpers.skill_config(File.basename(skill_path))['skip_quality_checks'] || '').split(',').map(&:strip)
+        skipped_quality_checks = ((XAeonAgentsSkills::GenHelpers.skill_config(File.basename(skill_path)) || {})['skip_quality_checks'] || '').split(',').map(&:strip)
         check_output = without_cli_colors { `skillkit validate #{skill_path} --verbose` }
         QUALITY_SCORE_THRESHOLDS.each do |quality_property, quality_threshold|
           next if skipped_quality_checks.include?(quality_property.to_s)

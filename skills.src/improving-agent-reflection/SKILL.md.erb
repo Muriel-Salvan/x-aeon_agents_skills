@@ -1,0 +1,110 @@
+<%= frontmatter(description: 'Proposes focused, high-value improvements to your active rules and skills. What this does is reflect on the user feedback and guidance, then suggests changes in Cline rules and skills. Use this when you are about to complete a task that involved user feedback provided at any point during the conversation, or involved multiple non-trivial steps (e.g., multiple file edits, complex logic generation).') %>
+
+# <%= skill_goal 'Improving agent reflection' %>
+
+Offer opportunities to continuously improve agent rules and skills, based on user interactions and feedback.
+
+<% define_ordered_todo_list do -%>
+  ### Applicability Check
+
+  - Always use `agent: ask_followup_question` to ask whether reflection is warranted for this task:
+    ```xml
+    <ask_followup_question>
+    <question>Did this task involve user feedback at any point OR multiple non-trivial steps (e.g., several file edits, complex logic generation)?</question>
+    <options>["Yes - proceed", "No - skip"]</options>
+    </ask_followup_question>
+    ```
+  - If "No - skip", conclude briefly and stop this skill.
+
+  ### Offer Reflection
+  
+  - Always use `agent: ask_followup_question` to confirm the user wants reflection and proposals:
+    ```xml
+    <ask_followup_question>
+    <question>Before I proceed, would you like me to reflect on our interaction and suggest potential improvements to the active rules and skills?</question>
+    <options>["Yes - reflect", "No - skip"]</options>
+    </ask_followup_question>
+    ```
+  - If "No - skip", conclude briefly and stop this skill.
+
+  ### Identify Active Rules
+
+  - Always use the `agent: read_file` tool to read the file `AGENTS.md`, and all the referenced *..md files referenced from it. This file contains rules that are always active.
+    ```xml
+    <read_file>
+    <path>AGENTS.md</path>
+    </read_file>
+    ```
+
+  ### Identify Active Skills (Best‑Effort)
+
+  - Skills directory: `.cline/skills`
+  - Always use the `agent: list_files` tool to list all skills that are present:
+    ```xml
+    <list_files>
+    <path>.cline/skills</path>
+    </list_files>
+    ```
+
+  ### Load Accessible Skill Files
+
+  - For each accessible skill that you want to consider, always use the `agent: read_file` tool to read the SKILL.md file of the skill, and all the referenced *..md files referenced from it.
+    ```xml
+    <read_file>
+    <path>.cline/skills/{skill-name}/SKILL.md</path>
+    </read_file>
+    ```
+  - If the content is referencing other files (*.md), always use the `agent: read_file` tool to read them:
+    ```xml
+    <read_file>
+    <path>.cline/skills/{skill-name}/references/{referenced-file}.md</path>
+    </read_file>
+    ```
+
+  ### Review and Synthesize Opportunities
+
+  Using the current task's conversation context:
+  - Always summarize relevant user feedback (explicit and implicit)
+  - Always identify where rules and skills helped or hindered flow
+  - Always propose targeted improvements focused on:
+    - Addressing user feedback directly
+    - Improving clarity and conciseness
+    - Consolidating overlapping guidance
+    - Removing outdated or low-impact sections
+
+  ### Present Proposals
+
+  - Always provide a concise list of suggested changes per file (no diff blocks). Keep focus on practical, high-value edits.
+
+  ### Approval to Act
+
+  - Always use `agent: ask_followup_question` to ask the user how to proceed:
+    ```xml
+    <ask_followup_question>
+    <question>Would you like me to apply these improvements now where possible, or just present recommendations?</question>
+    <options>["Apply now", "Show recommendations only", "Cancel"]</options>
+    </ask_followup_question>
+    ```
+
+  ### Execute or Report
+
+  - If "Apply now": implement updates for accessible files
+  - If "Show recommendations only": present a clean summary for manual application
+  - If "Cancel": make no changes
+
+  ### Conclude
+
+  - Always summarize what changed or what to change next, then finish.
+<% end -%>
+
+## Constraint
+
+Do not offer reflection if:
+- No rules or skills were active.
+- The task was very simple and involved no feedback.
+
+## When to use it
+
+- Always use it every time the user asks you to improve rules or skills.
+- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it before attempting completion of a task that involved user feedback on active skills and rules.
