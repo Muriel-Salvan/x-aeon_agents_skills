@@ -1,3 +1,19 @@
+# [v1.0.12](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.11...v1.0.12) (2026-02-23 13:14:56)
+
+### Patches
+
+* [refactor: convert skill dependencies from comma-separated strings to arrays](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/36f9f90f03bb11a09b0608e35d5bd67a2ed57074)
+* [fix: handle nil return from skill_config to prevent NoMethodError](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/56224b3a07e590a9506159734ee6cc26c2bd0d58)
+* [feat: add improving-cline-reflection skill for Cline rules](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/a4f855965dc6a8dc2a463a272d844e9e261f07e5)
+* [feat: add applying-test-conventions skill with test writing best practices](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/47f2dace8ad5f18ef38a0fc36e585336041b8e3f)
+* [feat: add addressing-pull-request-comments skill and update README guidance](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/375f91383ea1101c9147dd5b20b9ace6acfdb5ab)
+* [refactor: normalize skill conventions to sentence case and add rule helper](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/2d21a57f94fc8e4813407933021cb1e2fc12fe6f)
+* [feat: add per-skill .skill_config.yml support in skill generation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/df588da54f0b5197bee24e60e9d1f89fb7c1bb35)
+* [refactor(gen_helpers): centralize skill metadata with frontmatter and skill_goal](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/0988c459360f8b354d7c38a844a3d0f5e07235fa)
+* [docs: document new skill syntax conventions and add analyze-github-issue skill](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/df8f22e606b211a081a5a1d0df5d49620c8daec3)
+* [feat: add tmp_path helper and update skills to use configurable temp folder](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/9d27d2355cbe9f5c528edb5ad3e4c5dc1d993ad8)
+* [refactor: convert class methods to instance methods for ERB evaluation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8c018d2323f76a7e07a9ef9a83ff7b04ba4741d1)
+
 # [v1.0.11](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.10...v1.0.11) (2026-02-17 16:41:56)
 
 ### Patches
