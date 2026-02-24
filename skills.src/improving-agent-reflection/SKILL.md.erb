@@ -1,10 +1,10 @@
 <%= skill(description: 'Proposes focused, high-value improvements to your active rules and skills. What this does is reflect on the user feedback and guidance, then suggests changes in Cline rules and skills. Use this when you are about to complete a task that involved user feedback provided at any point during the conversation, or involved multiple non-trivial steps (e.g., multiple file edits, complex logic generation).') %>
 
-# <%= skill_goal 'Improving agent reflection' %>
+# <%= goal 'Improving agent reflection' %>
 
 Offer opportunities to continuously improve agent rules and skills, based on user interactions and feedback.
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Applicability Check
 
   - Always use `agent: ask_followup_question` to ask whether reflection is warranted for this task:
@@ -106,5 +106,5 @@ Do not offer reflection if:
 ## When to use it
 
 - Always use it every time the user asks you to improve rules or skills.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it before attempting completion of a task that involved user feedback on active skills and rules.

@@ -1,8 +1,8 @@
 <%= skill(description: 'Update the documentation of the project. What this does is update the README file of the project, its CLI usage and its Table of Content. Use this when a new development has been completed or when the user is asking for documentation or README to be updated.') %>
 
-# <%= skill_goal 'Updating documentation' %>
+# <%= goal 'Updating documentation' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Check the existing README content
 
   - Always read the existing README content and think about which parts of it should be updated with the task you just implemented.
@@ -75,7 +75,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to update documentation.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Use it every time you think documentation should be updated after implementing some changes in the code or tests.
 
 ## Usage and code examples

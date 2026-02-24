@@ -1,8 +1,8 @@
 <%= skill(description: 'Creates a Pull Request for the current git branch on GitHub. Use this when a Pull Request needs to be created to track the current feature branch changes on GitHub.') %>
 
-# <%= skill_goal 'Creating a Pull Request' %>
+# <%= goal 'Creating a Pull Request' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Ask the user about additional list of GitHub issues linked to this Pull Request
 
   - Always use `agent: ask_followup_question` to ask the user which GitHub issues are closed by or related to this Pull Request, even if you know of some of those issues already. There could be more GitHub issues that you are not aware of.
@@ -47,7 +47,7 @@
 
   Example:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/create_pr "Add support for debug mode in CLI arguments" <%= tmp_path %>/prs/pr_desc.txt
+  ruby .cline/skills/<%= name %>/scripts/create_pr "Add support for debug mode in CLI arguments" <%= tmp_path %>/prs/pr_desc.txt
   ```
 
   ### Delete the temporary description file
@@ -63,7 +63,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to create a Pull Request.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you need to create a Pull Request.
 
 ## Usage and code examples
@@ -76,6 +76,6 @@ This skill should perform the following commands:
 ```bash
 # Use agent tool ask_followup_question to ask the user about GitHub issue numbers that relate to this Pull Request
 # Use agent tool write_to_file to create file ./<%= tmp_path %>/prs/pr_desc.txt
-ruby .cline/skills/<%= skill_name %>/scripts/create_pr "Add support for debug mode in CLI arguments" <%= tmp_path %>/prs/pr_desc.txt
+ruby .cline/skills/<%= name %>/scripts/create_pr "Add support for debug mode in CLI arguments" <%= tmp_path %>/prs/pr_desc.txt
 rm <%= tmp_path %>/prs/pr_desc.txt
 ```

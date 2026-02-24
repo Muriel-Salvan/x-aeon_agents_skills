@@ -3,9 +3,9 @@
   plan: true
 ) %>
 
-# <%= skill_goal 'Addressing Pull Request comments' %>
+# <%= goal 'Addressing Pull Request comments' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Fetch Pull Request comments (can be done during Plan mode)
 
   - Find this skill directory path, later referenced as {skill_path}.
@@ -13,7 +13,7 @@
 
   Example with expected output as JSON:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/check_unresolved_pr_comments
+  ruby .cline/skills/<%= name %>/scripts/check_unresolved_pr_comments
   # => Repository Github handle: Muriel-Salvan/ruby-neural-nets
   # Branch name: main
   # Found 1 Pull Requests dealing with this branch (numbers 3)
@@ -57,7 +57,7 @@
   ```
   Example of an error case with a non-existing Pull Request:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/check_unresolved_pr_comments
+  ruby .cline/skills/<%= name %>/scripts/check_unresolved_pr_comments
   # => Repository Github handle: Muriel-Salvan/x-aeon_agents_skills
   # Branch name: main
   # Found 0 Pull Requests dealing with this branch (numbers )
@@ -115,7 +115,7 @@
 
   Example:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/reply_to_comment 3 2718057900 <%= tmp_path %>/replies/comment_2718057900_reply.md
+  ruby .cline/skills/<%= name %>/scripts/reply_to_comment 3 2718057900 <%= tmp_path %>/replies/comment_2718057900_reply.md
   ```
 <% end -%>
 
@@ -123,7 +123,8 @@
 
 - This skill can be used during Plan mode till code changes become needed.
 - Always use it every time the user asks you to address Pull Request comments.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
+- Always use it every time you need to address Pull Request comments.
 
 ## Usage and code examples
 
@@ -133,10 +134,10 @@ Those examples are given for a Linux environment. Adapt them if you are running 
 
 ```bash
 # 1. Get comments
-ruby .cline/skills/<%= skill_name %>/scripts/check_unresolved_pr_comments
+ruby .cline/skills/<%= name %>/scripts/check_unresolved_pr_comments
 # 2. Loop over each unanswered comment that starts with `/agent`. For each one of them:
 # 2.1. Apply necessary code changes if needed
 # 2.2. Create <%= tmp_path %>/replies/comment_1234567_reply.md with the appropriate reply
 # 2.3. Reply to the comment
-ruby .cline/skills/<%= skill_name %>/scripts/reply_to_comment 3 1234567 <%= tmp_path %>/replies/comment_1234567_reply.md
+ruby .cline/skills/<%= name %>/scripts/reply_to_comment 3 1234567 <%= tmp_path %>/replies/comment_1234567_reply.md
 ```

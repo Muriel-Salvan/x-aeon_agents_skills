@@ -3,9 +3,9 @@
   dependencies: %w[analyzing-github-issue validating-production-quality]
 ) %>
 
-# <%= skill_goal 'Implementing a GitHub issue' %>
+# <%= goal 'Implementing a GitHub issue' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Analyze the GitHub issue requirements to get an implementation plan (can be done during Plan mode)
 
   - Always use `skill: analyzing-github-issue` to get a full implementation plan. This plan will take into consideration requirements from the issue, user inputs and the project's context.
@@ -23,7 +23,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to implement a GitHub issue.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you need to implement a GitHub issue.
 
 ## Usage and code examples

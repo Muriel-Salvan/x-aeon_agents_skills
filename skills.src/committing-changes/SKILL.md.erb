@@ -1,8 +1,8 @@
 <%= skill(description: 'Commits changes and pushes them on GitHub. What this does is stage relevant files, create a git commit and push it on GitHub. Use this when development and testing has been done and changes are ready to be committed and pushed to GitHub.') %>
 
-# <%= skill_goal 'Committing changes' %>
+# <%= goal 'Committing changes' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Stage all the files that should be part of the commit
 
   - Identify all the files that make sense to commit altogether as part of 1 commit.
@@ -27,7 +27,7 @@
 
   Example:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/commit <%= tmp_path %>/commits/commit_desc.txt
+  ruby .cline/skills/<%= name %>/scripts/commit <%= tmp_path %>/commits/commit_desc.txt
   ```
 
   ### Delete the temporary commit description file
@@ -52,7 +52,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to commit your changes.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you need to commit your changes.
 
 ## Usage and code examples

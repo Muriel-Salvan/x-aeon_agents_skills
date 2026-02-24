@@ -1,6 +1,6 @@
 <%= skill(description: 'Runs Bash command lines in a Portable installation under WSL. What this does is execute the command line inside a Portable bash installation in WSL. Use this when a command line should be run under a WSL portable environment.') %>
 
-# <%= skill_goal 'Running CLI in WSL Portable' %>
+# <%= goal 'Running CLI in WSL Portable' %>
 
 ## Sequential steps to be followed when using this skill
 
@@ -9,7 +9,7 @@ The original bash command to be run is later referenced as {original_cli}.
 
 ### 1. Inform the user
 
-- <%= announce_skill %>
+- <%= announce %>
 
 ### 2. Run the command line with the right prefix
 
@@ -19,17 +19,17 @@ The original bash command to be run is later referenced as {original_cli}.
 
 Example:
 ```shell
-C:\my-repo\.cline\skills\<%= skill_name %>\scripts\wsl_portable_bash.cmd "mkdir linux-path/to/my-files"
+C:\my-repo\.cline\skills\<%= name %>\scripts\wsl_portable_bash.cmd "mkdir linux-path/to/my-files"
 ```
 Example with Linux file patterns that don't need to be escaped:
 ```shell
-C:\my-repo\.cline\skills\<%= skill_name %>\scripts\wsl_portable_bash.cmd "ls *.md"
+C:\my-repo\.cline\skills\<%= name %>\scripts\wsl_portable_bash.cmd "ls *.md"
 ```
 
 ## When to use it
 
 - Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you need to run a CLI command that needs a WSL Portable environment.
 - Never use this skill when you are under a Linux environment.
 
@@ -41,7 +41,7 @@ Those examples are given for a Windows environment.
 
 Note that the WSL Portable environment may output some lines on stderr. You can safely ignore them.
 ```bash
-C:\my-repo\.cline\skills\<%= skill_name %>\scripts\wsl_portable_bash.cmd "echo 'Hello World'"
+C:\my-repo\.cline\skills\<%= name %>\scripts\wsl_portable_bash.cmd "echo 'Hello World'"
 # Setting $HOME to /mnt/i/Env/Linux/Programs/bash/bash.home
 # Setting $XDG_CONFIG_HOME to /mnt/i/Env/Linux/Programs/bash/bash.config
 # Hello World
@@ -50,5 +50,5 @@ C:\my-repo\.cline\skills\<%= skill_name %>\scripts\wsl_portable_bash.cmd "echo '
 ### Listing all workspace Ruby files (*.rb) under a WSL Portable environment
 
 ```bash
-C:\my-repo\.cline\skills\<%= skill_name %>\scripts\wsl_portable_bash.cmd "ls -la *.rb"
+C:\my-repo\.cline\skills\<%= name %>\scripts\wsl_portable_bash.cmd "ls -la *.rb"
 ```

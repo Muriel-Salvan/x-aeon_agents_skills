@@ -1,15 +1,15 @@
 <%= skill(description: 'Enforces project-level operational rules that govern how the agent interacts with the workspace, CLI, and version control. What this does is enumerating governance rules that you should always follow when working in a project. Use this in ALL tasks executed inside a repository to ensure compliance with project constraints such as working directory rules and git branch restrictions.') %>
 
-# <%= skill_goal 'Enforcing project rules' %>
+# <%= goal 'Enforcing project rules' %>
 
 ## Inform the user
 
-- <%= announce_skill %>
+- <%= announce %>
 
 ## Non-negotiable Rules and Constraints to follow (MANDATORY)
 
 <%= rule(
-  'Execute all CLI commands from the workspace\'s root directory',
+  "Execute all CLI commands from the workspace's root directory",
   type: :bash,
   bad: <<~EO_Example,
     cd scripts
@@ -34,5 +34,5 @@
 ## When to use it
 
 - Always use it every time the user asks you to follow project rules.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you implement a task in a project.

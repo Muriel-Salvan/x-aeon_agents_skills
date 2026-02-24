@@ -4,9 +4,9 @@
   dependencies: %w[validating-production-quality]
 ) %>
 
-# <%= skill_goal 'Implementing a GitHub issue' %>
+# <%= goal 'Implementing a GitHub issue' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Get issue number (can be done during Plan mode)
 
   - Always use `agent: ask_followup_question` to ask the user which GitHub issue should be analyzed, unless the user already gave you this information in the prompt.
@@ -18,15 +18,15 @@
 
   Example with expected output as JSON:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/issue_details 29
+  ruby .cline/skills/<%= name %>/scripts/issue_details 29
   # => {"body":"# This is the GitHub issue body ...","comments":[],"labels":[],"number":29,"state":"OPEN","title":"This is the GitHub issue title","url":"https://github.com/my-user/my-repo/issues/29"}
   ```
   Example of an error case with a non-existing GitHub issue:
   ```bash
-  ruby .cline/skills/<%= skill_name %>/scripts/issue_details 29
+  ruby .cline/skills/<%= name %>/scripts/issue_details 29
   # GraphQL: Could not resolve to an issue or pull request with the number of 29. (repository.issue)
-  # .cline/skills/<%= skill_name %>/scripts/issue_details:9:in 'Kernel#system': Command failed with exit 1: gh issue view 29 --json=number,title,body,comments,labels,state,url (RuntimeError)
-  #       from .cline/skills/<%= skill_name %>/scripts/issue_details:9:in '<main>'
+  # .cline/skills/<%= name %>/scripts/issue_details:9:in 'Kernel#system': Command failed with exit 1: gh issue view 29 --json=number,title,body,comments,labels,state,url (RuntimeError)
+  #       from .cline/skills/<%= name %>/scripts/issue_details:9:in '<main>'
   ```
 
   ### Come up with an implementation plan (can be done during Plan mode)
@@ -39,7 +39,7 @@
 
 - This skill can be used during Plan mode and is totally safe.
 - Always use it every time the user asks you to analyze a given GitHub issue.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it every time you need to analyze a GitHub issue to gather requirements.
 
 ## Usage and code examples
@@ -51,14 +51,14 @@ Those examples are given for a Linux environment. Adapt them if you are running 
 If the user asked you to analyze a GitHub issue without specifying the number, this skill should perform the following commands:
 ```bash
 # Use agent tool ask_followup_question to get the GitHub issue number from the user
-ruby .cline/skills/<%= skill_name %>/scripts/issue_details 42
+ruby .cline/skills/<%= name %>/scripts/issue_details 42
 ```
 
 ### When asked to analyze the GitHub issue number 42
 
 If the user asked you to analyze the GitHub issue number 42, this skill should perform the following commands:
 ```bash
-ruby .cline/skills/<%= skill_name %>/scripts/issue_details 42
+ruby .cline/skills/<%= name %>/scripts/issue_details 42
 ```
 
 ### Example of implementation plan

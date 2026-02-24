@@ -1,8 +1,8 @@
 <%= skill(description: 'Syncs the current branch with its base. What this does is check the remote base branch, rebase the current one on the updated base and push it back to the remote. Use this when the base branch of the current branch may have diverged and you want to be sure that the current branch gets all latest changes of its base. This Skill is the canonical way to keep a branch up-to-date with its base. It must be used instead of merging the base branch, and always performs a rebase.') %>
 
-# <%= skill_goal 'Syncing the current branch with its base' %>
+# <%= goal 'Syncing the current branch with its base' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Find the base branch name
 
   - By default the base branch name is `main`.
@@ -47,7 +47,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to sync the branch with its base.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Use it every time you realize the base branch has divereged and you want to get the current branch up-to-date with its base.
 
 ## Usage and code examples

@@ -1,13 +1,13 @@
 RSpec.describe XAeonAgentsSkills::GenHelpers do
 
-  describe 'define_ordered_todo_list' do
+  describe 'ordered_todo_list' do
 
     it 'generates a full ordered list with checklist tracking instructions' do
       expect(
         process_erb(
           <<~EO_ERB
-            <% skill_goal('Numbered Skill') -%>
-            <% define_ordered_todo_list do -%>
+            <% goal('Numbered Skill') -%>
+            <% ordered_todo_list do -%>
               ### First Action
               - Do the first action
               ### Second Action
@@ -59,8 +59,8 @@ RSpec.describe XAeonAgentsSkills::GenHelpers do
       expect(
         process_erb(
           <<~EO_ERB
-            <% skill_goal('Empty Skill') -%>
-            <% define_ordered_todo_list do -%>
+            <% goal('Empty Skill') -%>
+            <% ordered_todo_list do -%>
             <% end -%>
           EO_ERB
         )

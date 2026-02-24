@@ -3,9 +3,9 @@
   dependencies: %w[committing-changes creating-pull-request syncing-branch-with-base updating-doc]
 ) %>
 
-# <%= skill_goal 'Validating production quality' %>
+# <%= goal 'Validating production quality' %>
 
-<% define_ordered_todo_list do -%>
+<% ordered_todo_list do -%>
   ### Fix any potential regression
 
   - Always run all test scenarios.
@@ -55,7 +55,7 @@
 ## When to use it
 
 - Always use it every time the user asks you to validate production quality gates.
-- Always use it every time another skill specifically mentions `skill: <%= skill_name %>`.
+- Always use it every time another skill specifically mentions `skill: <%= name %>`.
 - Always use it just before attempting completion of a task that is a full production-grade feature or bug fix.
 
 ## Usage and code examples
