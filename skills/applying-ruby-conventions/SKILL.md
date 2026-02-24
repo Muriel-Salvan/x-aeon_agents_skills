@@ -1,6 +1,8 @@
 ---
 name: applying-ruby-conventions
-description: Applies idiomatic Ruby conventions, structure, and best practices when writing or modifying Ruby code. What this does is defining a set of rules to follow when dealing with any Ruby file. Use this when the user is asking to create, edit, refactor, or review Ruby files or when the project contains Ruby source code.
+description: Applies idiomatic Ruby conventions, structure, and best practices when writing or modifying Ruby code. What this does is defining a set of rules to follow when dealing with any Ruby file. Use this when the user is asking to create, edit, refactor, or review Ruby files or when the project contains Ruby source code. Use this skill also in Plan mode.
+metadata:
+  agent: Plan
 ---
 
 # Applying Ruby conventions
@@ -37,6 +39,7 @@ See [references/conventions-for-ruby-exceptions-handling.md](references/conventi
 
 ## When to use it
 
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: applying-ruby-conventions`.
 - Always use it every time the user asks you to use Ruby conventions.
 - Always use it every time you need to write or modify Ruby code.

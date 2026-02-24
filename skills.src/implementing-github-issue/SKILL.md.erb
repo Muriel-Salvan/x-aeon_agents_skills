@@ -1,12 +1,13 @@
 <%= skill(
   description: 'Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the user is asking you to implement a GitHub issue.',
+  plan: true,
   dependencies: %w[analyzing-github-issue validating-production-quality]
 ) %>
 
 # <%= goal 'Implementing a GitHub issue' %>
 
 <% ordered_todo_list do -%>
-  ### Analyze the GitHub issue requirements to get an implementation plan (can be done during Plan mode)
+  ### Analyze the GitHub issue requirements to get an implementation plan (can be done when in Plan mode)
 
   - Always use `skill: analyzing-github-issue` to get a full implementation plan. This plan will take into consideration requirements from the issue, user inputs and the project's context.
 
@@ -30,6 +31,6 @@
 ### Implementing a GitHub issue
 
 This skill should perform the following steps:
-1. Use the skill named analyzing-github-issue to get an implementation plan
+1. Use the skill named `analyzing-github-issue` to get an implementation plan
 2. Execute all the steps that are identified in the implementation plan
-3. Use the skill named validating-production-quality to check all production quality gates
+3. Use the skill named `validating-production-quality` to check all production quality gates

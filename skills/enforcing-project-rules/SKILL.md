@@ -1,6 +1,8 @@
 ---
 name: enforcing-project-rules
-description: Enforces project-level operational rules that govern how the agent interacts with the workspace, CLI, and version control. What this does is enumerating governance rules that you should always follow when working in a project. Use this in ALL tasks executed inside a repository to ensure compliance with project constraints such as working directory rules and git branch restrictions.
+description: Enforces project-level operational rules that govern how the agent interacts with the workspace, CLI, and version control. What this does is enumerating governance rules that you should always follow when working in a project. Use this in ALL tasks executed inside a repository to ensure compliance with project constraints such as working directory rules and git branch restrictions. Use this skill also in Plan mode.
+metadata:
+  agent: Plan
 ---
 
 # Enforcing project rules
@@ -45,6 +47,7 @@ The current branch gives you a safe space to modify files without impacting othe
 
 ## When to use it
 
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: enforcing-project-rules`.
 - Always use it every time the user asks you to follow project rules.
 - Always use it every time you implement a task in a project.

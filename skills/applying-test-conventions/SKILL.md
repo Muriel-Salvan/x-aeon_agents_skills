@@ -1,6 +1,8 @@
 ---
 name: applying-test-conventions
-description: Applies idiomatic test conventions, structure, and best practices when writing or modifying unit tests. What this does is defining a set of rules to follow when dealing with any test file. Use this when the user is asking to create, edit, refactor, or review test files or when the project contains test scenarios.
+description: Applies idiomatic test conventions, structure, and best practices when writing or modifying unit tests. What this does is defining a set of rules to follow when dealing with any test file. Use this when the user is asking to create, edit, refactor, or review test files or when the project contains test scenarios. Use this skill also in Plan mode.
+metadata:
+  agent: Plan
 ---
 
 # Applying test conventions
@@ -98,6 +100,7 @@ Unit tests should have deterministic behaviour, whether they are run alone or gr
 
 ## When to use it
 
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: applying-test-conventions`.
 - Always use it every time the user asks you to write or modify tests.
 - Always use it every time you need to write or modify tests.

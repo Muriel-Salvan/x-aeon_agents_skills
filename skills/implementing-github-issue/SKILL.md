@@ -1,7 +1,8 @@
 ---
 name: implementing-github-issue
-description: Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the user is asking you to implement a GitHub issue.
+description: Implements what is described in a GitHub issue. What this does is first devise an implementation plan from the issue, execute the plan and validate production qualiy gates. Use this when the user is asking you to implement a GitHub issue. Use this skill also in Plan mode.
 metadata:
+  agent: Plan
   dependencies:
   - analyzing-github-issue
   - validating-production-quality
@@ -27,7 +28,7 @@ When implementing a GitHub issue, follow those steps.
 
 - Always tell the user "SKILL: I am implementing a GitHub issue" to inform the user that you are running this skill.
 
-### 2. Analyze the GitHub issue requirements to get an implementation plan (can be done during Plan mode)
+### 2. Analyze the GitHub issue requirements to get an implementation plan (can be done when in Plan mode)
 
 - Always use `skill: analyzing-github-issue` to get a full implementation plan. This plan will take into consideration requirements from the issue, user inputs and the project's context.
 
@@ -50,6 +51,7 @@ Before declaring the task complete:
 
 ## When to use it
 
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: implementing-github-issue`.
 - Always use it every time the user asks you to implement a GitHub issue.
 - Always use it every time you need to implement a GitHub issue.
@@ -59,6 +61,6 @@ Before declaring the task complete:
 ### Implementing a GitHub issue
 
 This skill should perform the following steps:
-1. Use the skill named analyzing-github-issue to get an implementation plan
+1. Use the skill named `analyzing-github-issue` to get an implementation plan
 2. Execute all the steps that are identified in the implementation plan
-3. Use the skill named validating-production-quality to check all production quality gates
+3. Use the skill named `validating-production-quality` to check all production quality gates
