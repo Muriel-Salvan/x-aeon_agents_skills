@@ -1,3 +1,12 @@
+# [v1.0.17](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.16...v1.0.17) (2026-02-24 15:04:01)
+
+### Patches
+
+* [feat: add plan mode support to some skill templates](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/12edb263d4e168a7863465008658433e2528e5b1)
+* [refactor: extract ERB block transformation and improve skill documentation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/38e012c6b1e5342f6ae529f7668f59fb11495525)
+* [refactor: rename skill-related methods for consistency](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/ecc2e6b20b7cac39c7dac89e7fdc2ac363ae7934)
+* [Refactor skill metadata generation and update skill definitions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/62ae05ca8e2f49485c33d7bd38c414413b07c764)
+
 # [v1.0.16](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.15...v1.0.16) (2026-02-23 20:31:23)
 
 ### Patches
