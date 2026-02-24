@@ -1,8 +1,6 @@
-<%= frontmatter(
-  description: 'Addresses comments made on the GitHub Pull Request tracking changes of the current branch. What this does is read all Pull Requests comments addressed to the agent, improve or fix the code based on those comments, and reply too each one of those comments. Use this when the user is asking you to address the comments made on the current branch\'s Pull Request. Use this skill also in Plan mode.',
-  metadata: {
-    agent: 'Plan'
-  }
+<%= skill(
+  description: 'Addresses comments made on the GitHub Pull Request tracking changes of the current branch. What this does is read all Pull Requests comments addressed to the agent, improve or fix the code based on those comments, and reply too each one of those comments. Use this when the user is asking you to address the comments made on the current branch\'s Pull Request.',
+  plan: true
 ) %>
 
 # <%= skill_goal 'Addressing Pull Request comments' %>

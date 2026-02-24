@@ -5,19 +5,28 @@ module XAeonAgentsSkills
   # Helper methods for generating skill content
   module GenHelpers
 
-    # Generate the YAML frontmatter block for a skill file.
+    # Define a skill metadata.
+    # This should always be the first call in a skill ERB file.
+    # It also returns the corresponding YAML frontmatter.
     # The name is automatically derived from skill_name.
     #
     # Parameters::
     # * *description* (String): Description of the skill
-    # * *metadata* (Hash or nil): Optional metadata key-value pairs
+    # * *dependencies* (Array<String>): List of skills dependencies [default: []]
+    # * *plan* (Boolean): Is this skill applicable to plan mode? [default: false]
+    # * *metadata* (Hash): Optional metadata key-value pairs [default: {}]
     #
     # Result::
     # * String: The complete YAML frontmatter block (including --- delimiters)
-    def frontmatter(description:, metadata: nil)
-      data = { 'name' => skill_name, 'description' => description }
-      data['metadata'] = metadata.transform_keys(&:to_s) if metadata
-      YAML.dump(data, line_width: -1).chomp + "\n---"
+    def skill(description:, dependencies: [], plan: false, metadata: {})
+      frontmatter = {
+        'name' => skill_name,
+        'description' => "#{description}#{plan ? ' Use this skill also in Plan mode.' : ''}"
+      }
+      metadata['agent'] = 'Plan' if plan
+      metadata['dependencies'] = dependencies unless dependencies.empty?
+      frontmatter['metadata'] = metadata.transform_keys(&:to_s) unless metadata.empty?
+      YAML.dump(frontmatter, line_width: -1).chomp + "\n---"
     end
 
     # Define or get the skill goal to be used in ERB templates

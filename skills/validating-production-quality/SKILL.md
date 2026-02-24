@@ -3,10 +3,10 @@ name: validating-production-quality
 description: Validates that the task is following all production-grade quality checks. What this does is check for regressions, update documentation, update the branch on the latest base, commit any remaining changes, push them on GitHub and create a Pull Request. Use this when attempting task completion on a task or when the user asks for validating production qulity gates.
 metadata:
   dependencies:
-  - updating-doc
   - committing-changes
-  - syncing-branch-with-base
   - creating-pull-request
+  - syncing-branch-with-base
+  - updating-doc
 ---
 
 # Validating production quality
