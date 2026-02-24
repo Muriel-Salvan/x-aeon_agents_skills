@@ -45,6 +45,6 @@ The current branch gives you a safe space to modify files without impacting othe
 
 ## When to use it
 
-- Always use it every time the user asks you to follow project rules.
 - Always use it every time another skill specifically mentions `skill: enforcing-project-rules`.
+- Always use it every time the user asks you to follow project rules.
 - Always use it every time you implement a task in a project.

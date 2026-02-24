@@ -1,6 +1,4 @@
-require 'x-aeon_agents_skills/gen_helpers'
-
-RSpec.describe XAeonAgentsSkills::GenHelpers do
+describe XAeonAgentsSkills::GenHelpers do
 
   describe 'config' do
 

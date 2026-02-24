@@ -73,8 +73,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to sync the branch with its base.
 - Always use it every time another skill specifically mentions `skill: syncing-branch-with-base`.
+- Always use it every time the user asks you to sync the branch with its base.
 - Use it every time you realize the base branch has divereged and you want to get the current branch up-to-date with its base.
 
 ## Usage and code examples

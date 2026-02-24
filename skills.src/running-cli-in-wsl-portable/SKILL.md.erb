@@ -26,12 +26,11 @@ Example with Linux file patterns that don't need to be escaped:
 C:\my-repo\.cline\skills\<%= name %>\scripts\wsl_portable_bash.cmd "ls *.md"
 ```
 
-## When to use it
-
-- Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you need to run a CLI command that needs a WSL Portable environment.
-- Never use this skill when you are under a Linux environment.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
+  - Always use it every time you need to run a CLI command that needs a WSL Portable environment.
+  - Never use this skill when you are under a Linux environment.
+<% end -%>
 
 ## Usage and code examples
 

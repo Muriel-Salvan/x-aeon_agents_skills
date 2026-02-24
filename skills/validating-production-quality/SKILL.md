@@ -84,8 +84,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to validate production quality gates.
 - Always use it every time another skill specifically mentions `skill: validating-production-quality`.
+- Always use it every time the user asks you to validate production quality gates.
 - Always use it just before attempting completion of a task that is a full production-grade feature or bug fix.
 
 ## Usage and code examples

@@ -89,8 +89,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to create a Pull Request.
 - Always use it every time another skill specifically mentions `skill: creating-pull-request`.
+- Always use it every time the user asks you to create a Pull Request.
 - Always use it every time you need to create a Pull Request.
 
 ## Usage and code examples

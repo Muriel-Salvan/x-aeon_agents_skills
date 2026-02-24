@@ -31,8 +31,8 @@ C:\my-repo\.cline\skills\running-cli-in-wsl-portable\scripts\wsl_portable_bash.c
 
 ## When to use it
 
-- Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
 - Always use it every time another skill specifically mentions `skill: running-cli-in-wsl-portable`.
+- Always use it every time the user asks you to run a CLI command using the WSL Portable environment.
 - Always use it every time you need to run a CLI command that needs a WSL Portable environment.
 - Never use this skill when you are under a Linux environment.
 

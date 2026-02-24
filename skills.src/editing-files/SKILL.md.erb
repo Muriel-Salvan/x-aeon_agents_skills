@@ -21,8 +21,7 @@
   Always check that the file is containing the edits you expect.
   If the edits were not performed, then always use `agent: write_in_file` with the whole file's content.
 
-## When to use it
-
-- Always use it every time the user asks you to create or edit a file.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you need to create or edit a file.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to create or edit a file.
+  - Always use it every time you need to create or edit a file.
+<% end -%>

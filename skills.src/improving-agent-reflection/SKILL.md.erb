@@ -103,8 +103,7 @@ Do not offer reflection if:
 - No rules or skills were active.
 - The task was very simple and involved no feedback.
 
-## When to use it
-
-- Always use it every time the user asks you to improve rules or skills.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it before attempting completion of a task that involved user feedback on active skills and rules.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to improve rules or skills.
+  - Always use it before attempting completion of a task that involved user feedback on active skills and rules.
+<% end -%>

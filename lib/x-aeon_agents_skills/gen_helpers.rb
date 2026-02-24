@@ -19,6 +19,7 @@ module XAeonAgentsSkills
     # Result::
     # * String: The complete YAML frontmatter block (including --- delimiters)
     def skill(description:, dependencies: [], plan: false, metadata: {})
+      @plan = plan
       frontmatter = {
         'name' => name,
         'description' => "#{description}#{plan ? ' Use this skill also in Plan mode.' : ''}"
@@ -116,51 +117,40 @@ module XAeonAgentsSkills
     # standard skill header, checklist initialization, and final verification sections.
     #
     # Parameters::
-    # * *block* (Proc): ERB block containing the markdown sections
-    def ordered_todo_list(&block)
-      # Capture the ERB block content using buffer manipulation
-      erb_buffer = eval('_erbout', block.binding)
-      saved_content = erb_buffer.dup
-      erb_buffer.clear
-      yield
-      captured = erb_buffer.dup
-      erb_buffer.replace(saved_content)
+    # * *erb_block* (Proc): ERB block containing the markdown sections
+    def ordered_todo_list(&erb_block)
+      transform_erb_block(erb_block) do |erb_content|
+        # Split into sections by ## headings
+        # Number sections starting from 2 and strip trailing whitespace
+        step_number = 2
+        numbered_sections = erb_content.
+          strip.
+          split(/^(?=### )/).
+          reject { |s| s.strip.empty? }.
+          map do |section|
+            numbered = section.sub(/^### /, "### #{step_number}. ").rstrip
+            step_number += 1
+            numbered
+          end
 
-      # Dedent the captured content: remove common leading whitespace
-      lines = captured.lines
-      min_indent = lines.reject { |l| l.strip.empty? }.map { |l| l.match(/^(\s*)/)[1].length }.min || 0
-      # Split into sections by ## headings
-      # Number sections starting from 2 and strip trailing whitespace
-      step_number = 2
-      numbered_sections = lines.
-        map { |l| l.strip.empty? ? "\n" : l[min_indent..] }.
-        join.
-        strip.
-        split(/^(?=### )/).
-        reject { |s| s.strip.empty? }.
-        map do |section|
-          numbered = section.sub(/^### /, "### #{step_number}. ").rstrip
-          step_number += 1
-          numbered
-        end
+        # Compose the full output and append directly to ERB buffer
+        # (we use <% %> not <%= %> since standard ERB doesn't support <%= method do %>)
+        <<~EO_Markdown
+          ## Sequential steps to be followed when using this skill
 
-      # Compose the full output and append directly to ERB buffer
-      # (we use <% %> not <%= %> since standard ERB doesn't support <%= method do %>)
-      erb_buffer << <<~EO_Markdown
-        ## Sequential steps to be followed when using this skill
+          When #{goal_sentence}, follow those steps.
 
-        When #{goal_sentence}, follow those steps.
+          #{init_skill_checklist.rstrip}
 
-        #{init_skill_checklist.rstrip}
+          ### 1. Inform the user
 
-        ### 1. Inform the user
+          - #{announce}
 
-        - #{announce}
+          #{numbered_sections.join("\n\n")}
 
-        #{numbered_sections.join("\n\n")}
-
-        #{validate_skill_checklist.rstrip}
-      EO_Markdown
+          #{validate_skill_checklist.rstrip}
+        EO_Markdown
+      end
     end
 
     # Return the skill config hash from its .skill_config.yml file, if it exists.
@@ -181,6 +171,28 @@ module XAeonAgentsSkills
     # * String: Skill name being generated
     def name
       current_erb_file.match(/\/skills\.src\/([^\/]+)\//)[1]
+    end
+
+    # Generate the "When to use it" section for a skill.
+    # This helper automatically includes standard items and custom usage instructions.
+    #
+    # Parameters::
+    # * *erb_block* (Proc): ERB block containing custom usage instructions
+    #
+    # Result::
+    # * String: The formatted "When to use it" section
+    def when_to_use(&erb_block)
+      transform_erb_block(erb_block) do |erb_content|
+        blocks = []
+        blocks << '- This skill can be used when in Plan mode.' if @plan
+        blocks << "- Always use it every time another skill specifically mentions `skill: #{name}`."
+        blocks << erb_content
+        <<~EO_Markdown
+          ## When to use it
+
+          #{blocks.join("\n").rstrip}
+        EO_Markdown
+      end
     end
 
     # Small class that can serve as a container for ERB evaluation with our DSL
@@ -252,6 +264,31 @@ module XAeonAgentsSkills
         - Confirm each one was executed.
         - If any step was not executed, execute it now.
       EO_Markdown
+    end
+
+    # Capture the ERB content inside a code block, and return a user-transformed version of it.
+    # Handle indentation properly by removing the indentation caused by the ERB call itself.
+    #
+    # Parameters::
+    # * *erb_block* (Proc): The block containing ERB content
+    # * *block* (Proc): The code that should transform the content:
+    #   * Parameters::
+    #     * *erb_content* (String): Original content
+    #   * Result::
+    #     * String: Transformed content
+    def transform_erb_block(erb_block)
+      # Capture the ERB block content using buffer manipulation
+      erb_buffer = eval('_erbout', erb_block.binding)
+      saved_content = erb_buffer.dup
+      erb_buffer.clear
+      erb_block.call
+      captured = erb_buffer.dup
+      erb_buffer.replace(saved_content)
+
+      # Dedent the captured content: remove common leading whitespace
+      lines = captured.lines
+      min_indent = lines.reject { |l| l.strip.empty? }.map { |l| l.match(/^(\s*)/)[1].length }.min || 0
+      erb_buffer << yield(lines.map { |l| l.strip.empty? ? "\n" : l[min_indent..] }.join)
     end
 
   end

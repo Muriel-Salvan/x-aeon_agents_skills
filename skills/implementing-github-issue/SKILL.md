@@ -50,8 +50,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to implement a GitHub issue.
 - Always use it every time another skill specifically mentions `skill: implementing-github-issue`.
+- Always use it every time the user asks you to implement a GitHub issue.
 - Always use it every time you need to implement a GitHub issue.
 
 ## Usage and code examples

@@ -1,4 +1,4 @@
-RSpec.describe 'generate_skills executable' do
+describe 'generate_skills executable' do
 
   describe 'basic functionality' do
 

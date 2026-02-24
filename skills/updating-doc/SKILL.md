@@ -101,8 +101,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to update documentation.
 - Always use it every time another skill specifically mentions `skill: updating-doc`.
+- Always use it every time the user asks you to update documentation.
 - Use it every time you think documentation should be updated after implementing some changes in the code or tests.
 
 ## Usage and code examples

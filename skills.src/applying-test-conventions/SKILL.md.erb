@@ -83,8 +83,7 @@ Those conventions use examples using Ruby, but are applicable to any programming
   rationale: 'Unit tests should have deterministic behaviour, whether they are run alone or grouped with other tests.'
 ) %>
 
-## When to use it
-
-- Always use it every time the user asks you to write or modify tests.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you need to write or modify tests.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to write or modify tests.
+  - Always use it every time you need to write or modify tests.
+<% end -%>

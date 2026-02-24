@@ -20,11 +20,10 @@
   - Always use `skill: validating-production-quality` before attempting task completion to make sure that all needed quality gates are passing.
 <% end -%>
 
-## When to use it
-
-- Always use it every time the user asks you to implement a GitHub issue.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you need to implement a GitHub issue.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to implement a GitHub issue.
+  - Always use it every time you need to implement a GitHub issue.
+<% end -%>
 
 ## Usage and code examples
 

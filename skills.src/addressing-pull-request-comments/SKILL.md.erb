@@ -119,12 +119,10 @@
   ```
 <% end -%>
 
-## When to use it
-
-- This skill can be used during Plan mode till code changes become needed.
-- Always use it every time the user asks you to address Pull Request comments.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you need to address Pull Request comments.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to address Pull Request comments.
+  - Always use it every time you need to address Pull Request comments.
+<% end -%>
 
 ## Usage and code examples
 

@@ -147,9 +147,9 @@ Before declaring the task complete:
 
 ## When to use it
 
-- This skill can be used during Plan mode till code changes become needed.
-- Always use it every time the user asks you to address Pull Request comments.
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: addressing-pull-request-comments`.
+- Always use it every time the user asks you to address Pull Request comments.
 - Always use it every time you need to address Pull Request comments.
 
 ## Usage and code examples

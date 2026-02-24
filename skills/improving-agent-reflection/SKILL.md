@@ -132,6 +132,6 @@ Do not offer reflection if:
 
 ## When to use it
 
-- Always use it every time the user asks you to improve rules or skills.
 - Always use it every time another skill specifically mentions `skill: improving-agent-reflection`.
+- Always use it every time the user asks you to improve rules or skills.
 - Always use it before attempting completion of a task that involved user feedback on active skills and rules.

@@ -37,6 +37,6 @@ See [references/conventions-for-ruby-exceptions-handling.md](references/conventi
 
 ## When to use it
 
-- Always use it every time the user asks you to use Ruby conventions.
 - Always use it every time another skill specifically mentions `skill: applying-ruby-conventions`.
+- Always use it every time the user asks you to use Ruby conventions.
 - Always use it every time you need to write or modify Ruby code.

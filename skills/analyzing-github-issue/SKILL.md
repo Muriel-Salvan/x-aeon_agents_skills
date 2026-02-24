@@ -64,9 +64,9 @@ Before declaring the task complete:
 
 ## When to use it
 
-- This skill can be used during Plan mode and is totally safe.
-- Always use it every time the user asks you to analyze a given GitHub issue.
+- This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: analyzing-github-issue`.
+- Always use it every time the user asks you to analyze a given GitHub issue.
 - Always use it every time you need to analyze a GitHub issue to gather requirements.
 
 ## Usage and code examples

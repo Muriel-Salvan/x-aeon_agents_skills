@@ -78,8 +78,8 @@ Before declaring the task complete:
 
 ## When to use it
 
-- Always use it every time the user asks you to commit your changes.
 - Always use it every time another skill specifically mentions `skill: committing-changes`.
+- Always use it every time the user asks you to commit your changes.
 - Always use it every time you need to commit your changes.
 
 ## Usage and code examples

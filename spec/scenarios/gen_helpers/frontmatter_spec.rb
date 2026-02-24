@@ -1,4 +1,4 @@
-RSpec.describe XAeonAgentsSkills::GenHelpers do
+describe XAeonAgentsSkills::GenHelpers do
 
   describe 'skill' do
 

@@ -31,8 +31,7 @@
   rationale: 'The current branch gives you a safe space to modify files without impacting other branches.'
 ) %>
 
-## When to use it
-
-- Always use it every time the user asks you to follow project rules.
-- Always use it every time another skill specifically mentions `skill: <%= name %>`.
-- Always use it every time you implement a task in a project.
+<% when_to_use do -%>
+  - Always use it every time the user asks you to follow project rules.
+  - Always use it every time you implement a task in a project.
+<% end -%>

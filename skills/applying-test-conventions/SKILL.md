@@ -98,6 +98,6 @@ Unit tests should have deterministic behaviour, whether they are run alone or gr
 
 ## When to use it
 
-- Always use it every time the user asks you to write or modify tests.
 - Always use it every time another skill specifically mentions `skill: applying-test-conventions`.
+- Always use it every time the user asks you to write or modify tests.
 - Always use it every time you need to write or modify tests.

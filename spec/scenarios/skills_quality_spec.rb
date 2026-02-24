@@ -1,6 +1,6 @@
 require 'x-aeon_agents_skills/gen_helpers'
 
-RSpec.describe 'Generated skills quality' do
+describe 'Generated skills quality' do
 
   COMPLIANCE_SCORE_THRESHOLD = 90
   QUALITY_SCORE_THRESHOLDS = {
