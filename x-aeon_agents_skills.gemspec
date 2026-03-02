@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.1'
 
+  spec.add_dependency 'ai-agents', '~> 0.9'
   spec.add_dependency 'front_matter_parser', '~> 1.0'
   spec.add_dependency 'json', '~> 2.18'
   spec.add_dependency 'sqlite3', '~> 2.9'
