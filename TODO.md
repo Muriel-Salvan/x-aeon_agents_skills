@@ -1,4 +1,3 @@
-* Use ai-agents
 * Make the WSL CLI tool a Ruby script to avoid paths and slashes issues
 * The model reported is wrong. Fix this.
 * The list of rules should also have a checklist. We see that some of them are missed. It should report a summary of all the rules it has read.

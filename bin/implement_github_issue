@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+# Parameters:
+# * *github_issue_number* (Integer): The Github issue number to implement
+issue_number = Integer(ARGV[0])
+
+require 'x-aeon_agents_skills/agents'
+
+XAeonAgentsSkills::Agents.configure(
+  cline_api_key: Bundler.with_unbundled_env { `launcher safe -- "Cline API key"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
+  debug: true
+)
+
+XAeonAgentsSkills::Agents.implement_requirements(`gh issue view #{issue_number} --json=number,title,body,comments,labels,state,url`)
+
+# XAeonAgentsSkills::Agents.implement_requirements('Implement a simple Ruby executable named bin/hello that will output "Hello World" to stdout')
