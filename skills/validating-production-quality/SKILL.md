@@ -58,7 +58,7 @@ python -m unittest
 
 Example, in case of merge commits found:
 ```bash
-git log --oneline --ancestry-path main..my_branch
+git log --oneline --ancestry-path github/main..my_branch
 git rebase main
 git push github --force-with-lease
 ```
@@ -70,7 +70,7 @@ git push github --force-with-lease
 
 Example to check for a Pull Request:
 ```bash
-gh pr list
+gh pr list --head my_branch
 # Execute skill creating-pull-request if our branch is not in this list
 ```
 
@@ -104,11 +104,11 @@ python -m unittest
 # 4. Run skill syncing-branch-with-base
 
 # 5. Remove merge commits
-git log --oneline --ancestry-path main..my_branch
+git log --oneline --ancestry-path github/main..my_branch
 git rebase main
 git push github --force-with-lease
 
 # 6. Create Pull Request if not already present
-gh pr list
+gh pr list --head my_branch
 # Run skill creating-pull-request
 ```
