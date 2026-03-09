@@ -1,4 +1,5 @@
 require 'agents'
+require 'front_matter_parser'
 require 'ruby_llm/model/info'
 require 'x-aeon_agents_skills/helpers'
 require 'x-aeon_agents_skills/providers/cline_cli'
@@ -36,6 +37,7 @@ module XAeonAgentsSkills
       # * *default_cline_model* (String): Default Cline model [default: 'kwaipilot/kat-coder-pro']
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
+      # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
@@ -74,14 +76,16 @@ module XAeonAgentsSkills
           useAutoCondense: true
         },
         default_cline_cli_args: '--thinking 1024',
+        default_cline_skills: [],
         debug: false
       )
         @config = {
-          cline_api_key: cline_api_key,
-          default_cline_model: default_cline_model,
-          default_cline_config: default_cline_config,
-          default_cline_cli_args: default_cline_cli_args,
-          debug: debug
+          cline_api_key:,
+          default_cline_model:,
+          default_cline_config:,
+          default_cline_cli_args:,
+          default_cline_skills:,
+          debug:
         }
 
         # Register our providers
@@ -170,6 +174,11 @@ module XAeonAgentsSkills
         )
         planner_agent = cline_agent(
           name: 'Planner',
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            enforcing-project-rules
+          ],
           config: Helpers.deep_merge(
             config[:default_cline_config],
             # Planning still needs to create the PLAN.md file
@@ -202,6 +211,12 @@ module XAeonAgentsSkills
         )
         developer_agent = cline_agent(
           name: 'Developer',
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            editing-files
+            enforcing-project-rules
+          ],
           instructions: <<~EO_Instructions
             Implement a task by following an implementation plan.
           EO_Instructions
@@ -236,6 +251,7 @@ module XAeonAgentsSkills
             #{requirements}
           PROMPT
         )
+        raise "Error: #{planner_result.error}" unless planner_result.error.nil?
         raise "Plan file #{plan_file} hasn't been created" unless File.exist?(plan_file)
 
         puts '===== 2. Develop...'
@@ -247,8 +263,9 @@ module XAeonAgentsSkills
             #{File.read(plan_file)}
           PROMPT
         )
+        raise "Error: #{developer_result.error}" unless developer_result.error.nil?
+
         puts "===== OUTPUT:\n#{developer_result.output}\n====="
-        puts "===== ERROR:\n#{developer_result.error}\n====="
       end
 
       private
@@ -261,12 +278,14 @@ module XAeonAgentsSkills
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
       # * *config* (Hash): Cline config to be used [default: Agents.config[:default_cline_config]]
       # * *cli_args* (String): Cline CLI additional arguments [default: Agents.config[:default_cline_cli_args]]
+      # * *skills* (Array<String>): List of skills to be associated to this agent [default: Agents.config[:default_cline_skills]]
       def cline_agent(
         name:,
         instructions:,
         model: Agents.config[:default_cline_model],
         config: Agents.config[:default_cline_config],
-        cli_args: Agents.config[:default_cline_cli_args]
+        cli_args: Agents.config[:default_cline_cli_args],
+        skills: Agents.config[:default_cline_skills]
       )
         ::Agents::Agent.new(
           model:,
@@ -274,8 +293,9 @@ module XAeonAgentsSkills
           name:,
           params: {
             clinecli: {
-              config: config,
-              cli_args: cli_args
+              config:,
+              cli_args:,
+              skills:
             }
           },
           instructions: <<~EO_System_Prompt
