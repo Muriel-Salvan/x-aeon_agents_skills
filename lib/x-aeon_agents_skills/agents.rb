@@ -165,7 +165,8 @@ module XAeonAgentsSkills
       # Parameters::
       # * *requirements* (String): Requirements to be implemented
       def implement_requirements(requirements)
-        plan_file = "PLAN_#{Time.now.strftime('%Y-%m-%d-%H-%M-%S')}.md"
+        plan_file = "tmp/plans/PLAN_#{Time.now.strftime('%Y-%m-%d-%H-%M-%S')}.md"
+        FileUtils.mkdir_p File.dirname(plan_file)
         manager_agent = cline_agent(
           name: 'Manager',
           instructions: <<~EO_Instructions
@@ -218,19 +219,39 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Implement a task by following an implementation plan.
+            Implement a task by following all the steps of an implementation plan.
           EO_Instructions
         )
         tester_agent = cline_agent(
           name: 'Tester',
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            editing-files
+            enforcing-project-rules
+          ],
           instructions: <<~EO_Instructions
-            Verify regressions by running unit tests and fix any issue that unit tests are surfacing.
+            Verify regressions from the full tests suite run.
+            Fix any issue that unit tests are surfacing.
+            Run tests again if needed using the provided tests command to test your own fixes.
+            Make sure all tests are running without issue.
+
+            For information, the implementation that may have incurred regressions has be planned in the file #{plan_file}.
           EO_Instructions
         )
         documenter_agent = cline_agent(
           name: 'Documenter',
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            editing-files
+            enforcing-project-rules
+            updating-doc
+          ],
           instructions: <<~EO_Instructions
-            Update relevant documentation when a task is being implemented
+            Update relevant documentation when a task is being implemented.
+
+            For information, the task that should be documented has be planned in the file #{plan_file}.
           EO_Instructions
         )
         releaser_agent = cline_agent(
@@ -240,35 +261,68 @@ module XAeonAgentsSkills
           EO_Instructions
         )
 
-        runner = ::Agents::Runner.new
+        with_runner do
+          run(
+            planner_agent,
+            <<~EO_Prompt
+              # Task requirements for which we need the implementation plan
 
-        puts '===== 1. Plan...'
-        planner_result = runner.run(
-          planner_agent,
-          <<~PROMPT
-            # Task requirements for which we need the implementation plan
+              #{requirements}
+            EO_Prompt
+          )
+          raise "Plan file #{plan_file} hasn't been created" unless File.exist?(plan_file)
+          run(
+            developer_agent,
+            <<~EO_Prompt
+              Follow the implementation plan.
 
-            #{requirements}
-          PROMPT
-        )
-        raise "Error: #{planner_result.error}" unless planner_result.error.nil?
-        raise "Plan file #{plan_file} hasn't been created" unless File.exist?(plan_file)
+              #{File.read(plan_file)}
+            EO_Prompt
+          )
+          tests_cmd = 'bundle exec rspec --format documentation'
+          run(
+            tester_agent,
+            <<~EO_Prompt
+              # Full result of the test suite run
 
-        puts '===== 2. Develop...'
-        developer_result = runner.run(
-          developer_agent,
-          <<~PROMPT
-            Follow the implementation plan.
-
-            #{File.read(plan_file)}
-          PROMPT
-        )
-        raise "Error: #{developer_result.error}" unless developer_result.error.nil?
-
-        puts "===== OUTPUT:\n#{developer_result.output}\n====="
+              The full tests suite has been run using the following command:
+              ```bash
+              #{tests_cmd}
+              ```
+              Here is the full output:
+              ```
+              #{XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, debug: config[:debug], expected_exit_status: nil)[:stdout]}
+              ```
+            EO_Prompt
+          )
+          run(documenter_agent)
+        end
+        puts
+        puts 'Requirements implemented successfully'
       end
 
       private
+
+      # Setup an agents runner.
+      #
+      # Parameters::
+      # * Proc: Code called with the runner setup
+      def with_runner
+        @runner = ::Agents::Runner.new
+        yield
+      end
+
+      # Run an agent with a prompt.
+      #
+      # Parameters::
+      # * *agent* (::Agents::Agent): The agent to run
+      # * *prompt* (String): Additional prompt [default = '']
+      def run(agent, prompt = '')
+        puts
+        puts "===== #{agent.name}..."
+        result = @runner.run(agent, prompt)
+        raise "Error: #{result.error}" unless result.error.nil?
+      end
 
       # Create a Cline agent
       #
@@ -292,7 +346,10 @@ module XAeonAgentsSkills
           provider: 'clinecli',
           name:,
           params: {
-            clinecli: {
+            agent: {
+              name:
+            },
+            cline: {
               config:,
               cli_args:,
               skills:
