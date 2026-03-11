@@ -165,6 +165,15 @@ module XAeonAgentsSkills
             else
               "!!! Unknown tool @ts #{message[:ts]}: #{message}"
             end
+          when 'task_progress'
+            # Count completed vs total tasks
+            completed_tasks = message[:text].scan(/- \[x\]/).size
+            total_tasks = message[:text].scan(/- \[[ x]\]/).size
+            "Task progress: #{completed_tasks}/#{total_tasks} tasks"
+          when 'completion_result'
+            "Task completed: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'error'
+            "Error: #{message[:text].strip.gsub("\n", ' ')}"
           else
             "!!! Unknown say @ts #{message[:ts]}: #{message}"
           end
