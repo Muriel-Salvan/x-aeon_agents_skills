@@ -213,6 +213,21 @@ module XAeonAgentsSkills
             case message[:ask]
             when 'resume_task'
               'Resume task'
+            when 'resume_completed_task'
+              'Resume completed task'
+            when 'api_req_failed'
+              details = JSON.parse(message[:text], symbolize_names: true)
+              "API request failed - #{details[:code]} - #{details[:message].strip.gsub("\n", ' ')}"
+            when 'command_output'
+              "Command output: #{message[:text].strip.gsub("\n", ' ')}"
+            when 'completion_result'
+              'Completion result'
+            when 'followup'
+              details = JSON.parse(message[:text], symbolize_names: true)
+              "Follow-up - #{details[:question]}#{details[:options].nil? || details[:options].empty? ? '' : " - Options: #{details[:options].join(', ')}"}"
+            when 'plan_mode_respond'
+              details = JSON.parse(message[:text], symbolize_names: true)
+              "Plan mode respond - #{details[:response].strip.gsub("\n", ' ')}"
             else
               "!!! Unknown ask @ts #{message[:ts]}: #{message}"
             end
