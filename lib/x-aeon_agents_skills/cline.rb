@@ -268,7 +268,7 @@ module XAeonAgentsSkills
               if new_ui_messages_file_mtime != ui_messages_file_mtime
                 # New messages have been added or old ones were updated
                 new_messages = JSON.parse(safe_read(ui_messages_file), symbolize_names: true)
-                new_messages.select { |message| message[:partial].nil? || message[:partial] } if ignore_partials
+                new_messages.select! { |message| message[:partial].nil? || !message[:partial] } if ignore_partials
                 unless new_messages.empty?
                   last_idx = new_messages.size - 1
                   new_messages.each.with_index do |message, idx|

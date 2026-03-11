@@ -60,7 +60,7 @@ module XAeonAgentsSkills
               completion_result = message[:text]
             end
           end,
-          ignore_partials: false
+          ignore_partials: true
         )
         {
           body: completion_result,
