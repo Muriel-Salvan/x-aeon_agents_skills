@@ -33,3 +33,4 @@
   * Models are good at performing small tasks, not huge workflows. We need workflows orchestrators handling context and memory.
 * Check anthropic's skill-creator skill: https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md
 * Check security warnings that we got from installation and fix them.
+* Move the Cline Ruby connector into a Rubygem.

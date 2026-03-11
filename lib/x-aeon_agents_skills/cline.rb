@@ -177,6 +177,20 @@ module XAeonAgentsSkills
             else
               "!!! Unknown tool @ts #{message[:ts]}: #{message}"
             end
+          when 'api_req_retried'
+            "API request retried: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'command'
+            "Command: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'command_output'
+            "Command output: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'diff_error'
+            "Diff error: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'error_retry'
+            "Error retry: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'reasoning'
+            "Reasoning: #{message[:text].strip.gsub("\n", ' ')}"
+          when 'user_feedback'
+            "User feedback: #{message[:text].strip.gsub("\n", ' ')}"
           when 'task_progress'
             # Count completed vs total tasks
             completed_tasks = message[:text].scan(/- \[x\]/).size
