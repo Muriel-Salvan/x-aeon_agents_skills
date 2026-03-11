@@ -1,3 +1,4 @@
+require 'ellipsized'
 require 'fileutils'
 require 'front_matter_parser'
 require 'json'
@@ -127,35 +128,59 @@ module XAeonAgentsSkills
     #
     # Parameters::
     # * *message* (Hash): Message to translate to humans
+    # * *limit* (Integer): Number of characters the message should be limited to [default: 128]
     # Result::
     # * String: The human translation
-    def self.human_message(message)
-      "[#{Time.at(message[:ts] / 1000.0).utc.strftime('%Y-%m-%d %H:%M:%S')}] - #{
+    def self.human_message(message, limit: 128)
+      ts_str = "[#{Time.at(message[:ts] / 1000.0).strftime('%H:%M:%S')}] - "
+      "#{ts_str}#{
         case message[:type]
         when 'say'
           case message[:say]
           when 'text', 'task'
-            message[:text]
+            message[:text].strip.gsub("\n", ' ')
           when 'api_req_started'
             api_details = JSON.parse(message[:text], symbolize_names: true)
             fields = []
             fields << "#{api_details[:cost]}$" if api_details.key?(:cost)
-            "#{fields.empty? ? '' : "#{fields.join(' ')} - "}#{api_details[:request]}"
+            sections = parse_sections(api_details[:request])
+            env_section = sections.find { |section| section[:name] == 'environment_details' }
+            if !env_section.nil? && env_section[:content] =~ /^([^ ]+) \/ ([^ ]+) tokens used \((\d+)%\)$/
+              tokens_used, tokens_limit, tokens_percent = Regexp.last_match[1..3]
+              fields << "#{tokens_used}/#{tokens_limit}"
+            end
+            fields_str = "#{fields.empty? ? '' : "#{fields.join(' ')} - "}"
+            section_delimiter = '|'
+            section_size = (limit - ts_str.size - fields_str.size) / sections.size - section_delimiter.size
+            "#{fields_str}#{
+              sections.map do |section|
+                "#{section[:name].nil? ? '' : "#{section[:name]}: "}#{section[:content].strip.gsub("\n", ' ')}".ellipsized(section_size)
+              end.join('|')
+            }"
           when 'tool'
             tool_details = JSON.parse(message[:text], symbolize_names: true)
             case tool_details[:tool]
             when 'readFile'
               "[readFile] - #{tool_details[:path]}"
             else
-              "!!! Unknown tool: #{message}"
+              "!!! Unknown tool @ts #{message[:ts]}: #{message}"
             end
           else
-            "!!! Unknown say: #{message}"
+            "!!! Unknown say @ts #{message[:ts]}: #{message}"
           end
+        when 'ask'
+          "Ask user: #{
+            case message[:ask]
+            when 'resume_task'
+              'Resume task'
+            else
+              "!!! Unknown ask @ts #{message[:ts]}: #{message}"
+            end
+          }"
         else
-          "!!! Unknown type: #{message}"
+          "!!! Unknown type @ts #{message[:ts]}: #{message}"
         end
-      }"
+      }".ellipsized(limit)
     end
 
     private
@@ -366,6 +391,48 @@ module XAeonAgentsSkills
         retry
       end
       file_content
+    end
+
+    # Use a single regex to match complete tag pairs
+    # This regex matches <tag>content</tag> patterns
+    COMPLETE_TAG_PATTERN = %r{<([a-zA-Z0-9_]*)>(.*?)</\1>}m
+
+    # Parse sections from a string with HTML-like tags.
+    # Sections are delimited by html-like tags, for example `<toto>...</toto>` is the section named `toto`.
+    # Sections without tags should still be part of the result, with a nil section name.
+    # Only considers top-level tags (no recursion).
+    #
+    # Parameters::
+    # * *content* (String): The input string to parse
+    # Result::
+    # * Array<Hash>: List of sections:
+    #   * *name* (String or nil): Section name
+    #   * *content* (String): Section content
+    def self.parse_sections(content)
+      sections = []
+      current_pos = 0
+      content_length = content.length
+      # Use cursor progression to maintain order
+      while current_pos < content_length
+        # Find the next complete tag pair starting from current position
+        match = content.match(COMPLETE_TAG_PATTERN, current_pos)
+        if match
+          # Add any untagged content before this tag
+          if match.begin(0) > current_pos
+            untagged_content = content[current_pos...match.begin(0)]
+            sections << { name: nil, content: untagged_content } unless untagged_content.strip.empty?
+          end
+          # Add the tagged section
+          sections << { name: match[1], content: match[2] }
+          current_pos = match.end(0)
+        else
+          # No more tags found, add remaining content
+          remaining_content = content[current_pos..-1]
+          sections << { name: nil, content: remaining_content } unless remaining_content.strip.empty?
+          current_pos = content_length
+        end
+      end
+      sections
     end
 
   end

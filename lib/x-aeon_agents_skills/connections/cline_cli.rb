@@ -1,4 +1,3 @@
-require 'ellipsized'
 require 'x-aeon_agents_skills/cline'
 require 'x-aeon_agents_skills/logger'
 
@@ -35,7 +34,7 @@ module XAeonAgentsSkills
           skillkit_agents: true,
           cli_args: payload[:cline][:cli_args],
           on_message: proc do |message, last, _previous_version|
-            log_debug { Cline.human_message(message).ellipsized(128) }
+            log_debug { Cline.human_message(message, limit: 128) }
             if message[:type] == 'ask' && last
               case message[:ask]
               when 'plan_mode_respond'
