@@ -3,20 +3,24 @@ require 'front_matter_parser'
 require 'json'
 require 'time'
 require 'tmpdir'
+require 'x-aeon_agents_skills/logger'
 
 module XAeonAgentsSkills
 
   # Cline Ruby connector
   class Cline
 
+    include Logger
+
     # Constructor
     #
     # Parameters::
     # * *api_key* (String): The Cline API key
-    # * *debug* (Boolean): Do we activate debug mode? [default: false]
-    def initialize(api_key, debug: false)
+    def initialize(api_key)
       @api_key = api_key
-      @debug = debug
+      @cline_pid = nil
+      @task_id = nil
+      @next_prompt = nil
     end
 
     # Send a prompt to a Cline agent
@@ -31,7 +35,10 @@ module XAeonAgentsSkills
     # * *on_message* (Proc or nil): Callback to be called everytime a new message happens in the task being executed, or nil if no callback [default: nil]
     #   * Parameters::
     #     * *message* (Hash): Message that has happened
-    def prompt(json_prompt, model:, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil)
+    #     * *last* (Boolean): Is this the last message fetched?
+    #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
+    # * *stdout_echo* (Boolean): Do we echo stdout of Cline CLI? [default: false]
+    def prompt(json_prompt, model:, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false)
       with_temp_dir do |temp_dir|
         config_dir = "#{temp_dir}/cline_config"
         log_debug "Temporary Cline config dir: #{config_dir}"
@@ -52,24 +59,103 @@ module XAeonAgentsSkills
           )
         )
 
-        # Generate prompt
-        prompt_file = "#{temp_dir}/prompt.json"
-        File.write(prompt_file, JSON.pretty_generate(json_prompt))
-
         with_selected_skills(skills, config_dir:, skillkit_agents:) do
           with_messages_monitoring(config_dir:, on_message:) do
-            # Run the agent
-            cmd = "cline --config #{config_dir} --act #{@debug ? '--verbose' : ''} --json #{cli_args} < #{prompt_file}"
-            log_debug "Cline CLI: #{cmd}"
-            XAeonAgentsSkills::Helpers.run_cmd(
-              cmd,
-              debug: @debug,
-              on_stdout: proc { |line| log_debug line },
-              on_stderr: proc { |line| $stderr.puts line }
-            )
+            @task_id = nil
+            begin
+              @next_prompt = json_prompt
+              idx_prompt = 0
+              while !@next_prompt.nil?
+                # Generate prompt file
+                prompt_file = "#{temp_dir}/prompt_#{idx_prompt}.json"
+                File.write(prompt_file, @next_prompt.is_a?(String) ? @next_prompt : JSON.pretty_generate(@next_prompt))
+                @next_prompt = nil
+                idx_prompt += 1
+                begin
+                  # Run the agent
+                  cmd = "cline --config #{config_dir} --act #{Logger.debug ? '--verbose' : ''} --json #{cli_args} #{@task_id.nil? ? '' : "--taskId #{@task_id}"} < #{prompt_file}"
+                  log_debug "Cline CLI: #{cmd}"
+                  begin
+                    XAeonAgentsSkills::Helpers.run_cmd(
+                      cmd,
+                      on_start: proc do |_stdin, _stdout, _stderr, wait_thr|
+                        @cline_pid = wait_thr.pid
+                      end,
+                      on_stdout: proc do |line|
+                        puts line if stdout_echo
+                        if line =~ /^\{"type":"task_started","taskId":"(\d+)"\}$/
+                          @task_id = Integer(Regexp.last_match[1])
+                          log_debug "Started task ID #{@task_id}"
+                        end
+                      end,
+                      on_stderr: proc { |line| $stderr.puts line }
+                    )
+                  ensure
+                    @cline_pid = nil
+                  end
+                rescue Helpers::UnexpectedExitStatusError
+                  # If another thread was setting @next_prompt, then we expected this interruption: we want to resume it
+                  raise if @next_prompt.nil?
+                end
+              end
+            ensure
+              @task_id = nil
+            end
           end
         end
       end
+    end
+
+    # Give some user feedback on a running task.
+    # This will interrupt the current task, and resume it with the user feedback.
+    #
+    # Parameters::
+    # * *message* (String): The feedback to append
+    def user_feedback(message)
+      raise 'No task current running' if @cline_pid.nil?
+      @next_prompt = message
+      log_debug "Interrupt current task with PID #{@cline_pid}"
+      if Gem.win_platform?
+        system("taskkill /PID #{@cline_pid} /T /F", exception: true)
+      else
+        Process.kill('INT', @cline_pid)
+      end
+    end
+
+    # Return a human-friendly version of a message.
+    # Useful for stdout or logging.
+    #
+    # Parameters::
+    # * *message* (Hash): Message to translate to humans
+    # Result::
+    # * String: The human translation
+    def self.human_message(message)
+      "[#{Time.at(message[:ts] / 1000.0).utc.strftime('%Y-%m-%d %H:%M:%S')}] - #{
+        case message[:type]
+        when 'say'
+          case message[:say]
+          when 'text', 'task'
+            message[:text]
+          when 'api_req_started'
+            api_details = JSON.parse(message[:text], symbolize_names: true)
+            fields = []
+            fields << "#{api_details[:cost]}$" if api_details.key?(:cost)
+            "#{fields.empty? ? '' : "#{fields.join(' ')} - "}#{api_details[:request]}"
+          when 'tool'
+            tool_details = JSON.parse(message[:text], symbolize_names: true)
+            case tool_details[:tool]
+            when 'readFile'
+              "[readFile] - #{tool_details[:path]}"
+            else
+              "!!! Unknown tool: #{message}"
+            end
+          else
+            "!!! Unknown say: #{message}"
+          end
+        else
+          "!!! Unknown type: #{message}"
+        end
+      }"
     end
 
     private
@@ -81,6 +167,8 @@ module XAeonAgentsSkills
     # * *on_message* (Proc or nil): Callback to be called everytime a new message happens in the task being executed, or nil if no callback
     #   * Parameters::
     #     * *message* (Hash): Message that has happened
+    #     * *last* (Boolean): Is this the last message fetched?
+    #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
     # * Proc: Code called with monitoring in place
     def with_messages_monitoring(config_dir:, on_message:)
       if on_message.nil?
@@ -90,17 +178,24 @@ module XAeonAgentsSkills
         monitoring_thread = Thread.new do
           ui_messages_file = nil
           ui_messages_file_mtime = nil
-          ui_messages_file_last_ts = 0
+          # Keep messages per timestamp to detect updates
+          messages = {}
           while monitoring
             ui_messages_file = Dir["#{config_dir}/data/tasks/*/ui_messages.json"].first if ui_messages_file.nil?
             unless ui_messages_file.nil?
               new_ui_messages_file_mtime = File.mtime(ui_messages_file)
               if new_ui_messages_file_mtime != ui_messages_file_mtime
-                # New messages have been added
-                new_messages = JSON.parse(File.read(ui_messages_file), symbolize_names: true).select { |message| message[:ts] > ui_messages_file_last_ts }
+                # New messages have been added or old ones were updated
+                new_messages = JSON.parse(safe_read(ui_messages_file), symbolize_names: true)
                 unless new_messages.empty?
-                  new_messages.each { |message| on_message.call(message) }
-                  ui_messages_file_last_ts = new_messages.last[:ts]
+                  last_idx = new_messages.size - 1
+                  new_messages.each.with_index do |message, idx|
+                    ts = message[:ts]
+                    if message != messages[ts]
+                      on_message.call(message, idx == last_idx, messages[ts])
+                      messages[ts] = message
+                    end
+                  end
                 end
                 ui_messages_file_mtime = new_ui_messages_file_mtime
               end
@@ -195,14 +290,6 @@ module XAeonAgentsSkills
       File.expand_path(path).gsub(File::SEPARATOR, File::ALT_SEPARATOR || File::SEPARATOR)
     end
 
-    # Log a message if debug was activated
-    #
-    # Parameters::
-    # * *msg* (String): Message to be displayed
-    def log_debug(msg)
-      puts "[DEBUG] - #{msg}" if @debug
-    end
-
     # Setup a temporary directory.
     # In case of debug activated, create the temporary directory from the current one and don't delete it.
     #
@@ -211,7 +298,7 @@ module XAeonAgentsSkills
     #   * Parameters::
     #     * *temp_dir* (String): The temporary directory
     def with_temp_dir(&block)
-      if @debug
+      if Logger.debug
         temp_dir = "tmp/cline/#{unique_id { |id| !File.exist?("tmp/cline/#{id}") }}"
         FileUtils.mkdir_p temp_dir
         block.call(temp_dir)
@@ -256,6 +343,29 @@ module XAeonAgentsSkills
           end
         end
       end
+    end
+
+    # Try to read a file with retries in case other processes are using it.
+    #
+    # Parameters::
+    # * *file* (String): Path to read
+    # * *max_retries* (Integer): Number of retries in case of concurrent access [default: 3]
+    # Result::
+    # * String: The file content
+    def safe_read(file, max_retries: 3)
+      retries = 0
+      file_content = nil
+      begin
+        file_content = File.read(file)
+      rescue Errno::EACCES, Errno::EAGAIN
+        # Could be that the file is being written at the same time.
+        # Just try again.
+        retries += 1
+        raise if retries > max_retries
+        sleep(0.05 * retries)
+        retry
+      end
+      file_content
     end
 
   end

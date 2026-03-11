@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+# Parameters:
+# * *prompt* (String): The prompt to give to the AI agent
+prompt = ARGV[0]
+
+require 'x-aeon_agents_skills/agents'
+
+XAeonAgentsSkills::Agents.configure(
+  cline_api_key: Bundler.with_unbundled_env { `launcher safe -- "Cline API key"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
+  debug: false
+)
+
+XAeonAgentsSkills::Agents.execute_simple_task(prompt)

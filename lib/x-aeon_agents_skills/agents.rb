@@ -2,6 +2,7 @@ require 'agents'
 require 'front_matter_parser'
 require 'ruby_llm/model/info'
 require 'x-aeon_agents_skills/helpers'
+require 'x-aeon_agents_skills/logger'
 require 'x-aeon_agents_skills/providers/cline_cli'
 require 'x-aeon_agents_skills/providers/cline'
 
@@ -149,10 +150,19 @@ module XAeonAgentsSkills
 
         # Initialize our dependencies
         ENV['RUBYLLM_DEBUG'] = '1' if config[:debug]
+        Logger.debug = config[:debug]
         ::Agents.configure do |ai_agents_config|
           ai_agents_config.cline_api_key = config[:cline_api_key]
           ai_agents_config.debug = config[:debug]
         end
+      end
+
+      # Execute a simple task
+      #
+      # Parameters::
+      # * *prompt* (String): The prompt for this task
+      def execute_simple_task(prompt)
+        with_runner { puts run(cline_agent, prompt) }
       end
 
       # Implement some requirements, given a classic dev cycle:
@@ -291,7 +301,7 @@ module XAeonAgentsSkills
               ```
               Here is the full output:
               ```
-              #{XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, debug: config[:debug], expected_exit_status: nil)[:stdout]}
+              #{XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)[:stdout]}
               ```
             EO_Prompt
           )
@@ -317,25 +327,28 @@ module XAeonAgentsSkills
       # Parameters::
       # * *agent* (::Agents::Agent): The agent to run
       # * *prompt* (String): Additional prompt [default = '']
+      # Result::
+      # * String: The result output
       def run(agent, prompt = '')
         puts
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
         raise "Error: #{result.error}" unless result.error.nil?
+        result.output
       end
 
       # Create a Cline agent
       #
       # Parameters::
-      # * *name* (String): Agent name
-      # * *instructions* (String): Agent's system instructions
+      # * *name* (String): Agent name [default: 'Executor']
+      # * *instructions* (String): Agent's system instructions [default: '']
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
       # * *config* (Hash): Cline config to be used [default: Agents.config[:default_cline_config]]
       # * *cli_args* (String): Cline CLI additional arguments [default: Agents.config[:default_cline_cli_args]]
       # * *skills* (Array<String>): List of skills to be associated to this agent [default: Agents.config[:default_cline_skills]]
       def cline_agent(
-        name:,
-        instructions:,
+        name: 'Executor',
+        instructions: '',
         model: Agents.config[:default_cline_model],
         config: Agents.config[:default_cline_config],
         cli_args: Agents.config[:default_cline_cli_args],

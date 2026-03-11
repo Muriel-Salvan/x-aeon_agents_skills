@@ -10,7 +10,7 @@ module XAeonAgentsSkills
 
       def initialize(config)
         super
-        @connection = Connections::ClineCli.new(config.cline_api_key, debug: !ENV['RUBYLLM_DEBUG'].nil?)
+        @connection = Connections::ClineCli.new(config.cline_api_key)
       end
 
       def api_base
