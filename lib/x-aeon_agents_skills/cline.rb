@@ -162,6 +162,18 @@ module XAeonAgentsSkills
             case tool_details[:tool]
             when 'readFile'
               "[readFile] - #{tool_details[:path]}"
+            when 'listFilesRecursive'
+              "[listFilesRecursive] - #{tool_details[:path]}"
+            when 'listFilesTopLevel'
+              "[listFilesTopLevel] - #{tool_details[:path]}"
+            when 'newFileCreated'
+              "[newFileCreated] - #{tool_details[:path]}"
+            when 'editedExistingFile'
+              "[editedExistingFile] - #{tool_details[:path]}"
+            when 'searchFiles'
+              "[searchFiles] - #{tool_details[:path]} (regex: #{tool_details[:regex]})"
+            when 'useSkill'
+              "[useSkill] - #{tool_details[:skill_name]}"
             else
               "!!! Unknown tool @ts #{message[:ts]}: #{message}"
             end
