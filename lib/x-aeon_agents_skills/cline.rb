@@ -39,7 +39,8 @@ module XAeonAgentsSkills
     #     * *last* (Boolean): Is this the last message fetched?
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
     # * *stdout_echo* (Boolean): Do we echo stdout of Cline CLI? [default: false]
-    def prompt(json_prompt, model:, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false)
+    # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
+    def prompt(json_prompt, model:, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false, ignore_partials: false)
       with_temp_dir do |temp_dir|
         config_dir = "#{temp_dir}/cline_config"
         log_debug "Temporary Cline config dir: #{config_dir}"
@@ -61,7 +62,7 @@ module XAeonAgentsSkills
         )
 
         with_selected_skills(skills, config_dir:, skillkit_agents:) do
-          with_messages_monitoring(config_dir:, on_message:) do
+          with_messages_monitoring(config_dir:, on_message:, ignore_partials:) do
             @task_id = nil
             begin
               @next_prompt = json_prompt
@@ -151,6 +152,8 @@ module XAeonAgentsSkills
             end
             fields_str = "#{fields.empty? ? '' : "#{fields.join(' ')} - "}"
             section_delimiter = '|'
+            # Ignore some sections
+            sections.select! { |section| section[:name] != 'environment_details' }
             section_size = (limit - ts_str.size - fields_str.size) / sections.size - section_delimiter.size
             "#{fields_str}#{
               sections.map do |section|
@@ -159,24 +162,26 @@ module XAeonAgentsSkills
             }"
           when 'tool'
             tool_details = JSON.parse(message[:text], symbolize_names: true)
-            case tool_details[:tool]
-            when 'readFile'
-              "[readFile] - #{tool_details[:path]}"
-            when 'listFilesRecursive'
-              "[listFilesRecursive] - #{tool_details[:path]}"
-            when 'listFilesTopLevel'
-              "[listFilesTopLevel] - #{tool_details[:path]}"
-            when 'newFileCreated'
-              "[newFileCreated] - #{tool_details[:path]}"
-            when 'editedExistingFile'
-              "[editedExistingFile] - #{tool_details[:path]}"
-            when 'searchFiles'
-              "[searchFiles] - #{tool_details[:path]} (regex: #{tool_details[:regex]})"
-            when 'useSkill'
-              "[useSkill] - #{tool_details[:skill_name]}"
-            else
-              "!!! Unknown tool @ts #{message[:ts]}: #{message}"
-            end
+            tool_header =
+              case tool_details[:tool]
+              when 'readFile'
+                "[readFile] - #{tool_details[:path]}"
+              when 'listFilesRecursive'
+                "[listFilesRecursive] - #{tool_details[:path]}"
+              when 'listFilesTopLevel'
+                "[listFilesTopLevel] - #{tool_details[:path]}"
+              when 'newFileCreated'
+                "[newFileCreated] - #{tool_details[:path]}"
+              when 'editedExistingFile'
+                "[editedExistingFile] - #{tool_details[:path]}"
+              when 'searchFiles'
+                "[searchFiles] - #{tool_details[:path]} (regex: #{tool_details[:regex]})"
+              when 'useSkill'
+                "[useSkill] - #{tool_details[:skill_name]}"
+              else
+                "!!! Unknown tool @ts #{message[:ts]}: #{message}"
+              end
+            "#{tool_header}#{tool_details.key?(:content) ? ": #{tool_details[:content].strip.gsub("\n", ' ')}".ellipsized(limit - ts_str.size - tool_header.size) : ''}"
           when 'api_req_retried'
             "API request retried: #{message[:text].strip.gsub("\n", ' ')}"
           when 'command'
@@ -229,8 +234,9 @@ module XAeonAgentsSkills
     #     * *message* (Hash): Message that has happened
     #     * *last* (Boolean): Is this the last message fetched?
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
+    # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
     # * Proc: Code called with monitoring in place
-    def with_messages_monitoring(config_dir:, on_message:)
+    def with_messages_monitoring(config_dir:, on_message:, ignore_partials: false)
       if on_message.nil?
         yield
       else
@@ -247,6 +253,7 @@ module XAeonAgentsSkills
               if new_ui_messages_file_mtime != ui_messages_file_mtime
                 # New messages have been added or old ones were updated
                 new_messages = JSON.parse(safe_read(ui_messages_file), symbolize_names: true)
+                new_messages.select { |message| message[:partial].nil? || message[:partial] } if ignore_partials
                 unless new_messages.empty?
                   last_idx = new_messages.size - 1
                   new_messages.each.with_index do |message, idx|

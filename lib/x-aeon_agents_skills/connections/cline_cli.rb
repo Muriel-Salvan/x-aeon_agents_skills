@@ -59,7 +59,8 @@ module XAeonAgentsSkills
             elsif message[:type] == 'say' && message[:say] == 'completion_result'
               completion_result = message[:text]
             end
-          end
+          end,
+          ignore_partials: false
         )
         {
           body: completion_result,
