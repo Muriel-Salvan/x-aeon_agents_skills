@@ -301,6 +301,7 @@ module XAeonAgentsSkills
               #{plan}
             EO_Prompt
           )
+          puts "===== Developer changes:\n#{`git status`}"
           tests_cmd = 'bundle exec rspec --format documentation'
           loop do
             puts
@@ -346,6 +347,7 @@ module XAeonAgentsSkills
                 ```
               EO_Prompt
             )
+            puts "===== Tester changes:\n#{`git status`}"
           end
           run(
             documenter_agent,
@@ -373,6 +375,7 @@ module XAeonAgentsSkills
               ```
             EO_Prompt
           )
+          puts "===== Documenter changes:\n#{`git status`}"
         end
         puts
         puts 'Requirements implemented successfully'
