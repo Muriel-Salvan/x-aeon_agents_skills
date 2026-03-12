@@ -190,15 +190,15 @@ module XAeonAgentsSkills
             applying-test-conventions
             enforcing-project-rules
           ],
+          plan_mode: true,
           config: Helpers.deep_merge(
             config[:default_cline_config],
-            # Planning still needs to create the PLAN.md file
             {
               autoApprovalSettings: {
                 actions: {
                   readFiles: true,
                   readFilesExternally: true,
-                  editFiles: true,
+                  editFiles: false,
                   editFilesExternally: false,
                   executeSafeCommands: true,
                   executeAllCommands: false,
@@ -206,17 +206,18 @@ module XAeonAgentsSkills
                   useMcp: true
                 }
               },
-              strictPlanModeEnabled: false
+              strictPlanModeEnabled: true
             }
           ),
           instructions: <<~EO_Instructions
             1. Read the requirements.
             2. Analyze the project files.
             3. Devise a **step-by-step implementation plan**.
-            4. Output **only the implementation plan** in a file named #{plan_file}.
+            4. Output **only the implementation plan** between `<plan>...</plan>` tags.
+            5. Do NOT execute the plan yourself.
 
             You are in read-only mode.
-            Do NOT modify or write any file other than #{plan_file}.
+            Do NOT modify or write any file.
             You may only analyze and propose plans.
           EO_Instructions
         )
@@ -241,12 +242,11 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Verify regressions from the full tests suite run.
+            Verify that an implementation has not introduced any regression.
+            Analyze the full output of a unit tests run.
             Fix any issue that unit tests are surfacing.
             Run tests again if needed using the provided tests command to test your own fixes.
             Make sure all tests are running without issue.
-
-            For information, the implementation that may have incurred regressions has be planned in the file #{plan_file}.
           EO_Instructions
         )
         documenter_agent = cline_agent(
@@ -272,7 +272,7 @@ module XAeonAgentsSkills
         )
 
         with_runner do
-          run(
+          plan = run(
             planner_agent,
             <<~EO_Prompt
               # Task requirements for which we need the implementation plan
@@ -280,32 +280,77 @@ module XAeonAgentsSkills
               #{requirements}
             EO_Prompt
           )
-          raise "Plan file #{plan_file} hasn't been created" unless File.exist?(plan_file)
+          puts "===== Implementation plan:\n#{plan}"
+          # TODO: Add interactive review step here
           run(
             developer_agent,
             <<~EO_Prompt
               Follow the implementation plan.
 
-              #{File.read(plan_file)}
+              #{plan}
             EO_Prompt
           )
           tests_cmd = 'bundle exec rspec --format documentation'
-          run(
-            tester_agent,
-            <<~EO_Prompt
-              # Full result of the test suite run
+          loop do
+            test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
+            break if test_result[:exit_status] == 0
+            run(
+              tester_agent,
+              <<~EO_Prompt
+                # Test command
 
-              The full tests suite has been run using the following command:
-              ```bash
-              #{tests_cmd}
+                ```bash
+                #{tests_cmd}
+                ```
+
+                # Full result of the test suite run
+
+                ```
+                #{test_result[:stdout]}
+                ```
+
+                # Implementation plan that may have incurred regressions
+
+                #{plan}
+
+                # List of modifications that may be responsible for regressions
+
+                ## git status
+
+                ```
+                #{`git status`}
+                ```
+
+                ## git diff
+
+                ```
+                #{`git diff`}
+                ```
+              EO_Prompt
+            )
+          end
+          run(
+            documenter_agent,
+            <<~EO_Prompt
+              # Implementation plan that introduced features and fixes to be documented
+
+              #{plan}
+
+              # List of corresponding modifications
+
+              ## git status
+
               ```
-              Here is the full output:
+              #{`git status`}
               ```
-              #{XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)[:stdout]}
+
+              ## git diff
+
+              ```
+              #{`git diff`}
               ```
             EO_Prompt
           )
-          run(documenter_agent)
         end
         puts
         puts 'Requirements implemented successfully'
@@ -343,6 +388,7 @@ module XAeonAgentsSkills
       # * *name* (String): Agent name [default: 'Executor']
       # * *instructions* (String): Agent's system instructions [default: '']
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
+      # * *plan_mode* (Boolean): Are we executing in Plan mode? [default: false]
       # * *config* (Hash): Cline config to be used [default: Agents.config[:default_cline_config]]
       # * *cli_args* (String): Cline CLI additional arguments [default: Agents.config[:default_cline_cli_args]]
       # * *skills* (Array<String>): List of skills to be associated to this agent [default: Agents.config[:default_cline_skills]]
@@ -350,6 +396,7 @@ module XAeonAgentsSkills
         name: 'Executor',
         instructions: '',
         model: Agents.config[:default_cline_model],
+        plan_mode: false,
         config: Agents.config[:default_cline_config],
         cli_args: Agents.config[:default_cline_cli_args],
         skills: Agents.config[:default_cline_skills]
@@ -363,6 +410,7 @@ module XAeonAgentsSkills
               name:
             },
             cline: {
+              plan_mode:,
               config:,
               cli_args:,
               skills:

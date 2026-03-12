@@ -26,9 +26,11 @@ module XAeonAgentsSkills
       # * Proc: Code called to set additional HTTP request parameters in case of a web API call
       def post(url, payload, &)
         completion_result = nil
+        plan_mode = payload[:cline][:plan_mode]
         @cline.prompt(
           payload[:messages],
           model: payload[:model],
+          plan_mode:,
           config: payload[:cline][:config],
           skills: payload[:cline][:skills],
           skillkit_agents: true,
@@ -37,10 +39,21 @@ module XAeonAgentsSkills
             log_debug { Cline.human_message(message, limit: 128) }
             if message[:type] == 'ask' && last
               case message[:ask]
+              when 'tool'
+                # Do nothing: the CLI agent will automatically pick this up
               when 'plan_mode_respond'
-                # Cline just got its plan done.
-                # TODO: Save the plan and exit if we are in a plan task.
-                # Otherwise just tell it to continue (check how it is done when switching to Act mode).
+                # Cline just got a plan done.
+                if plan_mode
+                  plan_match = JSON.parse(message[:text], symbolize_names: true)[:response].match(/<plan>(.+)<\/plan>/m)
+                  if plan_match.nil?
+                    @cline.user_feedback('Tell the plan to the user between `<plan>...</plan>` tags as completion and stop this task.')
+                  else
+                    completion_result = plan_match[1]
+                    @cline.user_feedback(:exit)
+                  end
+                else
+                  @cline.user_feedback('You are not in Plan mode, so resume this task.')
+                end
               when 'resume_task'
                 # @cline.user_feedback('Resume task')
               when 'command_output'
