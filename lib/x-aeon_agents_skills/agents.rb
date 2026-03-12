@@ -242,11 +242,16 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Verify that an implementation has not introduced any regression.
-            Analyze the full output of a unit tests run.
-            Fix any issue that unit tests are surfacing.
-            Run tests again if needed using the provided tests command to test your own fixes.
-            Make sure all tests are running without issue.
+            Fix any regression that has been induced by new features or fixes.
+
+            1. Read the initial requirements were implemented.
+            2. Read the implementation plan that was followed.
+            3. Check all files modifications to understand what was the intent of the developer implementing those requirements.
+            4. Analyze the full output of unit tests run, and check every error reported in it.
+            5. Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements.
+            6. Make sure all tests are running without issue after your fixes.
+            
+            You can run tests again using the provided tests command to test your own fixes.
           EO_Instructions
         )
         documenter_agent = cline_agent(
@@ -261,7 +266,13 @@ module XAeonAgentsSkills
           instructions: <<~EO_Instructions
             Update relevant documentation when a task is being implemented.
 
-            For information, the task that should be documented has be planned in the file #{plan_file}.
+            1. Read the initial requirements were implemented.
+            2. Read the implementation plan that was followed.
+            3. Check all files modifications to understand what was the intent of the developer implementing those requirements.
+            4. Update documentation files accordingly.
+
+            Only update documentation files.
+            Do NOT change any code or test.
           EO_Instructions
         )
         releaser_agent = cline_agent(
@@ -292,28 +303,23 @@ module XAeonAgentsSkills
           )
           tests_cmd = 'bundle exec rspec --format documentation'
           loop do
+            puts
+            puts "===== Run tests..."
             test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
+            puts "Tests exit status: #{test_result[:exit_status]}"
             break if test_result[:exit_status] == 0
             run(
               tester_agent,
               <<~EO_Prompt
-                # Test command
+                # Original requirements
 
-                ```bash
-                #{tests_cmd}
-                ```
-
-                # Full result of the test suite run
-
-                ```
-                #{test_result[:stdout]}
-                ```
+                #{requirements}
 
                 # Implementation plan that may have incurred regressions
 
                 #{plan}
 
-                # List of modifications that may be responsible for regressions
+                # List of files modifications that may be responsible for regressions
 
                 ## git status
 
@@ -326,12 +332,28 @@ module XAeonAgentsSkills
                 ```
                 #{`git diff`}
                 ```
+
+                # Test command
+
+                ```bash
+                #{tests_cmd}
+                ```
+
+                # Full result and errors of the test suite run
+
+                ```
+                #{test_result[:stdout]}
+                ```
               EO_Prompt
             )
           end
           run(
             documenter_agent,
             <<~EO_Prompt
+              # Original requirements
+
+              #{requirements}
+
               # Implementation plan that introduced features and fixes to be documented
 
               #{plan}
