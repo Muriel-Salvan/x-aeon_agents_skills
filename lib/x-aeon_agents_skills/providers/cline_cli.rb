@@ -25,12 +25,7 @@ module XAeonAgentsSkills
       def render_payload(messages, tools:, temperature:, model:, stream: false, schema: nil, thinking: nil, tool_prefs: nil)
         {
           model: model.id,
-          messages: messages.map do |msg|
-            {
-              role: msg.role,
-              content: msg.content
-            }
-          end,
+          messages:,
           stream: stream
         }
       end

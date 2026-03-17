@@ -29,7 +29,7 @@ module XAeonAgentsSkills
     # Send a prompt to a Cline agent
     #
     # Parameters::
-    # * *json_prompt* (Object): Prompt to be sent, as a JSON object (could be Hash, Array, Integer, String...)
+    # * *prompt_str* (String): Prompt to be sent
     # * *model* (String): Cline model to be used
     # * *plan_mode* (Boolean): Are we executing in Plan mode? [default: false]
     # * *config* (Hash): Cline config [default: {}]
@@ -43,7 +43,7 @@ module XAeonAgentsSkills
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
     # * *stdout_echo* (Boolean): Do we echo stdout of Cline CLI? [default: false]
     # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
-    def prompt(json_prompt, model:, plan_mode: false, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false, ignore_partials: false)
+    def prompt(prompt_str, model:, plan_mode: false, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false, ignore_partials: false)
       with_temp_dir do |temp_dir|
         config_dir = "#{temp_dir}/cline_config"
         log_debug "Temporary Cline config dir: #{config_dir}"
@@ -68,11 +68,11 @@ module XAeonAgentsSkills
           with_messages_monitoring(config_dir:, on_message:, ignore_partials:) do
             @task_id = nil
             begin
-              @next_prompt = json_prompt
+              @next_prompt = prompt_str
               idx_prompt = 0
               while !@next_prompt.nil? && @next_prompt != :exit
                 # Generate prompt file
-                prompt_file = "#{temp_dir}/prompt_#{idx_prompt}.json"
+                prompt_file = "#{temp_dir}/prompt_#{idx_prompt}.txt"
                 File.write(prompt_file, @next_prompt.is_a?(String) ? @next_prompt : JSON.pretty_generate(@next_prompt))
                 @next_prompt = nil
                 @remove_conversation_index = nil
@@ -165,7 +165,7 @@ module XAeonAgentsSkills
             sections = parse_sections(api_details[:request])
             env_section = sections.find { |section| section[:name] == 'environment_details' }
             if !env_section.nil? && env_section[:content] =~ /^([^ ]+) \/ ([^ ]+) tokens used \((\d+)%\)$/
-              tokens_used, tokens_limit, tokens_percent = Regexp.last_match[1..3]
+              tokens_used, tokens_limit, _tokens_percent = Regexp.last_match[1..3]
               fields << "#{tokens_used}/#{tokens_limit}"
             end
             fields_str = "#{fields.empty? ? '' : "#{fields.join(' ')} - "}"
@@ -197,11 +197,11 @@ module XAeonAgentsSkills
               when 'useSkill'
                 "[useSkill] - #{tool_details[:skill_name]}"
               else
-                "!!! Unknown tool @ts #{message[:ts]}: #{message}"
+                raise NotImplementedError.new("Unknown tool @ts #{message[:ts]}: #{message}")
               end
             "#{tool_header}#{tool_details.key?(:content) ? ": #{tool_details[:content].strip.gsub("\n", ' ')}".ellipsized(limit - ts_str.size - tool_header.size) : ''}"
           when 'api_req_retried'
-            "API request retried: #{message[:text].strip.gsub("\n", ' ')}"
+            'API request retried'
           when 'command'
             "Command: #{message[:text].strip.gsub("\n", ' ')}"
           when 'command_output'
@@ -224,7 +224,7 @@ module XAeonAgentsSkills
           when 'error'
             "Error: #{message[:text].strip.gsub("\n", ' ')}"
           else
-            "!!! Unknown say @ts #{message[:ts]}: #{message}"
+            raise NotImplementedError.new("Unknown say @ts #{message[:ts]}: #{message}")
           end
         when 'ask'
           "Ask user: #{
@@ -251,13 +251,55 @@ module XAeonAgentsSkills
               tool_name = details.delete(:tool)
               "Use tool #{tool_name} - #{details}"
             else
-              "!!! Unknown ask @ts #{message[:ts]}: #{message}"
+              raise NotImplementedError.new("Unknown ask @ts #{message[:ts]}: #{message}")
             end
           }"
         else
-          "!!! Unknown type @ts #{message[:ts]}: #{message}"
+          raise NotImplementedError.new("Unknown type @ts #{message[:ts]}: #{message}")
         end
       }".ellipsized(limit)
+    end
+
+    # Use a single regex to match complete tag pairs
+    # This regex matches <tag>content</tag> patterns
+    COMPLETE_TAG_PATTERN = %r{<([a-zA-Z0-9_:]*)>(.*?)</\1>}m
+
+    # Parse sections from a string with HTML-like tags.
+    # Sections are delimited by html-like tags, for example `<toto>...</toto>` is the section named `toto`.
+    # Sections without tags should still be part of the result, with a nil section name.
+    # Only considers top-level tags (no recursion).
+    #
+    # Parameters::
+    # * *content* (String): The input string to parse
+    # Result::
+    # * Array<Hash>: List of sections:
+    #   * *name* (String or nil): Section name
+    #   * *content* (String): Section content
+    def self.parse_sections(content)
+      sections = []
+      current_pos = 0
+      content_length = content.length
+      # Use cursor progression to maintain order
+      while current_pos < content_length
+        # Find the next complete tag pair starting from current position
+        match = content.match(COMPLETE_TAG_PATTERN, current_pos)
+        if match
+          # Add any untagged content before this tag
+          if match.begin(0) > current_pos
+            untagged_content = content[current_pos...match.begin(0)]
+            sections << { name: nil, content: untagged_content } unless untagged_content.strip.empty?
+          end
+          # Add the tagged section
+          sections << { name: match[1], content: match[2] }
+          current_pos = match.end(0)
+        else
+          # No more tags found, add remaining content
+          remaining_content = content[current_pos..-1]
+          sections << { name: nil, content: remaining_content } unless remaining_content.strip.empty?
+          current_pos = content_length
+        end
+      end
+      sections
     end
 
     private
@@ -503,48 +545,6 @@ module XAeonAgentsSkills
         retry
       end
       file_content
-    end
-
-    # Use a single regex to match complete tag pairs
-    # This regex matches <tag>content</tag> patterns
-    COMPLETE_TAG_PATTERN = %r{<([a-zA-Z0-9_]*)>(.*?)</\1>}m
-
-    # Parse sections from a string with HTML-like tags.
-    # Sections are delimited by html-like tags, for example `<toto>...</toto>` is the section named `toto`.
-    # Sections without tags should still be part of the result, with a nil section name.
-    # Only considers top-level tags (no recursion).
-    #
-    # Parameters::
-    # * *content* (String): The input string to parse
-    # Result::
-    # * Array<Hash>: List of sections:
-    #   * *name* (String or nil): Section name
-    #   * *content* (String): Section content
-    def self.parse_sections(content)
-      sections = []
-      current_pos = 0
-      content_length = content.length
-      # Use cursor progression to maintain order
-      while current_pos < content_length
-        # Find the next complete tag pair starting from current position
-        match = content.match(COMPLETE_TAG_PATTERN, current_pos)
-        if match
-          # Add any untagged content before this tag
-          if match.begin(0) > current_pos
-            untagged_content = content[current_pos...match.begin(0)]
-            sections << { name: nil, content: untagged_content } unless untagged_content.strip.empty?
-          end
-          # Add the tagged section
-          sections << { name: match[1], content: match[2] }
-          current_pos = match.end(0)
-        else
-          # No more tags found, add remaining content
-          remaining_content = content[current_pos..-1]
-          sections << { name: nil, content: remaining_content } unless remaining_content.strip.empty?
-          current_pos = content_length
-        end
-      end
-      sections
     end
 
   end

@@ -185,6 +185,12 @@ module XAeonAgentsSkills
         )
         planner_agent = cline_agent(
           name: 'Planner',
+          input_artifacts: {
+            requirements: 'Initial requirements for which you need to devise an implementation plan.'
+          },
+          output_artifacts: {
+            plan: 'The full implementation plan that you must devise.'
+          },
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -210,19 +216,24 @@ module XAeonAgentsSkills
             }
           ),
           instructions: <<~EO_Instructions
-            1. Read the requirements.
-            2. Analyze the project files.
-            3. Devise a **step-by-step implementation plan**.
-            4. Output **only the implementation plan** between `<plan>...</plan>` tags.
-            5. Do NOT execute the plan yourself.
+            [ ] 1. Read the initial requirements from the artifact named `requirements`.
+            [ ] 2. Analyze the project files.
+            [ ] 3. Devise a **step-by-step implementation plan**.
+            [ ] 4. Output **only the implementation plan** as an artifact named `plan`.
+            [ ] 5. Do NOT execute the plan yourself.
 
-            You are in read-only mode.
-            Do NOT modify or write any file.
-            You may only analyze and propose plans.
+            # Constraints
+            
+            * You are in read-only mode.
+            * Do NOT modify or write any file.
+            * You may only analyze and propose plans.
           EO_Instructions
         )
         developer_agent = cline_agent(
           name: 'Developer',
+          input_artifacts: {
+            plan: 'Implementation plan you must follow.'
+          },
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -230,11 +241,21 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Implement a task by following all the steps of an implementation plan.
+            Implement a task by following all the steps of the implementation plan described in the artifact named `plan`.
           EO_Instructions
         )
         tester_agent = cline_agent(
           name: 'Tester',
+          input_artifacts: {
+            requirements: 'Initial requirements.',
+            plan: 'Implementation plan devised from the requirements.',
+            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan.',
+            tests_output: 'Output of running the whole tests suite.',
+            tests_cmd: 'Command line to be used to run the whole tests suite.'
+          },
+          output_artifacts: {
+            plan_modifications: 'Any modification or divergence you considered from the implementation plan. Keep empty if you didn\'t change the implementation plan.'
+          },
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -242,20 +263,26 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Fix any regression that has been induced by new features or fixes.
+            Fix any regression that has been induced by new features or fixes, while keeping the initial requirements and implementation plan in mind.
+            If the decisions taken in the implementation plan prevent you from fixing regressions, modify the implementation plan and report those modifications to the user between `<plan-modifications>...</plan-modifications>` tags.
 
-            1. Read the initial requirements were implemented.
-            2. Read the implementation plan that was followed.
-            3. Check all files modifications to understand what was the intent of the developer implementing those requirements.
-            4. Analyze the full output of unit tests run, and check every error reported in it.
-            5. Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements.
-            6. Make sure all tests are running without issue after your fixes.
-            
-            You can run tests again using the provided tests command to test your own fixes.
+            [ ] 1. Read the initial requirements from the artifact named `requirements`.
+            [ ] 2. Read the implementation plan that was decided from the artifact named `plan`.
+            [ ] 3. Read all files modifications from the artifact named `files_diffs`, and understand what was the intent of the developer implementing those requirements.
+            [ ] 4. Analyze the full output of unit tests run from the artifact named `tests_output`, and check every error reported in it.
+            [ ] 5. Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements.
+            [ ] 6. Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan.
+            [ ] 7. Make sure all tests are running without issue after your fixes. You can run tests again using the provided tests command from the artifact named `tests_cmd` to test your own fixes.
+            [ ] 8. Report to the user any implementation plan modification or divergence you considered in the artifact named `plan_modifications`.
           EO_Instructions
         )
         documenter_agent = cline_agent(
           name: 'Documenter',
+          input_artifacts: {
+            requirements: 'Initial requirements.',
+            plan: 'Implementation plan that introduced features and fixes to be documented.',
+            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan.'
+          },
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -266,13 +293,17 @@ module XAeonAgentsSkills
           instructions: <<~EO_Instructions
             Update relevant documentation when a task is being implemented.
 
-            1. Read the initial requirements were implemented.
-            2. Read the implementation plan that was followed.
-            3. Check all files modifications to understand what was the intent of the developer implementing those requirements.
-            4. Update documentation files accordingly.
+            [ ] 1. Read the initial requirements from the artifact named `requirements`.
+            [ ] 2. Read the implementation plan that was decided from the artifact named `plan`.
+            [ ] 3. Read all files modifications from the artifact named `files_diffs`, and understand what was the intent of the developer implementing those requirements.
+            [ ] 4. Find all documentation files and all the files referenced by the documentation files. You can start with `README.md` and any `docs/*.md` file.
+            [ ] 5. Read all the documentation files that you found to understand the documentation structure and content.
+            [ ] 6. Update the documentation files according to the new requirements that were implemented following the plan and corresponding files diffs.
 
-            Only update documentation files.
-            Do NOT change any code or test.
+            # Constraints
+
+            * Only update documentation files.
+            * Do NOT change any code or test.
           EO_Instructions
         )
         releaser_agent = cline_agent(
@@ -283,102 +314,80 @@ module XAeonAgentsSkills
         )
 
         with_runner do
-          plan = run(
-            planner_agent,
-            <<~EO_Prompt
-              # Task requirements for which we need the implementation plan
+          # Initial artifacts
+          @artifacts[:requirements] = requirements
 
-              #{requirements}
-            EO_Prompt
-          )
-          puts "===== Implementation plan:\n#{plan}"
+          run(planner_agent)
+          puts "===== Implementation plan:\n#{@artifacts[:plan]}"
+
           # TODO: Add interactive review step here
-          run(
-            developer_agent,
-            <<~EO_Prompt
-              Follow the implementation plan.
 
-              #{plan}
-            EO_Prompt
-          )
+          run(developer_agent)
           puts "===== Developer changes:\n#{`git status`}"
+
           tests_cmd = 'bundle exec rspec --format documentation'
+          @artifacts[:tests_cmd] = tests_cmd
+          idx_test = 0
           loop do
             puts
-            puts "===== Run tests..."
+            puts "===== Run tests ##{idx_test}..."
             test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
-            puts "Tests exit status: #{test_result[:exit_status]}"
-            break if test_result[:exit_status] == 0
-            run(
-              tester_agent,
-              <<~EO_Prompt
-                # Original requirements
-
-                #{requirements}
-
-                # Implementation plan that may have incurred regressions
-
-                #{plan}
-
-                # List of files modifications that may be responsible for regressions
-
-                ## git status
+            puts "Tests ##{idx_test} exit status: #{test_result[:exit_status]}"
+            @artifacts.merge!(
+              files_diffs: <<~EO_Artifact,
+                ### git status
 
                 ```
                 #{`git status`}
                 ```
 
-                ## git diff
+                ### git diff
 
                 ```
                 #{`git diff`}
                 ```
-
-                # Test command
-
-                ```bash
-                #{tests_cmd}
-                ```
-
-                # Full result and errors of the test suite run
-
+              EO_Artifact
+              tests_output: <<~EO_Artifact,
                 ```
                 #{test_result[:stdout]}
                 ```
-              EO_Prompt
+              EO_Artifact
             )
+            break if test_result[:exit_status] == 0
+
+            run(tester_agent)
             puts "===== Tester changes:\n#{`git status`}"
+            # Integrate potential implementation plan modifications
+            unless @artifacts[:plan_modifications].strip.empty?
+              plan_modifications = @artifacts.delete(:plan_modifications)
+              @artifacts[:plan] << <<~EO_Artifact
+                # Revision ##{idx_test} to the implementation plan
+                
+                #{plan_modifications}
+
+              EO_Artifact
+            end
+            idx_test += 1
           end
-          run(
-            documenter_agent,
-            <<~EO_Prompt
-              # Original requirements
 
-              #{requirements}
-
-              # Implementation plan that introduced features and fixes to be documented
-
-              #{plan}
-
-              # List of corresponding modifications
-
-              ## git status
-
-              ```
-              #{`git status`}
-              ```
-
-              ## git diff
-
-              ```
-              #{`git diff`}
-              ```
-            EO_Prompt
-          )
+          run(documenter_agent)
           puts "===== Documenter changes:\n#{`git status`}"
         end
         puts
         puts 'Requirements implemented successfully'
+      end
+
+      # Get the instructions artifacts header, applicable to all agents dealing with artifacts
+      #
+      # Result::
+      # String: The corresponding instructions
+      def instructions_artifacts_header
+        <<~EO_Instructions
+          Artifacts are text documents that you can get as input and produce as output.
+          Each artifact is identified by a name.
+          You can produce an artifact by including its content between `<artifact:name>...</artifact:name>` tags in any of your response. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
+          The user is communicating artifacts with you using the same tags syntax: `<artifact:name>...</artifact:name>`.
+        EO_Instructions
       end
 
       private
@@ -389,6 +398,7 @@ module XAeonAgentsSkills
       # * Proc: Code called with the runner setup
       def with_runner
         @runner = ::Agents::Runner.new
+        @artifacts = {}
         yield
       end
 
@@ -400,6 +410,7 @@ module XAeonAgentsSkills
       # Result::
       # * String: The result output
       def run(agent, prompt = '')
+        agent.params[:artifacts][:store] = @artifacts
         puts
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
@@ -412,6 +423,8 @@ module XAeonAgentsSkills
       # Parameters::
       # * *name* (String): Agent name [default: 'Executor']
       # * *instructions* (String): Agent's system instructions [default: '']
+      # * *input_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent expects as input [default: {}]
+      # * *output_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent is expected to output [default: {}]
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
       # * *plan_mode* (Boolean): Are we executing in Plan mode? [default: false]
       # * *config* (Hash): Cline config to be used [default: Agents.config[:default_cline_config]]
@@ -420,12 +433,51 @@ module XAeonAgentsSkills
       def cline_agent(
         name: 'Executor',
         instructions: '',
+        input_artifacts: {},
+        output_artifacts: {},
         model: Agents.config[:default_cline_model],
         plan_mode: false,
         config: Agents.config[:default_cline_config],
         cli_args: Agents.config[:default_cline_cli_args],
         skills: Agents.config[:default_cline_skills]
       )
+        full_instructions = instructions_header(name)
+        unless instructions.empty?
+          full_instructions << <<~EO_Instructions
+            # Your task
+            
+            #{instructions}
+
+          EO_Instructions
+        end
+        unless input_artifacts.empty? && output_artifacts.empty?
+          full_instructions << <<~EO_Instructions
+            # Artifacts
+            
+            #{instructions_artifacts_header}
+
+          EO_Instructions
+          unless input_artifacts.empty?
+            full_instructions << <<~EO_Instructions
+              ## Input artifacts
+            
+              You are expecting the following artifacts as input from the `Artifacts` section.
+
+              #{input_artifacts.map { |name, description| "* `#{name}`: #{description}" }.join("\n")}
+              
+            EO_Instructions
+          end
+          unless output_artifacts.empty?
+            full_instructions << <<~EO_Instructions
+              ## Output artifacts
+            
+              You must produce the following artifacts as output when completing your task.
+
+              #{output_artifacts.map { |name, description| "* `#{name}`: #{description}" }.join("\n")}
+              
+            EO_Instructions
+          end
+        end
         ::Agents::Agent.new(
           model:,
           provider: 'clinecli',
@@ -434,6 +486,10 @@ module XAeonAgentsSkills
             agent: {
               name:
             },
+            artifacts: {
+              input: input_artifacts,
+              output: output_artifacts
+            },
             cline: {
               plan_mode:,
               config:,
@@ -441,17 +497,25 @@ module XAeonAgentsSkills
               skills:
             }
           },
-          instructions: <<~EO_System_Prompt
-            You are a #{name} agent.
-
-            You are working in a headless environment.
-            Do NOT ask for user confirmation. 
-            Do NOT call the tool plan_mode_respond.
-
-            Your task:
-            #{instructions}
-          EO_System_Prompt
+          instructions: full_instructions
         )
+      end
+
+      # Get the instructions header, applicable to all agents
+      #
+      # Parameters::
+      # * *name* (String): Agent's name
+      # Result::
+      # String: The corresponding instructions' header
+      def instructions_header(name)
+        <<~EO_Instructions
+          You are a #{name} agent.
+
+          You are working in a headless environment.
+          Do NOT ask for user confirmation. 
+          Do NOT call the tool `plan_mode_respond`.
+
+        EO_Instructions
       end
 
     end
