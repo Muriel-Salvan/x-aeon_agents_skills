@@ -250,6 +250,8 @@ module XAeonAgentsSkills
               details = JSON.parse(message[:text], symbolize_names: true)
               tool_name = details.delete(:tool)
               "Use tool #{tool_name} - #{details}"
+            when 'mistake_limit_reached'
+              "Mistake limit reached: #{message[:text]}"
             else
               raise NotImplementedError.new("Unknown ask @ts #{message[:ts]}: #{message}")
             end

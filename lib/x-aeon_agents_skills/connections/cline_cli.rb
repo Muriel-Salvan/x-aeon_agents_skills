@@ -1,3 +1,4 @@
+require 'json'
 require 'x-aeon_agents_skills/cline'
 require 'x-aeon_agents_skills/logger'
 
@@ -29,33 +30,61 @@ module XAeonAgentsSkills
         missing_input_artifacts = payload[:artifacts][:input].select { |name, _description| !payload[:artifacts][:store].key?(name) }
         raise "Missing #{missing_input_artifacts.size} artifacts from the payload:\n#{missing_input_artifacts.map { |name, description| "* #{name}: #{description}" }.join("\n")}" unless missing_input_artifacts.empty?
 
+        # Create a JSON prompt to keep the full structure
+        prompt_json = {}
+        prompt_json[:role] = payload[:agent][:role] unless payload[:agent][:role].empty?
+        prompt_json[:objective] = payload[:agent][:objective] unless payload[:agent][:objective].empty?
+        context = ''
+        unless payload[:artifacts][:input].empty? && payload[:artifacts][:output].empty?
+          context << <<~EO_Context
+            # Artifacts
+
+            Artifacts are text documents that you can get as input and produce as output.
+            Each artifact is identified by a name.
+            #{payload[:artifacts][:input].empty? ? '' : 'You must read all artifacts given in the `artifacts` JSON property: they are given to you by the user.'}
+            #{payload[:artifacts][:output].empty? ? '' : 'You must produce all artifacts given in the `output.artifacts` JSON property when completing your task.'}
+          EO_Context
+        end
+        prompt_json[:context] = context unless context.empty?
+        unless payload[:artifacts][:input].empty?
+          prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |name, description|
+            [
+              name,
+              {
+                description:,
+                content: payload[:artifacts][:store][name]
+              }
+            ]
+          end
+        end
+        prompt_json[:instructions] = payload[:messages].map(&:content).select { |content| !content.strip.empty? }
+        constraints = <<~EO_Constraints
+          - Do NOT ask for user confirmation. 
+          - Do NOT call the tool `plan_mode_respond`.
+        EO_Constraints
+        constraints << payload[:agent][:constraints] unless payload[:agent][:constraints].empty?
+        prompt_json[:constraints] = constraints
+        output = {}
+        output_format = ''
+        unless payload[:artifacts][:output].empty?
+          output[:artifacts] = payload[:artifacts][:output]
+          output_format << <<~EO_Output_Format
+            # Artifacts
+            
+            You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
+          EO_Output_Format
+        end
+        unless output_format.empty?
+          output[:format] = output_format
+          prompt_json[:output] = output
+        end
+
         completion_result = nil
         artifacts = {}
         plan_mode = payload[:cline][:plan_mode]
-        full_prompt = <<~EO_Prompt
-          #{payload[:messages].select { |message| message.role == :system }.map(&:content).join("\n\n")}
-
-        EO_Prompt
-        user_prompt = payload[:messages].select { |message| message.role == :user }.map(&:content).join("\n\n").strip
-        unless user_prompt.empty?
-          full_prompt << <<~EO_Prompt
-            # Instructions
-            
-            #{user_prompt}
-
-          EO_Prompt
-        end
-        unless payload[:artifacts][:input].empty?
-          log_debug "Adding #{payload[:artifacts][:input].size} artifacts to the prompt: #{payload[:artifacts][:input].keys.join(', ')}"
-          full_prompt << <<~EO_Prompt
-            # Artifacts
-            
-            #{payload[:artifacts][:input].keys.map { |name| "<artifact:#{name}>\n#{payload[:artifacts][:store][name]}\n</artifact:#{name}>" }.join("\n\n")}
-
-          EO_Prompt
-        end
+        log_debug { "Cline prompt:\n#{JSON.pretty_generate(prompt_json)}" }
         @cline.prompt(
-          full_prompt,
+          prompt_json.to_json,
           model: payload[:model],
           plan_mode:,
           config: payload[:cline][:config],
@@ -80,7 +109,9 @@ module XAeonAgentsSkills
                     @cline.user_feedback <<~EO_Prompt
                       Tell the plan to the user in an artifact named `plan` and stop this task.
 
-                      #{Agents.instructions_artifacts_header}
+                      Artifacts are text documents that you can get as input and produce as output.
+                      Each artifact is identified by a name.
+                      You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
                     EO_Prompt
                   end
                 else
@@ -113,11 +144,13 @@ module XAeonAgentsSkills
                     Some output artifacts are missing in your reponse.
 
                     You must return the following artifacts to the user:
-                    #{missing_input_artifacts.map { |name, description| "* #{name}: #{description}" }.join("\n")}
+                    #{missing_input_artifacts.map { |name, description| "- #{name}: #{description}" }.join("\n")}
                     
                     If some of those artifacts are empty, leave their content empty.
 
-                    #{Agents.instructions_artifacts_header}
+                    Artifacts are text documents that you can get as input and produce as output.
+                    Each artifact is identified by a name.
+                    You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
                   EO_Prompt
                 end
               when 'text'

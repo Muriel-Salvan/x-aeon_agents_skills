@@ -179,12 +179,11 @@ module XAeonAgentsSkills
         FileUtils.mkdir_p File.dirname(plan_file)
         manager_agent = cline_agent(
           name: 'Manager',
-          instructions: <<~EO_Instructions
-            Coordinate the work of other agents to fully implement a Github issue
-          EO_Instructions
+          objective: 'Coordinate the work of other agents to fully implement a Github issue'
         )
         planner_agent = cline_agent(
           name: 'Planner',
+          objective: 'Create an implementation plan that can be used to implement some requirements.',
           input_artifacts: {
             requirements: 'Initial requirements for which you need to devise an implementation plan.'
           },
@@ -215,22 +214,22 @@ module XAeonAgentsSkills
               strictPlanModeEnabled: true
             }
           ),
-          instructions: <<~EO_Instructions
+          instructions: <<~EO_Instructions,
             [ ] 1. Read the initial requirements from the artifact named `requirements`.
             [ ] 2. Analyze the project files.
             [ ] 3. Devise a **step-by-step implementation plan**.
             [ ] 4. Output **only the implementation plan** as an artifact named `plan`.
             [ ] 5. Do NOT execute the plan yourself.
-
-            # Constraints
-            
-            * You are in read-only mode.
-            * Do NOT modify or write any file.
-            * You may only analyze and propose plans.
           EO_Instructions
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+            - You may only analyze and propose plans.
+          EO_Constraints
         )
         developer_agent = cline_agent(
           name: 'Developer',
+          objective: 'Implement a task',
           input_artifacts: {
             plan: 'Implementation plan you must follow.'
           },
@@ -241,11 +240,15 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Implement a task by following all the steps of the implementation plan described in the artifact named `plan`.
+            Follow all the steps of the implementation plan described in the `plan` artifact.
           EO_Instructions
         )
         tester_agent = cline_agent(
           name: 'Tester',
+          objective: <<~EO_Objective,
+            Fix any regression that has been induced by new features or fixes, while keeping the initial requirements and implementation plan in mind.
+            If the decisions taken in the implementation plan prevent you from fixing regressions, modify the implementation plan and report those modifications to the user.
+          EO_Objective
           input_artifacts: {
             requirements: 'Initial requirements.',
             plan: 'Implementation plan devised from the requirements.',
@@ -263,21 +266,19 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Fix any regression that has been induced by new features or fixes, while keeping the initial requirements and implementation plan in mind.
-            If the decisions taken in the implementation plan prevent you from fixing regressions, modify the implementation plan and report those modifications to the user between `<plan-modifications>...</plan-modifications>` tags.
-
-            [ ] 1. Read the initial requirements from the artifact named `requirements`.
-            [ ] 2. Read the implementation plan that was decided from the artifact named `plan`.
-            [ ] 3. Read all files modifications from the artifact named `files_diffs`, and understand what was the intent of the developer implementing those requirements.
-            [ ] 4. Analyze the full output of unit tests run from the artifact named `tests_output`, and check every error reported in it.
+            [ ] 1. Read the initial requirements from the `requirements` artifact.
+            [ ] 2. Read the implementation plan that was decided from the `plan` artifact.
+            [ ] 3. Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements.
+            [ ] 4. Analyze the full output of unit tests run from the `tests_output` artifact, and check every error reported in it.
             [ ] 5. Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements.
             [ ] 6. Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan.
-            [ ] 7. Make sure all tests are running without issue after your fixes. You can run tests again using the provided tests command from the artifact named `tests_cmd` to test your own fixes.
-            [ ] 8. Report to the user any implementation plan modification or divergence you considered in the artifact named `plan_modifications`.
+            [ ] 7. Make sure all tests are running without issue after your fixes. You can run tests again using the provided tests command from the `tests_cmd` artifact to test your own fixes.
+            [ ] 8. Report to the user any implementation plan modification or divergence you considered in the `plan_modifications` artifact.
           EO_Instructions
         )
         documenter_agent = cline_agent(
           name: 'Documenter',
+          objective: 'Update relevant documentation when a task is being implemented.',
           input_artifacts: {
             requirements: 'Initial requirements.',
             plan: 'Implementation plan that introduced features and fixes to be documented.',
@@ -290,27 +291,22 @@ module XAeonAgentsSkills
             enforcing-project-rules
             updating-doc
           ],
-          instructions: <<~EO_Instructions
-            Update relevant documentation when a task is being implemented.
-
-            [ ] 1. Read the initial requirements from the artifact named `requirements`.
-            [ ] 2. Read the implementation plan that was decided from the artifact named `plan`.
-            [ ] 3. Read all files modifications from the artifact named `files_diffs`, and understand what was the intent of the developer implementing those requirements.
-            [ ] 4. Find all documentation files and all the files referenced by the documentation files. You can start with `README.md` and any `docs/*.md` file.
+          instructions: <<~EO_Instructions,
+            [ ] 1. Read the initial requirements from the `requirements` artifact.
+            [ ] 2. Read the implementation plan that was decided from the `plan` artifact.
+            [ ] 3. Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements.
+            [ ] 4. Find all documentation files and all the files referenced by the documentation files. Start with `README.md` and any `docs/*.md` files.
             [ ] 5. Read all the documentation files that you found to understand the documentation structure and content.
-            [ ] 6. Update the documentation files according to the new requirements that were implemented following the plan and corresponding files diffs.
-
-            # Constraints
-
-            * Only update documentation files.
-            * Do NOT change any code or test.
+            [ ] 6. Update the documentation files according to the new requirements that were implemented, keeping in mind the implementation plan that was used and the corresponding files diffs.
           EO_Instructions
+          constraints: <<~EO_Constraints
+            - Only update documentation files.
+            - Do NOT change any code or test.
+          EO_Constraints
         )
         releaser_agent = cline_agent(
           name: 'Releaser',
-          instructions: <<~EO_Instructions
-            Release a new feature or bugfix to its branch on Github, with a Pull Request
-          EO_Instructions
+          objective: 'Release a new feature or bugfix to its branch on Github, with a Pull Request'
         )
 
         with_runner do
@@ -377,19 +373,6 @@ module XAeonAgentsSkills
         puts 'Requirements implemented successfully'
       end
 
-      # Get the instructions artifacts header, applicable to all agents dealing with artifacts
-      #
-      # Result::
-      # String: The corresponding instructions
-      def instructions_artifacts_header
-        <<~EO_Instructions
-          Artifacts are text documents that you can get as input and produce as output.
-          Each artifact is identified by a name.
-          You can produce an artifact by including its content between `<artifact:name>...</artifact:name>` tags in any of your response. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
-          The user is communicating artifacts with you using the same tags syntax: `<artifact:name>...</artifact:name>`.
-        EO_Instructions
-      end
-
       private
 
       # Setup an agents runner.
@@ -422,7 +405,10 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *name* (String): Agent name [default: 'Executor']
+      # * *role* (String): Agent's role [default: "You are a #{name} agent"]
+      # * *objective* (String): Agent's objective [default: '']
       # * *instructions* (String): Agent's system instructions [default: '']
+      # * *constraints* (String): Constraints to be respected [default: '']
       # * *input_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent expects as input [default: {}]
       # * *output_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent is expected to output [default: {}]
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
@@ -432,7 +418,10 @@ module XAeonAgentsSkills
       # * *skills* (Array<String>): List of skills to be associated to this agent [default: Agents.config[:default_cline_skills]]
       def cline_agent(
         name: 'Executor',
+        role: "You are a #{name} agent",
+        objective: '',
         instructions: '',
+        constraints: '',
         input_artifacts: {},
         output_artifacts: {},
         model: Agents.config[:default_cline_model],
@@ -441,50 +430,16 @@ module XAeonAgentsSkills
         cli_args: Agents.config[:default_cline_cli_args],
         skills: Agents.config[:default_cline_skills]
       )
-        full_instructions = instructions_header(name)
-        unless instructions.empty?
-          full_instructions << <<~EO_Instructions
-            # Your task
-            
-            #{instructions}
-
-          EO_Instructions
-        end
-        unless input_artifacts.empty? && output_artifacts.empty?
-          full_instructions << <<~EO_Instructions
-            # Artifacts
-            
-            #{instructions_artifacts_header}
-
-          EO_Instructions
-          unless input_artifacts.empty?
-            full_instructions << <<~EO_Instructions
-              ## Input artifacts
-            
-              You are expecting the following artifacts as input from the `Artifacts` section.
-
-              #{input_artifacts.map { |name, description| "* `#{name}`: #{description}" }.join("\n")}
-              
-            EO_Instructions
-          end
-          unless output_artifacts.empty?
-            full_instructions << <<~EO_Instructions
-              ## Output artifacts
-            
-              You must produce the following artifacts as output when completing your task.
-
-              #{output_artifacts.map { |name, description| "* `#{name}`: #{description}" }.join("\n")}
-              
-            EO_Instructions
-          end
-        end
         ::Agents::Agent.new(
           model:,
           provider: 'clinecli',
           name:,
           params: {
             agent: {
-              name:
+              name:,
+              role:,
+              objective:,
+              constraints:
             },
             artifacts: {
               input: input_artifacts,
@@ -497,25 +452,8 @@ module XAeonAgentsSkills
               skills:
             }
           },
-          instructions: full_instructions
+          instructions: instructions
         )
-      end
-
-      # Get the instructions header, applicable to all agents
-      #
-      # Parameters::
-      # * *name* (String): Agent's name
-      # Result::
-      # String: The corresponding instructions' header
-      def instructions_header(name)
-        <<~EO_Instructions
-          You are a #{name} agent.
-
-          You are working in a headless environment.
-          Do NOT ask for user confirmation. 
-          Do NOT call the tool `plan_mode_respond`.
-
-        EO_Instructions
       end
 
     end
