@@ -140,7 +140,7 @@ module XAeonAgentsSkills
 
           When #{goal_sentence}, follow those steps.
 
-          #{init_skill_checklist.rstrip}
+          #{GenHelpers.init_skill_checklist(name).rstrip}
 
           ### 1. Inform the user
 
@@ -148,7 +148,7 @@ module XAeonAgentsSkills
 
           #{numbered_sections.join("\n\n")}
 
-          #{validate_skill_checklist.rstrip}
+          #{GenHelpers.validate_skill_checklist(name).rstrip}
         EO_Markdown
       end
     end
@@ -220,6 +220,44 @@ module XAeonAgentsSkills
 
     end
 
+    # Return the execution checklist initialization section
+    #
+    # Parameters::
+    # * *checklist_name* (String): Name to be given to this checklist
+    # Result::
+    # * String: The execution checklist section
+    def self.init_skill_checklist(checklist_name)
+      <<~EO_Markdown
+        ### Create the #{checklist_name} Execution Checklist (MANDATORY)
+
+        - Before executing anything, create a checklist named #{checklist_name} Execution Checklist with all steps of this skill.
+        - The #{checklist_name} Execution Checklist must include all numbered steps explicitly.
+        - The #{checklist_name} Execution Checklist must be displayed to the user.
+        - After completing each step of this skill, mark the item in the #{checklist_name} Execution Checklist as completed, and display again the #{checklist_name} Execution Checklist to the user.
+        - Do not skip any item.
+        - If an item cannot be executed, explicitly explain why.
+        - Never mark the skill as completed while any item from the #{checklist_name} Execution Checklist remains open.
+      EO_Markdown
+    end
+
+    # Return the final verification section
+    #
+    # Parameters::
+    # * *checklist_name* (String): Name to be given to this checklist
+    # Result::
+    # * String: The final verification section
+    def self.validate_skill_checklist(checklist_name)
+      <<~EO_Markdown
+        ### Final Verification (MANDATORY)
+
+        Before declaring the task complete:
+
+        - Re-list all numbered steps from the #{checklist_name} Execution Checklist.
+        - Confirm each one was executed.
+        - If any step was not executed, execute it now.
+      EO_Markdown
+    end
+
     private
 
     # Return the ERB file being generated
@@ -230,40 +268,6 @@ module XAeonAgentsSkills
       file_found = caller.find { |stack_trace| stack_trace =~ /(\/skills\.src\/.+\.erb)/ }
       raise "Unable to find ERB file among stack:\n#{caller.join("\n")}" if file_found.nil?
       Regexp.last_match[1]
-    end
-
-    # Return the execution checklist initialization section
-    #
-    # Result::
-    # * String: The execution checklist section
-    def init_skill_checklist
-      <<~EO_Markdown
-        ### Create the #{name} Execution Checklist (MANDATORY)
-
-        - Before executing anything, create a checklist named #{name} Execution Checklist with all steps of this skill.
-        - The #{name} Execution Checklist must include all numbered steps explicitly.
-        - The #{name} Execution Checklist must be displayed to the user.
-        - After completing each step of this skill, mark the item in the #{name} Execution Checklist as completed, and display again the #{name} Execution Checklist to the user.
-        - Do not skip any item.
-        - If an item cannot be executed, explicitly explain why.
-        - Never mark the skill as completed while any item from the #{name} Execution Checklist remains open.
-      EO_Markdown
-    end
-
-    # Return the final verification section
-    #
-    # Result::
-    # * String: The final verification section
-    def validate_skill_checklist
-      <<~EO_Markdown
-        ### Final Verification (MANDATORY)
-
-        Before declaring the task complete:
-
-        - Re-list all numbered steps from the #{name} Execution Checklist.
-        - Confirm each one was executed.
-        - If any step was not executed, execute it now.
-      EO_Markdown
     end
 
     # Capture the ERB content inside a code block, and return a user-transformed version of it.

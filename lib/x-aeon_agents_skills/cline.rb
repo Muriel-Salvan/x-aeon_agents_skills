@@ -73,7 +73,8 @@ module XAeonAgentsSkills
               while !@next_prompt.nil? && @next_prompt != :exit
                 # Generate prompt file
                 prompt_file = "#{temp_dir}/prompt_#{idx_prompt}.txt"
-                File.write(prompt_file, @next_prompt.is_a?(String) ? @next_prompt : JSON.pretty_generate(@next_prompt))
+                # Make sure we always create Unix-style files.
+                File.write(prompt_file, @next_prompt.is_a?(String) ? @next_prompt.gsub("\r", '') : JSON.pretty_generate(@next_prompt), mode: 'wb')
                 @next_prompt = nil
                 @remove_conversation_index = nil
                 idx_prompt += 1
@@ -106,7 +107,7 @@ module XAeonAgentsSkills
                 unless @remove_conversation_index.nil?
                   log_debug "Remove conversation #{@remove_conversation_index} from task's messages"
                   File.write(
-                    current_task_messages_file,
+                    current_task_messages_file(config_dir),
                     current_task_messages(config_dir).
                       select { |message| message[:conversationHistoryIndex] != @remove_conversation_index }.
                       to_json

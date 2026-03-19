@@ -1,6 +1,7 @@
 require 'agents'
 require 'front_matter_parser'
 require 'ruby_llm/model/info'
+require 'x-aeon_agents_skills/gen_helpers'
 require 'x-aeon_agents_skills/helpers'
 require 'x-aeon_agents_skills/logger'
 require 'x-aeon_agents_skills/providers/cline_cli'
@@ -183,12 +184,12 @@ module XAeonAgentsSkills
         )
         planner_agent = cline_agent(
           name: 'Planner',
-          objective: 'Create an implementation plan that can be used to implement some requirements.',
+          objective: 'Create a `plan` artifact containing a complete and detailed implementation plan that can be used to implement some requirements.',
           input_artifacts: {
-            requirements: 'Initial requirements for which you need to devise an implementation plan.'
+            requirements: 'Initial requirements for which you need to devise an implementation plan'
           },
           output_artifacts: {
-            plan: 'The full implementation plan that you must devise.'
+            plan: 'The full implementation plan that should implement the requirements given by the `requirements` artifact'
           },
           skills: %w[
             applying-ruby-conventions
@@ -214,13 +215,15 @@ module XAeonAgentsSkills
               strictPlanModeEnabled: true
             }
           ),
-          instructions: <<~EO_Instructions,
-            [ ] 1. Read the initial requirements from the artifact named `requirements`.
-            [ ] 2. Analyze the project files.
-            [ ] 3. Devise a **step-by-step implementation plan**.
-            [ ] 4. Output **only the implementation plan** as an artifact named `plan`.
-            [ ] 5. Do NOT execute the plan yourself.
-          EO_Instructions
+          instructions: {
+            ordered_list: [
+              'Read the initial requirements from the `requirements` artifact',
+              'Analyze the project files',
+              'Devise a **step-by-step implementation plan**',
+              'Return to ther user the `plan` artifact containing the full and detailed implementation plan between `<artifact:plan>` and `</artifact:plan>` tags',
+              'Do NOT execute the plan yourself'
+            ]
+          },
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
@@ -231,7 +234,7 @@ module XAeonAgentsSkills
           name: 'Developer',
           objective: 'Implement a task',
           input_artifacts: {
-            plan: 'Implementation plan you must follow.'
+            plan: 'Implementation plan that you must follow'
           },
           skills: %w[
             applying-ruby-conventions
@@ -250,14 +253,14 @@ module XAeonAgentsSkills
             If the decisions taken in the implementation plan prevent you from fixing regressions, modify the implementation plan and report those modifications to the user.
           EO_Objective
           input_artifacts: {
-            requirements: 'Initial requirements.',
-            plan: 'Implementation plan devised from the requirements.',
-            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan.',
-            tests_output: 'Output of running the whole tests suite.',
-            tests_cmd: 'Command line to be used to run the whole tests suite.'
+            requirements: 'Initial requirements',
+            plan: 'Implementation plan devised from the requirements',
+            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan',
+            tests_output: 'Output of running the whole tests suite',
+            tests_cmd: 'Command line to be used to run the whole tests suite'
           },
           output_artifacts: {
-            plan_modifications: 'Any modification or divergence you considered from the implementation plan. Keep empty if you didn\'t change the implementation plan.'
+            plan_modifications: 'Any modification or divergence you considered from the implementation plan'
           },
           skills: %w[
             applying-ruby-conventions
@@ -265,24 +268,30 @@ module XAeonAgentsSkills
             editing-files
             enforcing-project-rules
           ],
-          instructions: <<~EO_Instructions
-            [ ] 1. Read the initial requirements from the `requirements` artifact.
-            [ ] 2. Read the implementation plan that was decided from the `plan` artifact.
-            [ ] 3. Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements.
-            [ ] 4. Analyze the full output of unit tests run from the `tests_output` artifact, and check every error reported in it.
-            [ ] 5. Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements.
-            [ ] 6. Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan.
-            [ ] 7. Make sure all tests are running without issue after your fixes. You can run tests again using the provided tests command from the `tests_cmd` artifact to test your own fixes.
-            [ ] 8. Report to the user any implementation plan modification or divergence you considered in the `plan_modifications` artifact.
-          EO_Instructions
+          instructions: {
+            ordered_list: [
+              'Read the initial requirements from the `requirements` artifact',
+              'Read the implementation plan that was decided from the `plan` artifact',
+              'Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements',
+              'Analyze the full output of unit tests run from the `tests_output` artifact, and check every error reported in it',
+              'Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements',
+              'Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan',
+              <<~EO_Step,
+                Make sure all tests are running without issue after your fixes
+                
+                - You can run tests again using the provided tests command from the `tests_cmd` artifact to test your own fixes.
+              EO_Step
+              'Report to the user any implementation plan modification or divergence you considered in the `plan_modifications` artifact'
+            ]
+          }
         )
         documenter_agent = cline_agent(
           name: 'Documenter',
           objective: 'Update relevant documentation when a task is being implemented.',
           input_artifacts: {
-            requirements: 'Initial requirements.',
-            plan: 'Implementation plan that introduced features and fixes to be documented.',
-            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan.'
+            requirements: 'Initial requirements',
+            plan: 'Implementation plan that introduced features and fixes to be documented',
+            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan'
           },
           skills: %w[
             applying-ruby-conventions
@@ -291,14 +300,20 @@ module XAeonAgentsSkills
             enforcing-project-rules
             updating-doc
           ],
-          instructions: <<~EO_Instructions,
-            [ ] 1. Read the initial requirements from the `requirements` artifact.
-            [ ] 2. Read the implementation plan that was decided from the `plan` artifact.
-            [ ] 3. Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements.
-            [ ] 4. Find all documentation files and all the files referenced by the documentation files. Start with `README.md` and any `docs/*.md` files.
-            [ ] 5. Read all the documentation files that you found to understand the documentation structure and content.
-            [ ] 6. Update the documentation files according to the new requirements that were implemented, keeping in mind the implementation plan that was used and the corresponding files diffs.
-          EO_Instructions
+          instructions: {
+            ordered_list: [
+              'Read the initial requirements from the `requirements` artifact',
+              'Read the implementation plan that was decided from the `plan` artifact',
+              'Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements',
+              <<~EO_Step,
+                Find all documentation files and all the files referenced by the documentation files
+                
+                - Start with `README.md` and any `docs/*.md` files.
+              EO_Step
+              'Read all the documentation files that you found to understand the documentation structure and content',
+              'Update the documentation files according to the new requirements that were implemented, keeping in mind the implementation plan that was used and the corresponding files diffs'
+            ]
+          },
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.
@@ -371,6 +386,18 @@ module XAeonAgentsSkills
         end
         puts
         puts 'Requirements implemented successfully'
+      end
+
+      # Return a clear instruction for the LLM to generate an artifact
+      #
+      # Parameters::
+      # * *name* (Symbol): Artifact's name
+      # * *description* (String): Artifact's description
+      # Result::
+      # * String: The prompt instruction to generate this artifact
+      def artifact_prompt(name, description)
+        # "Return the implementation plan between `<artifact:#{name}>...</artifact:#{name}>` tags."
+        "Return the `#{name}` artifact (#{description}) between `<artifact:#{name}>` and `</artifact:#{name}>` tags"
       end
 
       private
@@ -452,8 +479,70 @@ module XAeonAgentsSkills
               skills:
             }
           },
-          instructions: instructions
+          instructions: system_instructions(name:, instructions:, output_artifacts:)
         )
+      end
+
+      # Compute the system instructions as a String from the original instructions and other agent variables that may affect it
+      #
+      # Parameters::
+      # * *name* (String): Agent name
+      # * *instructions* (Object): Original instructions given to the agent
+      #   Here are the possible kinds of instructions:
+      #   * Array<Object>: List of instruction descriptions that should be appended
+      #   * Object: Individual instruction description.
+      #   An individual instruction can be one of the following:
+      #     * Hash<Symbol,Object>: A structure describing the instructions
+      #     * String: Direct instructions to be used (equivalent to { text: instructions })
+      #     Here is the list of keys that can define different instructions:
+      #       * *text* (String): The instructions are given as text directly.
+      #       * *ordered_list* (Array<String>): The instructions are a precise list of steps to perform.
+      #       Several keys can be used in the same Hash, and they will be treated in the order in the Hash.
+      # * *output_artifacts* (Hash<Symbol,String>): Set of expected output artifacts
+      # Result::
+      # * String: The resulting instructions as a string
+      def system_instructions(name:, instructions:, output_artifacts:)
+        # Normalize instructions
+        instructions = (instructions.is_a?(Array) ? instructions : [instructions]).
+          map { |instruction_desc| instruction_desc.is_a?(Hash) ? instruction_desc : { text: instruction_desc } }
+
+        # Enrich instructions with output artifacts
+        unless output_artifacts.empty?
+          # We add the output artifacts at the end of an ordered list (we add one if current instructions don't end with such a list)
+          instructions << { ordered_list: [] } unless instructions.last.key?(:ordered_list)
+          instructions.last[:ordered_list].concat(output_artifacts.map { |name, description| artifact_prompt(name, description) })
+        end
+
+        # Convert the list of instructions into a nice string
+        idx_checklist = 0
+        instructions.map do |instruction_desc|
+          instruction_desc.map do |instruction_kind, instruction|
+            case instruction_kind
+            when :text
+              instruction
+            when :ordered_list
+              checklist_name = "#{name}-#{idx_checklist}"
+              idx_checklist += 1
+              <<~EO_Instructions
+                ## Sequential steps to follow
+
+                #{GenHelpers.init_skill_checklist(checklist_name)}
+
+                #{
+                  # Consider each element of the list as a potential markdown section, with the first line being the title.
+                  instruction.map.with_index do |markdown_section, step_number|
+                    lines = markdown_section.each_line.to_a
+                    "### #{step_number + 1}. #{lines.first}#{lines[1..-1].join}"
+                  end.join("\n\n")
+                }
+
+                #{GenHelpers.validate_skill_checklist(checklist_name)}
+              EO_Instructions
+            else
+              raise "Unknown instruction kind: #{instruction_kind}"
+            end
+          end
+        end.flatten(1).join("\n\n")
       end
 
     end

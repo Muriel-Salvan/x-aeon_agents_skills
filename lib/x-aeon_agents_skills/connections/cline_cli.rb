@@ -30,58 +30,55 @@ module XAeonAgentsSkills
         missing_input_artifacts = payload[:artifacts][:input].select { |name, _description| !payload[:artifacts][:store].key?(name) }
         raise "Missing #{missing_input_artifacts.size} artifacts from the payload:\n#{missing_input_artifacts.map { |name, description| "* #{name}: #{description}" }.join("\n")}" unless missing_input_artifacts.empty?
 
+        plan_mode = payload[:cline][:plan_mode]
+
         # Create a JSON prompt to keep the full structure
         prompt_json = {}
-        prompt_json[:role] = payload[:agent][:role] unless payload[:agent][:role].empty?
-        prompt_json[:objective] = payload[:agent][:objective] unless payload[:agent][:objective].empty?
-        context = ''
+        prompt_json[:role] = payload[:agent][:role].strip unless payload[:agent][:role].strip.empty?
+        prompt_json[:objective] = payload[:agent][:objective].strip unless payload[:agent][:objective].strip.empty?
         unless payload[:artifacts][:input].empty? && payload[:artifacts][:output].empty?
-          context << <<~EO_Context
+          prompt_json[:context] = <<~EO_Context.strip
             # Artifacts
 
             Artifacts are text documents that you can get as input and produce as output.
             Each artifact is identified by a name.
             #{payload[:artifacts][:input].empty? ? '' : 'You must read all artifacts given in the `artifacts` JSON property: they are given to you by the user.'}
-            #{payload[:artifacts][:output].empty? ? '' : 'You must produce all artifacts given in the `output.artifacts` JSON property when completing your task.'}
+            #{payload[:artifacts][:output].empty? ? '' : 'You must produce all artifacts described in the `output_format` JSON property when completing your task.'}
           EO_Context
         end
-        prompt_json[:context] = context unless context.empty?
         unless payload[:artifacts][:input].empty?
           prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |name, description|
             [
               name,
               {
                 description:,
-                content: payload[:artifacts][:store][name]
+                content: payload[:artifacts][:store][name].strip
               }
             ]
           end
         end
-        prompt_json[:instructions] = payload[:messages].map(&:content).select { |content| !content.strip.empty? }
+        prompt_json[:instructions] = payload[:messages].map(&:content).select { |content| !content.strip.empty? }.join("\n\n").strip
         constraints = <<~EO_Constraints
           - Do NOT ask for user confirmation. 
-          - Do NOT call the tool `plan_mode_respond`.
         EO_Constraints
+        unless plan_mode
+          constraints << <<~EO_Constraints
+            - Do NOT call the tool `plan_mode_respond`.
+          EO_Constraints
+        end
         constraints << payload[:agent][:constraints] unless payload[:agent][:constraints].empty?
-        prompt_json[:constraints] = constraints
-        output = {}
-        output_format = ''
+        prompt_json[:constraints] = constraints.strip
         unless payload[:artifacts][:output].empty?
-          output[:artifacts] = payload[:artifacts][:output]
-          output_format << <<~EO_Output_Format
+          prompt_json[:output_format] = <<~EO_Output_Format.strip
             # Artifacts
             
-            You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
+            Always return artifacts to the user between `<artifact:{name}>` and `</artifact:{name}>` tags, anywhere in your response.
+            If an artifact has no content, then return an empty string for its value between the tags.
           EO_Output_Format
-        end
-        unless output_format.empty?
-          output[:format] = output_format
-          prompt_json[:output] = output
         end
 
         completion_result = nil
         artifacts = {}
-        plan_mode = payload[:cline][:plan_mode]
         log_debug { "Cline prompt:\n#{JSON.pretty_generate(prompt_json)}" }
         @cline.prompt(
           prompt_json.to_json,
@@ -101,18 +98,10 @@ module XAeonAgentsSkills
                 # Cline just got a plan done.
                 if plan_mode
                   response = JSON.parse(message[:text], symbolize_names: true)[:response]
-                  artifacts.merge!(artifacts_from(response))
-                  if artifacts.key?(:plan)
+                  artifacts.merge!(xml_artifacts_from(response))
+                  if check_artifacts_upon_completion(artifacts, payload[:artifacts][:output])
                     completion_result = response
                     @cline.user_feedback(:exit)
-                  else
-                    @cline.user_feedback <<~EO_Prompt
-                      Tell the plan to the user in an artifact named `plan` and stop this task.
-
-                      Artifacts are text documents that you can get as input and produce as output.
-                      Each artifact is identified by a name.
-                      You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
-                    EO_Prompt
                   end
                 else
                   @cline.user_feedback('You are not in Plan mode, so resume this task.')
@@ -129,6 +118,8 @@ module XAeonAgentsSkills
                 puts details[:options] unless details[:options].empty?
                 puts '===== Please input your answer to Cline:'
                 @cline.user_feedback($stdin.gets.strip)
+              when 'mistake_limit_reached'
+                raise "Cline failed to process prompt: #{message}"
               else
                 raise "Unknown ask from Cline: #{message}"
               end
@@ -136,25 +127,10 @@ module XAeonAgentsSkills
               case message[:say]
               when 'completion_result'
                 completion_result = message[:text]
-                artifacts.merge!(artifacts_from(completion_result))
-                # Check for expected artifacts and eventually ask to continue if some are missing
-                missing_output_artifacts = payload[:artifacts][:output].select { |name, _description| artifacts.key?(name) }
-                unless missing_output_artifacts.empty?
-                  @cline.user_feedback <<~EO_Prompt
-                    Some output artifacts are missing in your reponse.
-
-                    You must return the following artifacts to the user:
-                    #{missing_input_artifacts.map { |name, description| "- #{name}: #{description}" }.join("\n")}
-                    
-                    If some of those artifacts are empty, leave their content empty.
-
-                    Artifacts are text documents that you can get as input and produce as output.
-                    Each artifact is identified by a name.
-                    You must produce your artifacts by including their content between `<artifact:name>...</artifact:name>` tags in any of your responses. For example the artifact named `plan` should be returned to the user between `<artifact:plan>...</artifact:plan>` tags.
-                  EO_Prompt
-                end
+                artifacts.merge!(xml_artifacts_from(completion_result))
+                check_artifacts_upon_completion(artifacts, payload[:artifacts][:output])
               when 'text'
-                artifacts.merge!(artifacts_from(message[:text]))
+                artifacts.merge!(xml_artifacts_from(message[:text]))
               end
             end
           end,
@@ -170,14 +146,28 @@ module XAeonAgentsSkills
 
       private
 
-      # Parse artifacts from a text.
+      # Check for missing artifacts and give user feedback if some of them are missing as clear instructions
+      #
+      # Parameters::
+      # * *artifacts* (Hash): Artifacts already found
+      # * *expected_artifacts* (Hash): Expected artifacts
+      # Result::
+      # * Boolean: Are all the required artifacts present?
+      def check_artifacts_upon_completion(artifacts, expected_artifacts)
+        # Check for expected artifacts and eventually ask to continue if some are missing
+        missing_artifacts = expected_artifacts.select { |name, _description| !artifacts.key?(name) }
+        @cline.user_feedback(missing_artifacts.map { |name, description| Agents.artifact_prompt(name, description) }.join("\n")) unless missing_artifacts.empty?
+        missing_artifacts.empty?
+      end
+
+      # Parse artifacts from a text as XML tags.
       # Artifacts defined several times will concatenate.
       #
       # Parameters::
       # * *text* (String): Text to look for artifacts
       # Result::
       # * Hash<Symbol,String>: Set of artifacts
-      def artifacts_from(text)
+      def xml_artifacts_from(text)
         artifacts = {}
         Cline.parse_sections(text).each do |section|
           if !section[:name].nil? && section[:name] =~ /^artifact:(.+)$/
@@ -187,6 +177,32 @@ module XAeonAgentsSkills
               artifacts[name] << section[:content]
             else
               artifacts[name] = section[:content]
+            end
+          end
+        end
+        artifacts
+      end
+
+      # Parse artifacts from a text as JSON.
+      # Artifacts defined several times will concatenate.
+      #
+      # Parameters::
+      # * *text* (String): Text to look for artifacts
+      # Result::
+      # * Hash<Symbol,String>: Set of artifacts
+      def json_artifacts_from(text)
+        artifacts = {}
+        # Find markdown json:output blocks using regex
+        text.scan(/^```json:output\n(.*?)\n```$/m).each do |json_block|
+          # Extract artifacts from the JSON
+          JSON.parse(json_block.first).each do |key, value|
+            if key.start_with?('artifact:')
+              name = key.sub('artifact:', '').to_sym
+              if artifacts.key?(name)
+                artifacts[name] << value
+              else
+                artifacts[name] = value
+              end
             end
           end
         end
