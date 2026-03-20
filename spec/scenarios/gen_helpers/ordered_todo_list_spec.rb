@@ -24,13 +24,12 @@ describe XAeonAgentsSkills::GenHelpers do
 
         ### Create the test_skill Execution Checklist (MANDATORY)
 
-        - Before executing anything, create a checklist named test_skill Execution Checklist with all steps of this skill.
+        - Before executing anything, create a checklist named test_skill Execution Checklist with all steps of these instructions.
         - The test_skill Execution Checklist must include all numbered steps explicitly.
-        - The test_skill Execution Checklist must be displayed to the user.
-        - After completing each step of this skill, mark the item in the test_skill Execution Checklist as completed.
+        - After completing each step of these instructions, mark the item in the test_skill Execution Checklist as completed.
         - Do not skip any item.
         - If an item cannot be executed, explicitly explain why.
-        - Never mark the skill as completed while any item from the test_skill Execution Checklist remains open.
+        - Never mark the task as completed while any item from the test_skill Execution Checklist remains open.
 
         ### 1. Inform the user
 
@@ -71,13 +70,12 @@ describe XAeonAgentsSkills::GenHelpers do
 
         ### Create the test_skill Execution Checklist (MANDATORY)
 
-        - Before executing anything, create a checklist named test_skill Execution Checklist with all steps of this skill.
+        - Before executing anything, create a checklist named test_skill Execution Checklist with all steps of these instructions.
         - The test_skill Execution Checklist must include all numbered steps explicitly.
-        - The test_skill Execution Checklist must be displayed to the user.
-        - After completing each step of this skill, mark the item in the test_skill Execution Checklist as completed.
+        - After completing each step of these instructions, mark the item in the test_skill Execution Checklist as completed.
         - Do not skip any item.
         - If an item cannot be executed, explicitly explain why.
-        - Never mark the skill as completed while any item from the test_skill Execution Checklist remains open.
+        - Never mark the task as completed while any item from the test_skill Execution Checklist remains open.
 
         ### 1. Inform the user
 
