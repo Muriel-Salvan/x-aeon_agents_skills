@@ -1,4 +1,5 @@
 require 'agents'
+require 'json'
 require 'front_matter_parser'
 require 'ruby_llm/model/info'
 require 'x-aeon_agents_skills/gen_helpers'
@@ -29,6 +30,8 @@ module XAeonAgentsSkills
   module Agents
 
     class << self
+
+      include Logger
 
       attr_reader :config
 
@@ -175,9 +178,8 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *requirements* (String): Requirements to be implemented
-      def implement_requirements(requirements)
-        plan_file = "tmp/plans/PLAN_#{Time.now.strftime('%Y-%m-%d-%H-%M-%S')}.md"
-        FileUtils.mkdir_p File.dirname(plan_file)
+      # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
+      def implement_requirements(requirements, run_id: nil)
         manager_agent = cline_agent(
           name: 'Manager',
           objective: 'Coordinate the work of other agents to fully implement a Github issue'
@@ -324,18 +326,24 @@ module XAeonAgentsSkills
           objective: 'Release a new feature or bugfix to its branch on Github, with a Pull Request'
         )
 
-        with_runner do
-          # Initial artifacts
-          @artifacts[:requirements] = requirements
+        with_runner(run_id) do
 
+          # Initial artifacts
+          step(:a_setup_requirements) { @artifacts[:requirements] = requirements }
+
+          step(:b_plan) do
           run(planner_agent)
           puts "===== Implementation plan:\n#{@artifacts[:plan]}"
+          end
 
           # TODO: Add interactive review step here
 
+          step(:c_develop) do
           run(developer_agent)
           puts "===== Developer changes:\n#{`git status`}"
+          end
 
+          step(:d_test) do
           tests_cmd = 'bundle exec rspec --format documentation'
           @artifacts[:tests_cmd] = tests_cmd
           idx_test = 0
@@ -379,10 +387,13 @@ module XAeonAgentsSkills
               EO_Artifact
             end
             idx_test += 1
+            end
           end
 
+          step(:e_document) do
           run(documenter_agent)
           puts "===== Documenter changes:\n#{`git status`}"
+          end
         end
         puts
         puts 'Requirements implemented successfully'
@@ -402,11 +413,45 @@ module XAeonAgentsSkills
 
       private
 
+      # Define a step that can be serialized and resumed.
+      # This will store the state of this step in the file system.
+      # If this step was already executed, skip it and update its artifacts from the file system store.
+      #
+      # Parameters::
+      # * *name* (Symbol): Step name
+      # * Proc: The code called for this step
+      def step(name)
+        if @run_id.nil?
+          yield
+        else
+          step_dir = ".x-aeon_agents/runs/#{@run_id}/#{name}"
+          step_file = "#{step_dir}/step.json"
+          if File.exist?(step_file) && JSON.parse(File.read(step_file), symbolize_names: true)[:executed]
+            # This step was already executed
+            # Read all the artifacts
+            @artifacts.replace(Dir.glob("#{step_dir}/*.md").to_h { |file| [File.basename(file, '.md').to_sym, File.read(file)] })
+            log_debug "[Step #{name}] - Executed - #{@artifacts.size} artifacts read from persistence: #{@artifacts.keys.join(', ')}"
+          else
+            yield
+            FileUtils.mkdir_p(step_dir)
+            # Serialize all the artifacts
+            @artifacts.each do |artifact_name, artifact_content|
+              File.write("#{step_dir}/#{artifact_name}.md", artifact_content)
+            end
+            # Mark the step as executed
+            File.write("#{step_dir}/step.json", { executed: true }.to_json)
+            log_debug "[Step #{name}] - Executed - Stored #{@artifacts.size} artifacts in persistence: #{@artifacts.keys.join(', ')}"
+          end
+        end
+      end
+
       # Setup an agents runner.
       #
       # Parameters::
+      # * *run_id* (String or nil): The run ID, or nil if persistence is not needed [default = nil]
       # * Proc: Code called with the runner setup
-      def with_runner
+      def with_runner(run_id = nil)
+        @run_id = run_id
         @runner = ::Agents::Runner.new
         @artifacts = {}
         yield
