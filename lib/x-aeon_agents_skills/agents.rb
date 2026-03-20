@@ -169,6 +169,22 @@ module XAeonAgentsSkills
         with_runner { puts run(cline_agent, prompt) }
       end
 
+      # Interpret current code diffs
+      #
+      # Result::
+      # * String: Code diffs interpretation
+      def interpret_diffs
+        with_runner do
+          store_artifact_files_diffs
+          puts <<~EO_Diffs.strip
+            
+            ===== Code diffs interpretation:
+
+            #{code_diffs}
+          EO_Diffs
+        end
+      end
+
       # Implement some requirements, given a classic dev cycle:
       # 1. Planning
       # 2. Development
@@ -179,12 +195,117 @@ module XAeonAgentsSkills
       # Parameters::
       # * *requirements* (String): Requirements to be implemented
       # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
-      def implement_requirements(requirements, run_id: nil)
-        manager_agent = cline_agent(
+      # * *commit* (Boolean): Do we commit changes? [default: false]
+      def implement_requirements(requirements, run_id: nil, commit: false)
+        with_runner(run_id) do
+
+          # Initial artifacts
+          step(:a_setup_requirements) { @artifacts[:requirements] = requirements }
+
+          step(:b_plan) do
+            run(planner_agent)
+            puts "===== Implementation plan:\n#{@artifacts[:plan]}"
+          end
+
+          # TODO: Add interactive review step here
+
+          step(:c_develop) do
+            run(developer_agent)
+            store_artifact_files_diffs
+            puts "===== Developer changes:\n#{`git status`}"
+          end
+
+          step(:d_commit) { git_commit(developer_agent) } if commit
+
+          step(:e_test) do
+            tests_cmd = 'bundle exec rspec --format documentation'
+            @artifacts[:tests_cmd] = tests_cmd
+            idx_test = 0
+            loop do
+              puts
+              puts "===== Run tests ##{idx_test}..."
+              test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
+              puts "Tests ##{idx_test} exit status: #{test_result[:exit_status]}"
+              @artifacts[:tests_output] = <<~EO_Artifact
+                ```
+                #{test_result[:stdout]}
+                ```
+              EO_Artifact
+              break if test_result[:exit_status] == 0
+
+              run(tester_agent)
+              store_artifact_files_diffs
+              puts "===== Tester changes:\n#{`git status`}"
+              # Integrate potential implementation plan modifications
+              unless @artifacts[:plan_modifications].strip.empty?
+                plan_modifications = @artifacts.delete(:plan_modifications)
+                @artifacts[:plan] << <<~EO_Artifact
+                  # Revision ##{idx_test} to the implementation plan
+                  
+                  #{plan_modifications}
+
+                EO_Artifact
+              end
+              git_commit(tester_agent) if commit
+              idx_test += 1
+            end
+          end
+
+          step(:f_document) do
+            run(documenter_agent)
+            puts "===== Documenter changes:\n#{`git status`}"
+          end
+
+          step(:g_commit) { git_commit(documenter_agent) } if commit
+        end
+        puts
+        puts 'Requirements implemented successfully'
+      end
+
+      private
+
+      # Get the read-only configuration used by agents that are planning and analyzing code
+      #
+      # Result::
+      # * Hash: The read-only configuration
+      def read_only_config
+        @read_only_config ||= Helpers.deep_merge(
+          config[:default_cline_config],
+          {
+            autoApprovalSettings: {
+              actions: {
+                readFiles: true,
+                readFilesExternally: true,
+                editFiles: false,
+                editFilesExternally: false,
+                executeSafeCommands: true,
+                executeAllCommands: false,
+                useBrowser: true,
+                useMcp: true
+              }
+            },
+            strictPlanModeEnabled: true
+          }
+        )
+      end
+
+      # Create the Manager agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Manager agent
+      def manager_agent
+        @manager_agent ||= cline_agent(
           name: 'Manager',
           objective: 'Coordinate the work of other agents to fully implement a Github issue'
         )
-        planner_agent = cline_agent(
+      end
+
+      # Create the Planner agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Planner agent
+      def planner_agent
+        @planner_agent ||= cline_agent(
           name: 'Planner',
           objective: 'Produce a full and detailed implementation plan that can be used to implement some requirements.',
           input_artifacts: {
@@ -199,24 +320,7 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           plan_mode: true,
-          config: Helpers.deep_merge(
-            config[:default_cline_config],
-            {
-              autoApprovalSettings: {
-                actions: {
-                  readFiles: true,
-                  readFilesExternally: true,
-                  editFiles: false,
-                  editFilesExternally: false,
-                  executeSafeCommands: true,
-                  executeAllCommands: false,
-                  useBrowser: true,
-                  useMcp: true
-                }
-              },
-              strictPlanModeEnabled: true
-            }
-          ),
+          config: read_only_config,
           instructions: {
             ordered_list: [
               'Read the initial requirements from the `requirements` artifact',
@@ -231,7 +335,93 @@ module XAeonAgentsSkills
             - Do NOT execute the plan yourself.
           EO_Constraints
         )
-        developer_agent = cline_agent(
+      end
+
+      # Create the Diff interpreter agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Diff interpreter agent
+      def diff_interpreter_agent
+        @diff_interpreter_agent ||= cline_agent(
+          name: 'Diff interpreter',
+          objective: 'Interpret code modifications and explain the changes properly with its meaning and intent.',
+          input_artifacts: {
+            files_diffs: 'Full list of files changes and differences that have been done',
+          },
+          output_artifacts: {
+            change_intent: 'the full description of the code changes, their meaning and intent'
+          },
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            enforcing-project-rules
+          ],
+          plan_mode: true,
+          config: read_only_config,
+          instructions: {
+            ordered_list: [
+              'Read the full list of file changes from the `files_diffs` artifact',
+              'Analyze the project files',
+              <<~EO_Step
+                Explain properly the intent of those changes
+
+                - Explain the files difference meaning and intent in the context of this project.
+                - Always enumerate the kinds of changes it brings (for example: new feature, bug fix, documentation...).
+                - Always enumerate the project's components impacted by this change (for example: backend, login screen, CLI...).
+              EO_Step
+            ]
+          },
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+          EO_Constraints
+        )
+      end
+
+      # Create the 1-line code diff summarizer agent
+      #
+      # Result::
+      # * ::Agents::Agent: The 1-line code diff summarizer agent
+      def one_line_code_diff_summarizer
+        @one_line_code_diff_summarizer ||= cline_agent(
+          name: '1-line code diff summarizer',
+          objective: 'Produce a 1-line summary of a code change intent report.',
+          input_artifacts: {
+            change_intent: 'The full description of the code changes, their meaning and intent',
+          },
+          output_artifacts: {
+            one_line_summary: 'the 1-line summary of the code change intent'
+          },
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            enforcing-project-rules
+          ],
+          plan_mode: true,
+          config: read_only_config,
+          instructions: {
+            ordered_list: [
+              'Read the full report of the code change intent from the `change_intent` artifact',
+              <<~EO_Step
+                Provide a 1-line summary of such code changes that could be used as a git commit title
+
+                - Follow standard git commit title conventions using `feat`, `fix`, etc... with impacted component names.
+              EO_Step
+            ]
+          },
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+          EO_Constraints
+        )
+      end
+
+      # Create the Developer agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Developer agent
+      def developer_agent
+        @developer_agent ||= cline_agent(
           name: 'Developer',
           objective: 'Implement a task',
           input_artifacts: {
@@ -247,7 +437,14 @@ module XAeonAgentsSkills
             Follow all the steps of the implementation plan described in the `plan` artifact.
           EO_Instructions
         )
-        tester_agent = cline_agent(
+      end
+
+      # Create the Tester agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Tester agent
+      def tester_agent
+        @tester_agent ||= cline_agent(
           name: 'Tester',
           objective: <<~EO_Objective,
             Fix any regression that has been induced by new features or fixes, while keeping the initial requirements and implementation plan in mind.
@@ -285,7 +482,14 @@ module XAeonAgentsSkills
             ]
           }
         )
-        documenter_agent = cline_agent(
+      end
+
+      # Create the Documenter agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Documenter agent
+      def documenter_agent
+        @documenter_agent ||= cline_agent(
           name: 'Documenter',
           objective: 'Update relevant documentation when a task is being implemented.',
           input_artifacts: {
@@ -319,85 +523,69 @@ module XAeonAgentsSkills
             - Do NOT change any code or test.
           EO_Constraints
         )
-        releaser_agent = cline_agent(
+      end
+
+      # Create the Releaser agent
+      #
+      # Result::
+      # * ::Agents::Agent: The Releaser agent
+      def releaser_agent
+        @releaser_agent ||= cline_agent(
           name: 'Releaser',
           objective: 'Release a new feature or bugfix to its branch on Github, with a Pull Request'
         )
-
-        with_runner(run_id) do
-
-          # Initial artifacts
-          step(:a_setup_requirements) { @artifacts[:requirements] = requirements }
-
-          step(:b_plan) do
-            run(planner_agent)
-            puts "===== Implementation plan:\n#{@artifacts[:plan]}"
-          end
-
-          # TODO: Add interactive review step here
-
-          step(:c_develop) do
-            run(developer_agent)
-            puts "===== Developer changes:\n#{`git status`}"
-          end
-
-          step(:d_test) do
-            tests_cmd = 'bundle exec rspec --format documentation'
-            @artifacts[:tests_cmd] = tests_cmd
-            idx_test = 0
-            loop do
-              puts
-              puts "===== Run tests ##{idx_test}..."
-              test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
-              puts "Tests ##{idx_test} exit status: #{test_result[:exit_status]}"
-              @artifacts.merge!(
-                files_diffs: <<~EO_Artifact,
-                  ### git status
-
-                  ```
-                  #{`git status`}
-                  ```
-
-                  ### git diff
-
-                  ```
-                  #{`git diff`}
-                  ```
-                EO_Artifact
-                tests_output: <<~EO_Artifact,
-                  ```
-                  #{test_result[:stdout]}
-                  ```
-                EO_Artifact
-              )
-              break if test_result[:exit_status] == 0
-
-              run(tester_agent)
-              puts "===== Tester changes:\n#{`git status`}"
-              # Integrate potential implementation plan modifications
-              unless @artifacts[:plan_modifications].strip.empty?
-                plan_modifications = @artifacts.delete(:plan_modifications)
-                @artifacts[:plan] << <<~EO_Artifact
-                  # Revision ##{idx_test} to the implementation plan
-                  
-                  #{plan_modifications}
-
-                EO_Artifact
-              end
-              idx_test += 1
-            end
-          end
-
-          step(:e_document) do
-            run(documenter_agent)
-            puts "===== Documenter changes:\n#{`git status`}"
-          end
-        end
-        puts
-        puts 'Requirements implemented successfully'
       end
 
-      private
+      # Get current code diffs interpretation
+      #
+      # Result::
+      # * String: The current code diffs
+      def code_diffs
+        run(diff_interpreter_agent)
+        run(one_line_code_diff_summarizer)
+        <<~EO_Diffs.strip
+          #{@artifacts[:one_line_summary].each_line.first}
+          
+          #{@artifacts[:change_intent]}
+        EO_Diffs
+      end
+
+      # Git commit and author properly what the agent modified
+      #
+      # Parameters::
+      # * *author_agent* (::Agents::Agent): The agent authoring the changes
+      def git_commit(author_agent)
+        Dir.mktmpdir do |temp_dir|
+          comment_file = "#{temp_dir}/comment.txt"
+          File.write(
+            comment_file,
+            <<~EO_Commit.strip
+              #{code_diffs}
+              
+              Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
+            EO_Commit
+          )
+          system 'git add :/', exception: true
+          system "git commit --file \"#{comment_file}\"", exception: true
+        end
+      end
+
+      # Add the current files diffs in the artifacts store
+      def store_artifact_files_diffs
+        @artifacts[:files_diffs] = <<~EO_Artifact
+          ### git status
+
+          ```
+          #{`git status`}
+          ```
+
+          ### git diff
+
+          ```
+          #{`git diff`}
+          ```
+        EO_Artifact
+      end
 
       # Define a step that can be serialized and resumed.
       # This will store the state of this step in the file system.
