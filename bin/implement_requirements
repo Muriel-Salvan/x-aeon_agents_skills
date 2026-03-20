@@ -14,4 +14,4 @@ XAeonAgentsSkills::Agents.configure(
   debug: true
 )
 
-XAeonAgentsSkills::Agents.implement_requirements(requirements, run_id:)
+XAeonAgentsSkills::Agents.implement_requirements(requirements, run_id:, commit: true, pull_request: true)
