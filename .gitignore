@@ -3,6 +3,3 @@ Gemfile.lock
 
 # Generated skills test directory
 /skills.test
-
-# Temporary directory
-/tmp

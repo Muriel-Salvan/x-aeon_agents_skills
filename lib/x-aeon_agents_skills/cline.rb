@@ -481,7 +481,7 @@ module XAeonAgentsSkills
     #     * *temp_dir* (String): The temporary directory
     def with_temp_dir(&block)
       if Logger.debug
-        temp_dir = "tmp/cline/#{unique_id { |id| !File.exist?("tmp/cline/#{id}") }}"
+        temp_dir = ".x-aeon_agents/tmp/cline/#{unique_id { |id| !File.exist?("tmp/cline/#{id}") }}"
         FileUtils.mkdir_p temp_dir
         block.call(temp_dir)
       else

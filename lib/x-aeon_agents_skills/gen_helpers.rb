@@ -62,7 +62,7 @@ module XAeonAgentsSkills
     # Result::
     # * String: Temporary folder path
     def tmp_path
-      './.tmp_agents'
+      '.x-aeon_agents/tmp'
     end
 
     # Generate a rule documentation block with examples and rationale.
