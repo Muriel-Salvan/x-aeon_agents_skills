@@ -14,7 +14,7 @@ When creating a Pull Request, follow those steps.
 - Before executing anything, create a checklist named creating-pull-request Execution Checklist with all steps of this skill.
 - The creating-pull-request Execution Checklist must include all numbered steps explicitly.
 - The creating-pull-request Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the creating-pull-request Execution Checklist as completed, and display again the creating-pull-request Execution Checklist to the user.
+- After completing each step of this skill, mark the item in the creating-pull-request Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
 - Never mark the skill as completed while any item from the creating-pull-request Execution Checklist remains open.
@@ -36,7 +36,7 @@ When creating a Pull Request, follow those steps.
 - Always devise a meaningful Pull Request description for all the changes that you have in the current branch, and for the task you want to achieve in this branch.
 - Always add a section in the Pull Request description that lists all GitHub issues closed by or related to this Pull Request (devised in step 2), with mentions like "Closes #{issue_id}" or "Relates to #{issue_id}".
 - Always add a section in the Pull Request description that contains the exact initial prompt of the user for this task, and all user inputs or precisions that you have received from the user while implementing the task.
-- Always use `agent: write_to_file` tool to write the devised Pull Request description in a temporary file (later referenced as {pr_description_file}), inside the directory `./.tmp_agents/prs`.
+- Always use `agent: write_to_file` tool to write the devised Pull Request description in a temporary file (later referenced as {pr_description_file}), inside the directory `.x-aeon_agents/tmp/prs`.
 
 Example of a Pull Request description:
 ```markdown
@@ -67,7 +67,7 @@ This PR implements conditional debug logging in STDOUT.
 
 Example:
 ```bash
-ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" ./.tmp_agents/prs/pr_desc.txt
+ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" .x-aeon_agents/tmp/prs/pr_desc.txt
 ```
 
 ### 6. Delete the temporary description file
@@ -76,7 +76,7 @@ ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debu
 
 Example:
 ```bash
-rm ./.tmp_agents/prs/pr_desc.txt
+rm .x-aeon_agents/tmp/prs/pr_desc.txt
 ```
 
 ### Final Verification (MANDATORY)
@@ -102,7 +102,7 @@ Those examples are given for a Linux environment. Adapt them if you are running 
 This skill should perform the following commands:
 ```bash
 # Use agent tool ask_followup_question to ask the user about GitHub issue numbers that relate to this Pull Request
-# Use agent tool write_to_file to create file ././.tmp_agents/prs/pr_desc.txt
-ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" ./.tmp_agents/prs/pr_desc.txt
-rm ./.tmp_agents/prs/pr_desc.txt
+# Use agent tool write_to_file to create file ./.x-aeon_agents/tmp/prs/pr_desc.txt
+ruby .cline/skills/creating-pull-request/scripts/create_pr "Add support for debug mode in CLI arguments" .x-aeon_agents/tmp/prs/pr_desc.txt
+rm .x-aeon_agents/tmp/prs/pr_desc.txt
 ```

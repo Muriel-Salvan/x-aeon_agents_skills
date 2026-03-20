@@ -14,7 +14,7 @@ When updating documentation, follow those steps.
 - Before executing anything, create a checklist named updating-doc Execution Checklist with all steps of this skill.
 - The updating-doc Execution Checklist must include all numbered steps explicitly.
 - The updating-doc Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the updating-doc Execution Checklist as completed, and display again the updating-doc Execution Checklist to the user.
+- After completing each step of this skill, mark the item in the updating-doc Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
 - Never mark the skill as completed while any item from the updating-doc Execution Checklist remains open.

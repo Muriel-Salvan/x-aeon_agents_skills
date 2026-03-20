@@ -19,7 +19,7 @@ When implementing a GitHub issue, follow those steps.
 - Before executing anything, create a checklist named implementing-github-issue Execution Checklist with all steps of this skill.
 - The implementing-github-issue Execution Checklist must include all numbered steps explicitly.
 - The implementing-github-issue Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the implementing-github-issue Execution Checklist as completed, and display again the implementing-github-issue Execution Checklist to the user.
+- After completing each step of this skill, mark the item in the implementing-github-issue Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
 - Never mark the skill as completed while any item from the implementing-github-issue Execution Checklist remains open.

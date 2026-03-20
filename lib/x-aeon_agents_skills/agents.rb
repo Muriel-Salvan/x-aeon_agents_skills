@@ -186,12 +186,12 @@ module XAeonAgentsSkills
         )
         planner_agent = cline_agent(
           name: 'Planner',
-          objective: 'Create a `plan` artifact containing a complete and detailed implementation plan that can be used to implement some requirements.',
+          objective: 'Produce a full and detailed implementation plan that can be used to implement some requirements.',
           input_artifacts: {
             requirements: 'Initial requirements for which you need to devise an implementation plan'
           },
           output_artifacts: {
-            plan: 'The full implementation plan that should implement the requirements given by the `requirements` artifact'
+            plan: 'the full and detailed implementation plan that should implement the requirements given by the `requirements` artifact'
           },
           skills: %w[
             applying-ruby-conventions
@@ -222,14 +222,13 @@ module XAeonAgentsSkills
               'Read the initial requirements from the `requirements` artifact',
               'Analyze the project files',
               'Devise a **step-by-step implementation plan**',
-              'Return to ther user the `plan` artifact containing the full and detailed implementation plan between `<artifact:plan>` and `</artifact:plan>` tags',
-              'Do NOT execute the plan yourself'
             ]
           },
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
             - You may only analyze and propose plans.
+            - Do NOT execute the plan yourself.
           EO_Constraints
         )
         developer_agent = cline_agent(
@@ -262,7 +261,7 @@ module XAeonAgentsSkills
             tests_cmd: 'Command line to be used to run the whole tests suite'
           },
           output_artifacts: {
-            plan_modifications: 'Any modification or divergence you considered from the implementation plan'
+            plan_modifications: 'the modification or divergence you considered from the implementation plan'
           },
           skills: %w[
             applying-ruby-conventions
@@ -278,12 +277,11 @@ module XAeonAgentsSkills
               'Analyze the full output of unit tests run from the `tests_output` artifact, and check every error reported in it',
               'Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements',
               'Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan',
-              <<~EO_Step,
+              <<~EO_Step
                 Make sure all tests are running without issue after your fixes
                 
                 - You can run tests again using the provided tests command from the `tests_cmd` artifact to test your own fixes.
               EO_Step
-              'Report to the user any implementation plan modification or divergence you considered in the `plan_modifications` artifact'
             ]
           }
         )
@@ -332,83 +330,71 @@ module XAeonAgentsSkills
           step(:a_setup_requirements) { @artifacts[:requirements] = requirements }
 
           step(:b_plan) do
-          run(planner_agent)
-          puts "===== Implementation plan:\n#{@artifacts[:plan]}"
+            run(planner_agent)
+            puts "===== Implementation plan:\n#{@artifacts[:plan]}"
           end
 
           # TODO: Add interactive review step here
 
           step(:c_develop) do
-          run(developer_agent)
-          puts "===== Developer changes:\n#{`git status`}"
+            run(developer_agent)
+            puts "===== Developer changes:\n#{`git status`}"
           end
 
           step(:d_test) do
-          tests_cmd = 'bundle exec rspec --format documentation'
-          @artifacts[:tests_cmd] = tests_cmd
-          idx_test = 0
-          loop do
-            puts
-            puts "===== Run tests ##{idx_test}..."
-            test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
-            puts "Tests ##{idx_test} exit status: #{test_result[:exit_status]}"
-            @artifacts.merge!(
-              files_diffs: <<~EO_Artifact,
-                ### git status
+            tests_cmd = 'bundle exec rspec --format documentation'
+            @artifacts[:tests_cmd] = tests_cmd
+            idx_test = 0
+            loop do
+              puts
+              puts "===== Run tests ##{idx_test}..."
+              test_result = XAeonAgentsSkills::Helpers.run_cmd(tests_cmd, expected_exit_status: nil)
+              puts "Tests ##{idx_test} exit status: #{test_result[:exit_status]}"
+              @artifacts.merge!(
+                files_diffs: <<~EO_Artifact,
+                  ### git status
 
-                ```
-                #{`git status`}
-                ```
+                  ```
+                  #{`git status`}
+                  ```
 
-                ### git diff
+                  ### git diff
 
-                ```
-                #{`git diff`}
-                ```
-              EO_Artifact
-              tests_output: <<~EO_Artifact,
-                ```
-                #{test_result[:stdout]}
-                ```
-              EO_Artifact
-            )
-            break if test_result[:exit_status] == 0
+                  ```
+                  #{`git diff`}
+                  ```
+                EO_Artifact
+                tests_output: <<~EO_Artifact,
+                  ```
+                  #{test_result[:stdout]}
+                  ```
+                EO_Artifact
+              )
+              break if test_result[:exit_status] == 0
 
-            run(tester_agent)
-            puts "===== Tester changes:\n#{`git status`}"
-            # Integrate potential implementation plan modifications
-            unless @artifacts[:plan_modifications].strip.empty?
-              plan_modifications = @artifacts.delete(:plan_modifications)
-              @artifacts[:plan] << <<~EO_Artifact
-                # Revision ##{idx_test} to the implementation plan
-                
-                #{plan_modifications}
+              run(tester_agent)
+              puts "===== Tester changes:\n#{`git status`}"
+              # Integrate potential implementation plan modifications
+              unless @artifacts[:plan_modifications].strip.empty?
+                plan_modifications = @artifacts.delete(:plan_modifications)
+                @artifacts[:plan] << <<~EO_Artifact
+                  # Revision ##{idx_test} to the implementation plan
+                  
+                  #{plan_modifications}
 
-              EO_Artifact
-            end
-            idx_test += 1
+                EO_Artifact
+              end
+              idx_test += 1
             end
           end
 
           step(:e_document) do
-          run(documenter_agent)
-          puts "===== Documenter changes:\n#{`git status`}"
+            run(documenter_agent)
+            puts "===== Documenter changes:\n#{`git status`}"
           end
         end
         puts
         puts 'Requirements implemented successfully'
-      end
-
-      # Return a clear instruction for the LLM to generate an artifact
-      #
-      # Parameters::
-      # * *name* (Symbol): Artifact's name
-      # * *description* (String): Artifact's description
-      # Result::
-      # * String: The prompt instruction to generate this artifact
-      def artifact_prompt(name, description)
-        # "Return the implementation plan between `<artifact:#{name}>...</artifact:#{name}>` tags."
-        "Return the `#{name}` artifact (#{description}) between `<artifact:#{name}>` and `</artifact:#{name}>` tags"
       end
 
       private
@@ -524,7 +510,7 @@ module XAeonAgentsSkills
               skills:
             }
           },
-          instructions: system_instructions(name:, instructions:, output_artifacts:)
+          instructions: system_instructions(name:, instructions:)
         )
       end
 
@@ -543,20 +529,12 @@ module XAeonAgentsSkills
       #       * *text* (String): The instructions are given as text directly.
       #       * *ordered_list* (Array<String>): The instructions are a precise list of steps to perform.
       #       Several keys can be used in the same Hash, and they will be treated in the order in the Hash.
-      # * *output_artifacts* (Hash<Symbol,String>): Set of expected output artifacts
       # Result::
       # * String: The resulting instructions as a string
-      def system_instructions(name:, instructions:, output_artifacts:)
+      def system_instructions(name:, instructions:)
         # Normalize instructions
         instructions = (instructions.is_a?(Array) ? instructions : [instructions]).
           map { |instruction_desc| instruction_desc.is_a?(Hash) ? instruction_desc : { text: instruction_desc } }
-
-        # Enrich instructions with output artifacts
-        unless output_artifacts.empty?
-          # We add the output artifacts at the end of an ordered list (we add one if current instructions don't end with such a list)
-          instructions << { ordered_list: [] } unless instructions.last.key?(:ordered_list)
-          instructions.last[:ordered_list].concat(output_artifacts.map { |name, description| artifact_prompt(name, description) })
-        end
 
         # Convert the list of instructions into a nice string
         idx_checklist = 0
