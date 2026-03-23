@@ -580,19 +580,12 @@ module XAeonAgentsSkills
         if git_status.changed.empty? && git_status.added.empty? && git_status.deleted.empty? && git_status.untracked.empty?
           log_debug 'Nothing to commit'
         else
-          Dir.mktmpdir do |temp_dir|
-            comment_file = "#{temp_dir}/comment.txt"
-            File.write(
-              comment_file,
-              <<~EO_Commit.strip
-                #{code_diffs}
-                
-                Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
-              EO_Commit
-            )
-            git.add(all: true)
-            git.commit_file(comment_file)
-          end
+          git.add(all: true)
+          git.commit <<~EO_Commit.strip
+            #{code_diffs}
+            
+            Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
+          EO_Commit
         end
       end
 
