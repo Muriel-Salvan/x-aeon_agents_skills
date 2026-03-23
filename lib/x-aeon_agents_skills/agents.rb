@@ -172,16 +172,17 @@ module XAeonAgentsSkills
 
       # Interpret current code diffs
       #
+      # Parameters::
+      # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
       # Result::
       # * String: Code diffs interpretation
-      def interpret_diffs
+      def interpret_diffs(base = 'HEAD')
         with_runner do
-          store_artifact_files_diffs
           puts <<~EO_Diffs.strip
             
             ===== Code diffs interpretation:
 
-            #{code_diffs}
+            #{code_diffs(base)}
           EO_Diffs
         end
       end
@@ -201,7 +202,12 @@ module XAeonAgentsSkills
         with_runner(run_id) do
 
           # Initial artifacts
-          step(:a_setup_requirements) { @artifacts[:requirements] = requirements }
+          step(:a_setup_requirements) do
+             @artifacts.merge!(
+              requirements: requirements,
+              base_sha: git.gcommit('HEAD').sha
+             )
+          end
 
           step(:b_plan) do
             run(planner_agent)
@@ -212,9 +218,7 @@ module XAeonAgentsSkills
 
           step(:c_develop) do
             run(developer_agent)
-            # TODO: Handle the git diffs properly, with commit true and false (use a diff from a base SHA instead of just git diff?)
-            store_artifact_files_diffs
-            puts "===== Developer changes:\n#{@artifacts[:files_diffs]}"
+            puts "===== Developer changes: #{git.status.changed.keys.join(", ")}"
           end
 
           step(:d_commit) { git_commit(developer_agent) } if commit
@@ -235,9 +239,9 @@ module XAeonAgentsSkills
               EO_Artifact
               break if test_result[:exit_status] == 0
 
+              @artifacts[:files_diffs] = artifact_files_diffs(@artifacts[:base_sha])
               run(tester_agent)
-              store_artifact_files_diffs
-              puts "===== Tester changes:\n#{@artifacts[:files_diffs]}"
+              puts "===== Tester changes: #{git.status.changed.keys.join(", ")}"
               # Integrate potential implementation plan modifications
               unless @artifacts[:plan_modifications].strip.empty?
                 plan_modifications = @artifacts.delete(:plan_modifications)
@@ -253,18 +257,30 @@ module XAeonAgentsSkills
             end
           end
 
-          step(:f_document) do
+          step(:f_commit) { git_commit(tester_agent) } if commit
+
+          step(:g_document) do
+            @artifacts[:files_diffs] = artifact_files_diffs(@artifacts[:base_sha])
             run(documenter_agent)
-            puts "===== Documenter changes:\n#{@artifacts[:files_diffs]}"
+            puts "===== Documenter changes: #{git.status.changed.keys.join(", ")}"
           end
 
-          step(:g_commit) { git_commit(documenter_agent) } if commit
+          step(:h_commit) { git_commit(documenter_agent) } if commit
         end
         puts
         puts 'Requirements implemented successfully'
       end
 
       private
+
+      # Get a Git instance on the current directory.
+      # Keep a cache of it.
+      #
+      # Result::
+      # * Git::Base: The git instance
+      def git
+        @git_pwd ||= Git.open(Dir.pwd)
+      end
 
       # Get the read-only configuration used by agents that are planning and analyzing code
       #
@@ -540,10 +556,12 @@ module XAeonAgentsSkills
 
       # Get current code diffs interpretation
       #
+      # Parameters::
+      # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
       # Result::
       # * String: The current code diffs
-      def code_diffs
-        # TODO: Handle the case when there is nothing as diff
+      def code_diffs(base = 'HEAD')
+        @artifacts[:files_diffs] = artifact_files_diffs(base)
         run(diff_interpreter_agent)
         run(one_line_code_diff_summarizer)
         <<~EO_Diffs.strip
@@ -558,27 +576,32 @@ module XAeonAgentsSkills
       # Parameters::
       # * *author_agent* (::Agents::Agent): The agent authoring the changes
       def git_commit(author_agent)
-        Dir.mktmpdir do |temp_dir|
-          comment_file = "#{temp_dir}/comment.txt"
-          File.write(
-            comment_file,
-            <<~EO_Commit.strip
-              #{code_diffs}
-              
-              Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
-            EO_Commit
-          )
-          git = Git.open(Dir.pwd)
-          git.add(all: true)
-          git.commit_file(comment_file)
+        git_status = git.status
+        if git_status.changed.empty? && git_status.added.empty? && git_status.deleted.empty? && git_status.untracked.empty?
+          log_debug 'Nothing to commit'
+        else
+          Dir.mktmpdir do |temp_dir|
+            comment_file = "#{temp_dir}/comment.txt"
+            File.write(
+              comment_file,
+              <<~EO_Commit.strip
+                #{code_diffs}
+                
+                Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
+              EO_Commit
+            )
+            git.add(all: true)
+            git.commit_file(comment_file)
+          end
         end
       end
 
-      # Add the current files diffs in the artifacts store
-      def store_artifact_files_diffs
-        # TODO: Adapt this to diffs that are committed already
-        git = Git.open(Dir.pwd)
-        @artifacts[:files_diffs] = <<~EO_Artifact
+      # Get a current files diffs
+      #
+      # Parameters::
+      # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
+      def artifact_files_diffs(base = 'HEAD')
+        <<~EO_Artifact
           ### New untracked files
 
           #{git.status.untracked.keys.map do |file|
@@ -593,7 +616,7 @@ module XAeonAgentsSkills
           ### git diff
 
           ```
-          #{git.diff}
+          #{git.diff(base)}
           ```
         EO_Artifact
       end

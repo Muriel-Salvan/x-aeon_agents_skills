@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+# Parameters::
+# * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
+base = ARGV[0] || 'HEAD'
+
 require 'x-aeon_agents_skills/agents'
 
 XAeonAgentsSkills::Agents.configure(
@@ -7,4 +11,4 @@ XAeonAgentsSkills::Agents.configure(
   debug: true
 )
 
-XAeonAgentsSkills::Agents.interpret_diffs
+XAeonAgentsSkills::Agents.interpret_diffs(base)
