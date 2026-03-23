@@ -330,7 +330,7 @@ module XAeonAgentsSkills
             requirements: 'Initial requirements for which you need to devise an implementation plan'
           },
           output_artifacts: {
-            plan: 'the full and detailed implementation plan that should implement the requirements given by the `requirements` artifact'
+            plan: 'the full and detailed implementation plan that should implement the requirements given by the `ARTIFACT_REQUIREMENTS` artifact'
           },
           skills: %w[
             applying-ruby-conventions
@@ -341,7 +341,7 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the initial requirements from the `requirements` artifact',
+              'Read the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact',
               'Analyze the project files',
               'Devise a **step-by-step implementation plan**',
             ]
@@ -378,7 +378,7 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the full list of file changes from the `files_diffs` artifact',
+              'Understand the full list of file changes from the `ARTIFACT_FILES_DIFFS` artifact',
               'Analyze the project files',
               <<~EO_Step
                 Explain properly the intent of those changes
@@ -419,7 +419,7 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the full report of the code change intent from the `change_intent` artifact',
+              'Read the full report of the code change intent from the `ARTIFACT_CHANGE_INTENT` artifact',
               <<~EO_Step
                 Provide a 1-line summary of such code changes that could be used as a git commit title
 
@@ -452,7 +452,7 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           instructions: <<~EO_Instructions
-            Follow all the steps of the implementation plan described in the `plan` artifact.
+            Follow all the steps of the implementation plan described in the `ARTIFACT_PLAN` artifact.
           EO_Instructions
         )
       end
@@ -486,16 +486,32 @@ module XAeonAgentsSkills
           ],
           instructions: {
             ordered_list: [
-              'Read the initial requirements from the `requirements` artifact',
-              'Read the implementation plan that was decided from the `plan` artifact',
-              'Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements',
-              'Analyze the full output of unit tests run from the `tests_output` artifact, and check every error reported in it',
+              <<~EO_Step,
+                Understand the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
+                
+                - Understand those requirements.
+              EO_Step
+              <<~EO_Step,
+                Understand the implementation plan from the `ARTIFACT_PLAN` artifact
+                
+                - Understand all the steps of the implementation plan.
+              EO_Step
+              <<~EO_Step,
+                Understand the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
+
+                - Understand what was the intent of the developer implementing those requirements.
+              EO_Step
+              <<~EO_Step,
+                Analyze the full output of unit tests run from the `ARTIFACT_TESTS_OUTPUT` artifact
+                
+                - Check every error reported in the output.
+              EO_Step
               'Fix any issue that unit tests are surfacing, while keeping the original intent of the requirements',
               'Remember any inconsistency and modification you need to make to the implementation plan so that your fixes are in-line with a better implementation plan',
               <<~EO_Step
                 Make sure all tests are running without issue after your fixes
                 
-                - You can run tests again using the provided tests command from the `tests_cmd` artifact to test your own fixes.
+                - You can run tests again using the provided tests command from the `ARTIFACT_TESTS_CMD` artifact to test your own fixes.
               EO_Step
             ]
           }
@@ -522,70 +538,46 @@ module XAeonAgentsSkills
             enforcing-project-rules
             updating-doc
           ],
-          instructions: [
-            <<~EO_Instructions,
-              ## Information sources (CRITICAL)
+          instructions: {
+            ordered_list: [
+              <<~EO_Step,
+                Understand the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
+                
+                - Understand those requirements.
+              EO_Step
+              <<~EO_Step,
+                Understand the implementation plan from the `ARTIFACT_PLAN` artifact
+                
+                - Understand all the steps of the implementation plan.
+              EO_Step
+              <<~EO_Step,
+                Understand the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
 
-              You have two sources of information:
+                - Understand what was the intent of the developer implementing those requirements.
+              EO_Step
+              <<~EO_Step,
+                Derive documentation impact
 
-              ### 1. Artifacts (PRIMARY SOURCE OF INTENT)
-              - The artifacts describe:
-                - What changed
-                - Why it changed
-                - What should be reflected in documentation
-              - You MUST read ALL artifacts first.
-              - You MUST treat artifacts as the source of truth for understanding the task.
+              - Based ONLY on artifacts, determine:
+                - What documentation should change.
+                - What wording should be updated.
+              EO_Step
+              <<~EO_Step,
+                Explore filesystem to locate documentation
 
-              ### 2. Filesystem (SOURCE OF TARGET FILES)
-              - The filesystem is used ONLY to:
-                - Locate documentation files
-                - Read their current content
-                - Apply updates
-            EO_Instructions
-            {
-              ordered_list: [
-                <<~EO_Step,
-                  Understand the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
-                  
-                  - The `ARTIFACT_REQUIREMENTS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
-                  - Understand those requirements.
-                EO_Step
-                <<~EO_Step,
-                  Understand the implementation plan from the `ARTIFACT_PLAN` artifact
-                  
-                  - The `ARTIFACT_PLAN` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
-                  - Understand all the steps of the implementation plan.
-                EO_Step
-                <<~EO_Step,
-                  Understand the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
+                - Now search the filesystem to find relevant documentation files.
+                - Start with README.md and docs/.
+                - Find documentation files that are referenced recursively from other documentation files.
+                - Understand the documentation structure and content.
+              EO_Step
+              <<~EO_Step
+                Apply updates
 
-                  - The `ARTIFACT_FILES_DIFFS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
-                  - Understand what was the intent of the developer implementing those requirements.
-                EO_Step
-                <<~EO_Step,
-                  Derive documentation impact (NO FILESYSTEM YET)
-
-                - Based ONLY on artifacts, determine:
-                  - What documentation should change.
-                  - What wording should be updated.
-                EO_Step
-                <<~EO_Step,
-                  Explore filesystem to locate documentation
-
-                  - Now search the filesystem to find relevant documentation files.
-                  - Start with README.md and docs/.
-                  - Find documentation files that are referenced recursively from other documentation files.
-                  - Understand the documentation structure and content.
-                EO_Step
-                <<~EO_Step
-                  Apply updates
-
-                  - Update the documentation files according to the new requirements that were implemented.
-                  - Keep in mind the implementation plan that was used and the corresponding files diffs.
-                EO_Step
-              ]
-            }
-          ],
+                - Update the documentation files according to the new requirements that were implemented.
+                - Keep in mind the implementation plan that was used and the corresponding files diffs.
+              EO_Step
+            ]
+          },
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.

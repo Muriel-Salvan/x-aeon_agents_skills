@@ -36,13 +36,14 @@ module XAeonAgentsSkills
         prompt_json = {}
         prompt_json[:role] = payload[:agent][:role].strip unless payload[:agent][:role].strip.empty?
         prompt_json[:objective] = payload[:agent][:objective].strip unless payload[:agent][:objective].strip.empty?
-        unless payload[:artifacts][:input].empty? && payload[:artifacts][:output].empty?
+        unless payload[:artifacts][:input].empty?
           prompt_json[:context] = <<~EO_Context.strip
             # Artifacts
 
-            Artifacts are text documents that you can get as input.
-            Each artifact is identified by a name.
-            #{payload[:artifacts][:input].empty? ? '' : 'You must read all artifacts given in the `artifacts` JSON property: they are given to you by the user.'}
+            - Artifacts are text documents that you can get as input.
+            - Each artifact is identified by a name, like `ARTIFACT_PLAN`.
+            #{payload[:artifacts][:input].empty? ? '' : '- You must read all artifacts given in the `artifacts` JSON property: they are given to you by the user.'}
+            #{payload[:artifacts][:input].keys.map { |name| "- The `#{name}_REQUIREMENTS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it." }.join("\n")}
           EO_Context
         end
         unless payload[:artifacts][:input].empty?
