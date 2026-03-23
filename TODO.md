@@ -1,3 +1,4 @@
+* Cache the cli auth call for performace between several agents of the same run
 * Make the WSL CLI tool a Ruby script to avoid paths and slashes issues
 * The model reported is wrong. Fix this.
 * The list of rules should also have a checklist. We see that some of them are missed. It should report a summary of all the rules it has read.

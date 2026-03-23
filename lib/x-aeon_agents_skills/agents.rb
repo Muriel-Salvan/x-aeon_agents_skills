@@ -1,6 +1,7 @@
 require 'agents'
-require 'json'
 require 'front_matter_parser'
+require 'git'
+require 'json'
 require 'ruby_llm/model/info'
 require 'x-aeon_agents_skills/gen_helpers'
 require 'x-aeon_agents_skills/helpers'
@@ -211,8 +212,9 @@ module XAeonAgentsSkills
 
           step(:c_develop) do
             run(developer_agent)
+            # TODO: Handle the git diffs properly, with commit true and false (use a diff from a base SHA instead of just git diff?)
             store_artifact_files_diffs
-            puts "===== Developer changes:\n#{`git status`}"
+            puts "===== Developer changes:\n#{@artifacts[:files_diffs]}"
           end
 
           step(:d_commit) { git_commit(developer_agent) } if commit
@@ -235,7 +237,7 @@ module XAeonAgentsSkills
 
               run(tester_agent)
               store_artifact_files_diffs
-              puts "===== Tester changes:\n#{`git status`}"
+              puts "===== Tester changes:\n#{@artifacts[:files_diffs]}"
               # Integrate potential implementation plan modifications
               unless @artifacts[:plan_modifications].strip.empty?
                 plan_modifications = @artifacts.delete(:plan_modifications)
@@ -253,7 +255,7 @@ module XAeonAgentsSkills
 
           step(:f_document) do
             run(documenter_agent)
-            puts "===== Documenter changes:\n#{`git status`}"
+            puts "===== Documenter changes:\n#{@artifacts[:files_diffs]}"
           end
 
           step(:g_commit) { git_commit(documenter_agent) } if commit
@@ -541,6 +543,7 @@ module XAeonAgentsSkills
       # Result::
       # * String: The current code diffs
       def code_diffs
+        # TODO: Handle the case when there is nothing as diff
         run(diff_interpreter_agent)
         run(one_line_code_diff_summarizer)
         <<~EO_Diffs.strip
@@ -565,24 +568,32 @@ module XAeonAgentsSkills
               Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
             EO_Commit
           )
-          system 'git add :/', exception: true
-          system "git commit --file \"#{comment_file}\"", exception: true
+          git = Git.open(Dir.pwd)
+          git.add(all: true)
+          git.commit_file(comment_file)
         end
       end
 
       # Add the current files diffs in the artifacts store
       def store_artifact_files_diffs
+        # TODO: Adapt this to diffs that are committed already
+        git = Git.open(Dir.pwd)
         @artifacts[:files_diffs] = <<~EO_Artifact
-          ### git status
+          ### New untracked files
 
-          ```
-          #{`git status`}
-          ```
+          #{git.status.untracked.keys.map do |file|
+            <<~EO_Untracked_File
+              #### #{file}
+              ```
+              #{File.read(file)}
+              ```
+            EO_Untracked_File
+          end.join("\n")}
 
           ### git diff
 
           ```
-          #{`git diff`}
+          #{git.diff}
           ```
         EO_Artifact
       end
