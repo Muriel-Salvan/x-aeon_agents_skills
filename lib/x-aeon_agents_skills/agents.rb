@@ -2,6 +2,7 @@ require 'agents'
 require 'front_matter_parser'
 require 'git'
 require 'json'
+require 'octokit'
 require 'ruby_llm/model/info'
 require 'x-aeon_agents_skills/gen_helpers'
 require 'x-aeon_agents_skills/helpers'
@@ -44,6 +45,7 @@ module XAeonAgentsSkills
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
       # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
+      # * *github_token* (String): GitHub token for Octokit authentication [default: ENV['GITHUB_TOKEN']]
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
@@ -83,6 +85,7 @@ module XAeonAgentsSkills
         },
         default_cline_cli_args: '--thinking 1024',
         default_cline_skills: [],
+        github_token: ENV['GITHUB_TOKEN'],
         debug: false
       )
         @config = {
@@ -91,6 +94,7 @@ module XAeonAgentsSkills
           default_cline_config:,
           default_cline_cli_args:,
           default_cline_skills:,
+          github_token:,
           debug:
         }
 
@@ -182,7 +186,7 @@ module XAeonAgentsSkills
             
             ===== Code diffs interpretation:
 
-            #{code_diffs(base)}
+            #{code_diffs(base).join("\n\n")}
           EO_Diffs
         end
       end
@@ -198,7 +202,8 @@ module XAeonAgentsSkills
       # * *requirements* (String): Requirements to be implemented
       # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
       # * *commit* (Boolean): Do we commit changes? [default: false]
-      def implement_requirements(requirements, run_id: nil, commit: false)
+      # * *pull_request* (Boolean): Do we create a Pull Request (if not done already) for these requirements? [default: false]
+      def implement_requirements(requirements, run_id: nil, commit: false, pull_request: false)
         with_runner(run_id) do
 
           # Initial artifacts
@@ -266,6 +271,8 @@ module XAeonAgentsSkills
           end
 
           step(:h_commit) { git_commit(documenter_agent) } if commit
+
+          step(:i_pr) { create_pr(developer_agent) } if pull_request
         end
         puts
         puts 'Requirements implemented successfully'
@@ -280,6 +287,15 @@ module XAeonAgentsSkills
       # * Git::Base: The git instance
       def git
         @git_pwd ||= Git.open(Dir.pwd)
+      end
+
+      # Get a Github Octokit API instance.
+      # Keep a cache of it.
+      #
+      # Result::
+      # * Octokit::Client: The Octokit client
+      def github
+        @github_octokit ||= Octokit::Client.new(access_token: config[:github_token])
       end
 
       # Get the read-only configuration used by agents that are planning and analyzing code
@@ -602,18 +618,54 @@ module XAeonAgentsSkills
       # Parameters::
       # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
       # Result::
-      # * String: The current code diffs
+      # * String: The current code diffs summarized as 1 line
+      # * String: The current code diffs with details
       def code_diffs(base = 'HEAD')
         @artifacts[:files_diffs] = artifact_files_diffs(base)
         run(diff_interpreter_agent)
         run(one_line_code_diff_summarizer)
-        <<~EO_Diffs.strip
-          #{@artifacts[:one_line_summary].each_line.first}
-          
-          #{@artifacts[:change_intent]}
-        EO_Diffs
+        [
+          @artifacts[:one_line_summary].each_line.first.strip,
+          @artifacts[:change_intent].strip
+        ]
       end
 
+      # Create a Pull Request if it does not exist already for the current branch against main
+      #
+      # Parameters::
+      # * *author_agent* (::Agents::Agent): The agent authoring the changes
+      def create_pr(author_agent)
+        head_branch = git.current_branch
+       
+        # Check if PR already exists for the current branch
+        raise 'Can\'t find a Github remote in this repository' if git.remotes.find { |remote| remote.url.match(%r{github\.com[:/](.+)\.git}) }.nil?
+        repo_name = Regexp.last_match[1]
+        existing_pr = github.pull_requests(repo_name, state: 'open').find { |pull_request| pull_request.head.ref == head_branch }
+        if existing_pr.nil?
+          title, description = code_diffs(@artifacts[:base_sha])
+          # Create new PR
+          new_pr = github.create_pull_request(
+            repo_name,
+            'main',
+            head_branch,
+            title,
+            <<~EO_Body
+              #{description}
+              
+              # Initial requirements given
+              
+              #{@artifacts[:requirements]}
+              
+              Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
+            EO_Body
+          )
+          log_debug "Created new Pull Request for branch #{head_branch}: #{new_pr.html_url}"
+        else
+          require 'debug' ; binding.break
+          log_debug "A Pull Request for branch #{head_branch} already exists: #{existing_pr.html_url}"
+        end
+      end
+      
       # Git commit and author properly what the agent modified
       #
       # Parameters::

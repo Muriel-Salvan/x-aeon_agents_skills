@@ -10,6 +10,7 @@ require 'x-aeon_agents_skills/agents'
 
 XAeonAgentsSkills::Agents.configure(
   cline_api_key: Bundler.with_unbundled_env { `launcher safe -- "Cline API key"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
+  github_token: Bundler.with_unbundled_env { `launcher safe -- "Github API token"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
   debug: true
 )
 
