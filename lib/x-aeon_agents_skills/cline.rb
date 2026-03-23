@@ -238,7 +238,7 @@ module XAeonAgentsSkills
               details = JSON.parse(message[:text], symbolize_names: true)
               "API request failed - #{details[:code]} - #{details[:message].strip.gsub("\n", ' ')}"
             when 'command_output'
-              "Command output: #{message[:text].strip.gsub("\n", ' ')}"
+              "Command output - #{message[:text].strip.gsub("\n", ' ')}"
             when 'completion_result'
               'Completion result'
             when 'followup'
@@ -250,9 +250,11 @@ module XAeonAgentsSkills
             when 'tool'
               details = JSON.parse(message[:text], symbolize_names: true)
               tool_name = details.delete(:tool)
-              "Use tool #{tool_name} - #{details}"
+              "Use tool - #{tool_name} - #{details.to_json}}"
             when 'mistake_limit_reached'
-              "Mistake limit reached: #{message[:text]}"
+              "Mistake limit reached - #{message[:text].strip.gsub("\n", ' ')}}"
+            when 'new_task'
+              "New task - #{message[:text].strip.gsub("\n", ' ')}"
             else
               raise NotImplementedError.new("Unknown ask @ts #{message[:ts]}: #{message}")
             end
