@@ -106,6 +106,8 @@ module XAeonAgentsSkills
                 puts details[:options] unless details[:options].empty?
                 puts '===== Please input your answer to Cline:'
                 @cline.user_feedback($stdin.gets.strip)
+              when 'new_task'
+                @cline.user_feedback('Resume task')
               when 'mistake_limit_reached'
                 raise "Cline failed to process prompt: #{message}"
               else
