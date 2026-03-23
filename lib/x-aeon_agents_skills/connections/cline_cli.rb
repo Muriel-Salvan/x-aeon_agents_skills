@@ -48,7 +48,7 @@ module XAeonAgentsSkills
         unless payload[:artifacts][:input].empty?
           prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |name, description|
             [
-              name,
+              "ARTIFACT_#{name.to_s.upcase}",
               {
                 description:,
                 content: payload[:artifacts][:store][name].strip

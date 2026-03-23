@@ -545,21 +545,21 @@ module XAeonAgentsSkills
             {
               ordered_list: [
                 <<~EO_Step,
-                  Understand the initial requirements
+                  Understand the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
                   
-                  - Read the `requirements` artifact from the JSON prompt.
+                  - The `ARTIFACT_REQUIREMENTS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
                   - Understand those requirements.
                 EO_Step
                 <<~EO_Step,
-                  Understand the implementation plan
+                  Understand the implementation plan from the `ARTIFACT_PLAN` artifact
                   
-                  - Read the `plan` artifact' from the JSON prompt.
+                  - The `ARTIFACT_PLAN` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
                   - Understand all the steps of the implementation plan.
                 EO_Step
                 <<~EO_Step,
-                  Understand the concrete changes
+                  Understand the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
 
-                  - Read the `files_diffs` artifact from the JSON prompt.
+                  - The `ARTIFACT_FILES_DIFFS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it.
                   - Understand what was the intent of the developer implementing those requirements.
                 EO_Step
                 <<~EO_Step,
