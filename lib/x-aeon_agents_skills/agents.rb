@@ -522,23 +522,74 @@ module XAeonAgentsSkills
             enforcing-project-rules
             updating-doc
           ],
-          instructions: {
-            ordered_list: [
-              'Read the initial requirements from the `requirements` artifact',
-              'Read the implementation plan that was decided from the `plan` artifact',
-              'Read all files modifications from the `files_diffs` artifact, and understand what was the intent of the developer implementing those requirements',
-              <<~EO_Step,
-                Find all documentation files and all the files referenced by the documentation files
-                
-                - Start with `README.md` and any `docs/*.md` files.
-              EO_Step
-              'Read all the documentation files that you found to understand the documentation structure and content',
-              'Update the documentation files according to the new requirements that were implemented, keeping in mind the implementation plan that was used and the corresponding files diffs'
-            ]
-          },
+          instructions: [
+            <<~EO_Instructions,
+              ## Information sources (CRITICAL)
+
+              You have two sources of information:
+
+              ### 1. Artifacts (PRIMARY SOURCE OF INTENT)
+              - The artifacts describe:
+                - What changed
+                - Why it changed
+                - What should be reflected in documentation
+              - You MUST read ALL artifacts first.
+              - You MUST treat artifacts as the source of truth for understanding the task.
+
+              ### 2. Filesystem (SOURCE OF TARGET FILES)
+              - The filesystem is used ONLY to:
+                - Locate documentation files
+                - Read their current content
+                - Apply updates
+            EO_Instructions
+            {
+              ordered_list: [
+                <<~EO_Step,
+                  Understand the initial requirements
+                  
+                  - Read the `requirements` artifact from the JSON prompt.
+                  - Understand those requirements.
+                EO_Step
+                <<~EO_Step,
+                  Understand the implementation plan
+                  
+                  - Read the `plan` artifact' from the JSON prompt.
+                  - Understand all the steps of the implementation plan.
+                EO_Step
+                <<~EO_Step,
+                  Understand the concrete changes
+
+                  - Read the `files_diffs` artifact from the JSON prompt.
+                  - Understand what was the intent of the developer implementing those requirements.
+                EO_Step
+                <<~EO_Step,
+                  Derive documentation impact (NO FILESYSTEM YET)
+
+                - Based ONLY on artifacts, determine:
+                  - What documentation should change.
+                  - What wording should be updated.
+                EO_Step
+                <<~EO_Step,
+                  Explore filesystem to locate documentation
+
+                  - Now search the filesystem to find relevant documentation files.
+                  - Start with README.md and docs/.
+                  - Find documentation files that are referenced recursively from other documentation files.
+                  - Understand the documentation structure and content.
+                EO_Step
+                <<~EO_Step
+                  Apply updates
+
+                  - Update the documentation files according to the new requirements that were implemented.
+                  - Keep in mind the implementation plan that was used and the corresponding files diffs.
+                EO_Step
+              ]
+            }
+          ],
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.
+            - Do NOT explore unrelated parts of the repository.
           EO_Constraints
         )
       end
