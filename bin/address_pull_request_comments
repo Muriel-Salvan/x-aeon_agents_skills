@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+# Parameters:
+# * *pull_request_number* (Integer): The Pull Request number to look for comments
+# * *run_id* (String): [Optional] The run ID for persistence
+pull_request_number = Integer(ARGV[0])
+run_id = ARGV[1]
+
+require 'x-aeon_agents_skills/agents'
+
+XAeonAgentsSkills::Agents.configure(
+  cline_api_key: Bundler.with_unbundled_env { `launcher safe -- "Cline API key"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
+  github_token: Bundler.with_unbundled_env { `launcher safe -- "Github API token"`.match(/\[PASSWORD\][^:]+: ([^\n]+)\n/)[1] },
+  debug: true
+)
+
+XAeonAgentsSkills::Agents.address_pull_request_comments(pull_request_number, run_id:)

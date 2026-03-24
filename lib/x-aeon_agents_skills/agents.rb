@@ -394,7 +394,7 @@ module XAeonAgentsSkills
             { name: :files_diffs, description: 'Full list of files changes and differences that have been done' }
           ],
           output_artifacts: [
-            { name: :change_intent, description: 'the full description of the code changes, their meaning and intent' }
+            { name: :change_intent, description: 'the full explanation of the code changes' }
           ],
           skills: %w[
             applying-ruby-conventions
@@ -414,6 +414,7 @@ module XAeonAgentsSkills
             1. A general explanation of the changes, their meaning and intent in the context of this project.
             2. The types of changes (feature, bug fix, documentation, etc.).
             3. The impacted architectural components (backend, login screen, CLI, etc.).
+            - Describe those changes as in a git commit or pull request description.
           EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
