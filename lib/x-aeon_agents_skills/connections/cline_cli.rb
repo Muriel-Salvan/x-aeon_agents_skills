@@ -1,4 +1,5 @@
 require 'json'
+require 'launchy'
 require 'x-aeon_agents_skills/cline'
 require 'x-aeon_agents_skills/logger'
 
@@ -27,8 +28,8 @@ module XAeonAgentsSkills
       # * Proc: Code called to set additional HTTP request parameters in case of a web API call
       def post(url, payload, &)
         # First check that needed artifacts are present
-        missing_input_artifacts = payload[:artifacts][:input].select { |name, _description| !payload[:artifacts][:store].key?(name) }
-        raise "Missing #{missing_input_artifacts.size} artifacts from the payload:\n#{missing_input_artifacts.map { |name, description| "* #{name}: #{description}" }.join("\n")}" unless missing_input_artifacts.empty?
+        missing_input_artifacts = payload[:artifacts][:input].select { |artifact| !payload[:artifacts][:store].key?(artifact[:name]) }
+        raise "Missing #{missing_input_artifacts.size} artifacts from the payload:\n#{missing_input_artifacts.map { |artifact| "* #{artifact[:name]}: #{artifact[:description]}" }.join("\n")}" unless missing_input_artifacts.empty?
 
         @plan_mode = payload[:cline][:plan_mode]
 
@@ -43,16 +44,16 @@ module XAeonAgentsSkills
             - Artifacts are text documents that you can get as input.
             - Each artifact is identified by a name, like `ARTIFACT_PLAN`.
             #{payload[:artifacts][:input].empty? ? '' : '- You must read all artifacts given in the `artifacts` JSON property: they are given to you by the user.'}
-            #{payload[:artifacts][:input].keys.map { |name| "- The `#{name}_REQUIREMENTS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it." }.join("\n")}
+            #{payload[:artifacts][:input].map { |artifact| "- The `#{artifact[:name]}_REQUIREMENTS` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it." }.join("\n")}
           EO_Context
         end
         unless payload[:artifacts][:input].empty?
-          prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |name, description|
+          prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |artifact|
             [
-              "ARTIFACT_#{name.to_s.upcase}",
+              "ARTIFACT_#{artifact[:name].to_s.upcase}",
               {
-                description:,
-                content: payload[:artifacts][:store][name].strip
+                description: artifact[:description],
+                content: payload[:artifacts][:store][artifact[:name]].strip
               }
             ]
           end
@@ -73,6 +74,7 @@ module XAeonAgentsSkills
         @artifacts = {}
         @output_artifacts = payload[:artifacts][:output]
         @expected_artifact = nil
+        @asks = payload[:agent][:asks]
         log_debug { "Cline prompt:\n#{JSON.pretty_generate(prompt_json)}" }
         @cline.prompt(
           prompt_json.to_json,
@@ -95,10 +97,8 @@ module XAeonAgentsSkills
                 else
                   @cline.user_feedback('You are not in Plan mode, so resume this task.')
                 end
-              when 'resume_task'
-                # @cline.user_feedback('Resume task')
-              when 'command_output'
-                # @cline.user_feedback('Resume task')
+              when 'resume_task', 'command_output'
+                # Nopthing to do, a new message should be coming in
               when 'followup'
                 # Cline is asking for user feedback
                 details = JSON.parse(message[:text], symbolize_names: true)
@@ -106,7 +106,9 @@ module XAeonAgentsSkills
                 puts details[:question]
                 puts details[:options] unless details[:options].empty?
                 puts '===== Please input your answer to Cline:'
-                @cline.user_feedback($stdin.gets.strip)
+                feedback = $stdin.gets.strip
+                @cline.user_feedback(feedback)
+                log_ask(details[:question], feedback)
               when 'new_task'
                 @cline.user_feedback('Resume task')
               when 'mistake_limit_reached'
@@ -133,38 +135,78 @@ module XAeonAgentsSkills
 
       private
 
+      # Log a question and feedback to the asks array
+      #
+      # Parameters::
+      # * *question* (String): The question asked
+      # * *feedback* (String): The user's feedback
+      def log_ask(question, feedback)
+        @asks << { question: question, feedback: feedback }
+      end
+
       # Handle the completion of a task.
       # This can trigger user feedback, for example to ask for an artifact
       #
       # Parameters::
       # * *response* (String): Last task's response
       def handle_completion(response)
+        feedback_given = false
         # If we were expecting an artifact, save it
         unless @expected_artifact.nil?
-          log_debug "Received output artifact #{@expected_artifact}"
-          @artifacts[@expected_artifact] = response
+          if @expected_artifact[:to_be_reviewed]
+            # Ask for user review of the artifact.
+            # If user is not happy with the artifact, give extra feedback for the agent to improve it.
+            
+            Helpers.with_temp_dir(sub_dir: 'tmp/reviews', suffix: "-#{@expected_artifact[:name]}") do |temp_dir|
+              # Generate the markdown file with the artifact content
+              artifact_file = File.join(temp_dir, "#{@expected_artifact[:name]}.md")
+              File.write(artifact_file, response)
+              Launchy.open(artifact_file)
+              
+              # Ask the user for feedback on the file
+              puts
+              puts "Please review the `#{@expected_artifact[:name]}` artifact (#{artifact_file}) that has been opened in your default viewer."
+              puts 'If you are satisfied with the artifact, respond with \'ok\' or press Enter without typing anything.'
+              puts 'Otherwise, please provide your feedback:'
+              puts '===== Please input your feedback:'
+              feedback = $stdin.gets.strip
+              
+              # If the user has responded something else than ok or an empty string, 
+              # then call @cline.user_feedback and log_ask, and set feedback_given to true
+              if feedback.downcase != 'ok' && !feedback.empty?
+                @cline.user_feedback(feedback)
+                log_ask("Review of #{@expected_artifact[:name]}", feedback)
+                feedback_given = true
+              end
+            end
+          end
+          unless feedback_given
+            log_debug "Received output artifact #{@expected_artifact[:name]}"
+            @artifacts[@expected_artifact[:name]] = response
+          end
           @expected_artifact = nil
         end
 
-        # Check for expected artifacts and eventually ask to continue if some are missing
-        missing_artifacts = @output_artifacts.select { |name, _description| !@artifacts.key?(name) }
-        if missing_artifacts.empty?
-          @completion_result = response
-          # In plan mode we force the exit, as CLI is waiting for user confirmation
-          @cline.user_feedback(:exit) if @plan_mode
-        else
-          # Ask Cline to provide the first missing artifact
-          @expected_artifact, description = missing_artifacts.first
-          log_debug "Asking for the production of artifact #{@expected_artifact}"
-          @cline.user_feedback(
-            # "Return the implementation plan between `<artifact:#{name}>...</artifact:#{name}>` tags."
-            <<~EO_Prompt
-              What is #{description}?
-            
-              - You MUST return ONLY #{description} in your next response (MANDATORY)
-              - Do NOT include any other information.
-            EO_Prompt
-          )
+        unless feedback_given
+          # Check for expected artifacts and eventually ask to continue if some are missing
+          missing_artifacts = @output_artifacts.select { |artifact| !@artifacts.key?(artifact[:name]) }
+          if missing_artifacts.empty?
+            @completion_result = response
+            # In plan mode we force the exit, as CLI is waiting for user confirmation
+            @cline.user_feedback(:exit) if @plan_mode
+          else
+            # Ask Cline to provide the first missing artifact
+            @expected_artifact = missing_artifacts.first
+            log_debug "Asking for the production of artifact #{@expected_artifact[:name]}"
+            @cline.user_feedback(
+              <<~EO_Prompt
+                What is #{@expected_artifact[:description]}?
+              
+                - You MUST return ONLY #{@expected_artifact[:description]} in your next response (MANDATORY)
+                - Do NOT include any other information.
+              EO_Prompt
+            )
+          end
         end
       end
 

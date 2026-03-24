@@ -272,7 +272,7 @@ module XAeonAgentsSkills
 
           step(:h_commit) { git_commit(documenter_agent) } if commit
 
-          step(:i_pr) { create_pr(developer_agent) } if pull_request
+          step(:i_pr) { create_pr(@agents_run.uniq) } if pull_request
         end
         puts
         puts 'Requirements implemented successfully'
@@ -342,12 +342,12 @@ module XAeonAgentsSkills
         @planner_agent ||= cline_agent(
           name: 'Planner',
           objective: 'Produce a full and detailed implementation plan that can be used to implement some requirements.',
-          input_artifacts: {
-            requirements: 'Initial requirements for which you need to devise an implementation plan'
-          },
-          output_artifacts: {
-            plan: 'the full and detailed implementation plan that should implement the requirements given by the `ARTIFACT_REQUIREMENTS` artifact'
-          },
+          input_artifacts: [
+            { name: :requirements, description: 'Initial requirements for which you need to devise an implementation plan' }
+          ],
+          output_artifacts: [
+            { name: :plan, description: 'the full and detailed implementation plan that should implement the requirements given by the `ARTIFACT_REQUIREMENTS` artifact' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -379,12 +379,12 @@ module XAeonAgentsSkills
         @diff_interpreter_agent ||= cline_agent(
           name: 'Diff interpreter',
           objective: 'Interpret code modifications and explain the changes properly with its meaning and intent.',
-          input_artifacts: {
-            files_diffs: 'Full list of files changes and differences that have been done',
-          },
-          output_artifacts: {
-            change_intent: 'the full description of the code changes, their meaning and intent'
-          },
+          input_artifacts: [
+            { name: :files_diffs, description: 'Full list of files changes and differences that have been done' }
+          ],
+          output_artifacts: [
+            { name: :change_intent, description: 'the full description of the code changes, their meaning and intent' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -420,12 +420,12 @@ module XAeonAgentsSkills
         @one_line_code_diff_summarizer ||= cline_agent(
           name: '1-line code diff summarizer',
           objective: 'Produce a 1-line summary of a code change intent report.',
-          input_artifacts: {
-            change_intent: 'The full description of the code changes, their meaning and intent',
-          },
-          output_artifacts: {
-            one_line_summary: 'the 1-line summary of the code change intent'
-          },
+          input_artifacts: [
+            { name: :change_intent, description: 'The full description of the code changes, their meaning and intent' }
+          ],
+          output_artifacts: [
+            { name: :one_line_summary, description: 'the 1-line summary of the code change intent' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -458,9 +458,9 @@ module XAeonAgentsSkills
         @developer_agent ||= cline_agent(
           name: 'Developer',
           objective: 'Implement a task',
-          input_artifacts: {
-            plan: 'Implementation plan that you must follow'
-          },
+          input_artifacts: [
+            { name: :plan, description: 'Implementation plan that you must follow' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -484,16 +484,16 @@ module XAeonAgentsSkills
             Fix any regression that has been induced by new features or fixes, while keeping the initial requirements and implementation plan in mind.
             If the decisions taken in the implementation plan prevent you from fixing regressions, modify the implementation plan and report those modifications to the user.
           EO_Objective
-          input_artifacts: {
-            requirements: 'Initial requirements',
-            plan: 'Implementation plan devised from the requirements',
-            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan',
-            tests_output: 'Output of running the whole tests suite',
-            tests_cmd: 'Command line to be used to run the whole tests suite'
-          },
-          output_artifacts: {
-            plan_modifications: 'the modification or divergence you considered from the implementation plan'
-          },
+          input_artifacts: [
+            { name: :requirements, description: 'Initial requirements' },
+            { name: :plan, description: 'Implementation plan devised from the requirements' },
+            { name: :files_diffs, description: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan' },
+            { name: :tests_output, description: 'Output of running the whole tests suite' },
+            { name: :tests_cmd, description: 'Command line to be used to run the whole tests suite' }
+          ],
+          output_artifacts: [
+            { name: :plan_modifications, description: 'the modification or divergence you considered from the implementation plan' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -542,11 +542,11 @@ module XAeonAgentsSkills
         @documenter_agent ||= cline_agent(
           name: 'Documenter',
           objective: 'Update relevant documentation when a task is being implemented.',
-          input_artifacts: {
-            requirements: 'Initial requirements',
-            plan: 'Implementation plan that introduced features and fixes to be documented',
-            files_diffs: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan'
-          },
+          input_artifacts: [
+            { name: :requirements, description: 'Initial requirements' },
+            { name: :plan, description: 'Implementation plan that introduced features and fixes to be documented' },
+            { name: :files_diffs, description: 'Full list of files changes and differences that have been done to implement the initial requirements following the implementation plan' }
+          ],
           skills: %w[
             applying-ruby-conventions
             applying-test-conventions
@@ -633,8 +633,8 @@ module XAeonAgentsSkills
       # Create a Pull Request if it does not exist already for the current branch against main
       #
       # Parameters::
-      # * *author_agent* (::Agents::Agent): The agent authoring the changes
-      def create_pr(author_agent)
+      # * *implementation_agents* (Array<::Agents::Agent>): All agents that were involved in the implementation
+      def create_pr(implementation_agents)
         head_branch = git.current_branch
        
         # Check if PR already exists for the current branch
@@ -642,26 +642,51 @@ module XAeonAgentsSkills
         repo_name = Regexp.last_match[1]
         existing_pr = github.pull_requests(repo_name, state: 'open').find { |pull_request| pull_request.head.ref == head_branch }
         if existing_pr.nil?
-          title, description = code_diffs(@artifacts[:base_sha])
           # Create new PR
+          title, description = code_diffs(@artifacts[:base_sha])
+          sections = [description]
+          sections << <<~EO_Section if @artifacts[:requirements]
+              # Initial requirements given
+              
+              #{@artifacts[:requirements]}
+          EO_Section
+          all_asks = implementation_agents.map do |agent|
+            if agent.params[:agent][:asks].empty?
+              nil
+            else
+              <<~EO_Agent_Asks.strip
+                ## #{agent.name}
+                
+                #{
+                  all_asks.map do |ask|
+                    <<~EO_Ask
+                      #{ask[:question].each_line.map { |line| "> #{line}<br/>" }.join("\n") }
+                      #{ask[:feedback].each_line.map { |line| ">> #{line}<br/>" }.join("\n") }
+                    EO_Ask
+                  end
+                }
+              EO_Agent_Asks
+            end
+          end.compact
+          sections << <<~EO_Section unless all_asks.empty?
+              # User guidance and feedback to agents
+              
+              #{all_asks.join("\n\n")}
+          EO_Section
+          sections << <<~EO_Section
+            # Co-authored by X-Aeon AI Agents
+            
+            #{implementation_agents.map { |agent| "* #{agent.name}: #{agent.model}" }.join("\n")}
+          EO_Section
           new_pr = github.create_pull_request(
             repo_name,
             'main',
             head_branch,
             title,
-            <<~EO_Body
-              #{description}
-              
-              # Initial requirements given
-              
-              #{@artifacts[:requirements]}
-              
-              Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
-            EO_Body
+            sections.map { |section| section.strip }.join("\n\n")
           )
           log_debug "Created new Pull Request for branch #{head_branch}: #{new_pr.html_url}"
         else
-          require 'debug' ; binding.break
           log_debug "A Pull Request for branch #{head_branch} already exists: #{existing_pr.html_url}"
         end
       end
@@ -750,6 +775,7 @@ module XAeonAgentsSkills
         @run_id = run_id
         @runner = ::Agents::Runner.new
         @artifacts = {}
+        @agents_run = []
         yield
       end
 
@@ -766,10 +792,15 @@ module XAeonAgentsSkills
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
         raise "Error: #{result.error}" unless result.error.nil?
+        @agents_run << agent
         result.output
       end
 
-      # Create a Cline agent
+      # Create a Cline agent.
+      # Artifacts are defined with these properties:
+      # * *name* (Symbol): Artifact's name
+      # * *description* (String): Artifact's description
+      # * *to_be_reviewed* (Boolean): Does this artifact need user review during output? [default: false]
       #
       # Parameters::
       # * *name* (String): Agent name [default: 'Executor']
@@ -777,8 +808,8 @@ module XAeonAgentsSkills
       # * *objective* (String): Agent's objective [default: '']
       # * *instructions* (String): Agent's system instructions [default: '']
       # * *constraints* (String): Constraints to be respected [default: '']
-      # * *input_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent expects as input [default: {}]
-      # * *output_artifacts* (Hash<Symbol,String>): Set of artifacts (name: description) this agent is expected to output [default: {}]
+      # * *input_artifacts* (Array<Hash>): Set of artifacts this agent expects as input [default: []]
+      # * *output_artifacts* (Array<Hash>): Set of artifacts this agent is expected to output [default: []]
       # * *model* (String): Model to be used [default: Agents.config[:default_cline_model]]
       # * *plan_mode* (Boolean): Are we executing in Plan mode? [default: false]
       # * *config* (Hash): Cline config to be used [default: Agents.config[:default_cline_config]]
@@ -790,8 +821,8 @@ module XAeonAgentsSkills
         objective: '',
         instructions: '',
         constraints: '',
-        input_artifacts: {},
-        output_artifacts: {},
+        input_artifacts: [],
+        output_artifacts: [],
         model: Agents.config[:default_cline_model],
         plan_mode: false,
         config: Agents.config[:default_cline_config],
@@ -807,7 +838,8 @@ module XAeonAgentsSkills
               name:,
               role:,
               objective:,
-              constraints:
+              constraints:,
+              asks: []
             },
             artifacts: {
               input: input_artifacts,

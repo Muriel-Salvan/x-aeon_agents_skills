@@ -4,6 +4,7 @@ require 'front_matter_parser'
 require 'json'
 require 'time'
 require 'tmpdir'
+require 'x-aeon_agents_skills/helpers'
 require 'x-aeon_agents_skills/logger'
 
 module XAeonAgentsSkills
@@ -44,7 +45,7 @@ module XAeonAgentsSkills
     # * *stdout_echo* (Boolean): Do we echo stdout of Cline CLI? [default: false]
     # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
     def prompt(prompt_str, model:, plan_mode: false, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false, ignore_partials: false)
-      with_temp_dir do |temp_dir|
+      Helpers.with_temp_dir(sub_dir: 'tmp/cline') do |temp_dir|
         config_dir = "#{temp_dir}/cline_config"
         log_debug "Temporary Cline config dir: #{config_dir}"
 
@@ -472,23 +473,6 @@ module XAeonAgentsSkills
     # * String: The corresponding file path that can be included in Cline config files
     def canonize_path(path)
       File.expand_path(path).gsub(File::SEPARATOR, File::ALT_SEPARATOR || File::SEPARATOR)
-    end
-
-    # Setup a temporary directory.
-    # In case of debug activated, create the temporary directory from the current one and don't delete it.
-    #
-    # Parameters::
-    # * *block* (Proc): Code called with the temp dir created
-    #   * Parameters::
-    #     * *temp_dir* (String): The temporary directory
-    def with_temp_dir(&block)
-      if Logger.debug
-        temp_dir = ".x-aeon_agents/tmp/cline/#{unique_id { |id| !File.exist?("tmp/cline/#{id}") }}"
-        FileUtils.mkdir_p temp_dir
-        block.call(temp_dir)
-      else
-        Dir.mktmpdir(&block)
-      end
     end
 
     # Find a unique ID, with a client code block validating its unicity.

@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'open3'
 require 'x-aeon_agents_skills/logger'
 
@@ -12,6 +13,33 @@ module XAeonAgentsSkills
     class << self
 
       include Logger
+
+      # Setup a temporary directory.
+      # In case of debug activated, create the temporary directory from the current one and don't delete it, following this pattern:
+      # .x-aeon_agents/#{sub_dir}/{unique_id}#{suffix}
+      # {unique_id} is computed using Time.now in utc and gets an extra index to avoid conflicts.
+      #
+      # Parameters::
+      # * *sub_dir* (String): Sub-directory appended to the temp dir. Only used in case of debug. [default: '/tmp']
+      # * *suffix* (String): Suffix used after the directory name [default: '']
+      # * *block* (Proc): Code called with the temp dir created
+      #   * Parameters::
+      #     * *temp_dir* (String): The temporary directory
+      def with_temp_dir(sub_dir: 'tmp', suffix: '', &block)
+        if Logger.debug
+          temp_dir = nil
+          unique_idx = 0
+          loop do
+            temp_dir = ".x-aeon_agents/#{sub_dir}/#{Time.now.utc.strftime('%Y-%m-%d-%H-%M-%S')}-#{unique_idx}#{suffix}"
+            break unless File.exist?(temp_dir)
+            unique_idx += 1
+          end
+          FileUtils.mkdir_p temp_dir
+          block.call(temp_dir)
+        else
+          Dir.mktmpdir(&block)
+        end
+      end
 
       # Deep merge two hashes recursively, preserving nested structures
       #
