@@ -635,11 +635,15 @@ module XAeonAgentsSkills
       # Parameters::
       # * *implementation_agents* (Array<::Agents::Agent>): All agents that were involved in the implementation
       def create_pr(implementation_agents)
+        git_remote = git.remotes.find { |remote| remote.url.match(%r{github\.com[:/](.+)\.git}) }
+        raise 'Can\'t find a Github remote in this repository' if git_remote.nil?
+        repo_name = Regexp.last_match[1]
         head_branch = git.current_branch
+
+        # Push the branch on the git_remote using --force-with-lease as it may have been rebased
+        git.push(git_remote, head_branch, force_with_lease: true)
        
         # Check if PR already exists for the current branch
-        raise 'Can\'t find a Github remote in this repository' if git.remotes.find { |remote| remote.url.match(%r{github\.com[:/](.+)\.git}) }.nil?
-        repo_name = Regexp.last_match[1]
         existing_pr = github.pull_requests(repo_name, state: 'open').find { |pull_request| pull_request.head.ref == head_branch }
         if existing_pr.nil?
           # Create new PR
