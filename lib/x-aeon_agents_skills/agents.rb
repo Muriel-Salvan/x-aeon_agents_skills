@@ -346,7 +346,11 @@ module XAeonAgentsSkills
             { name: :requirements, description: 'Initial requirements for which you need to devise an implementation plan' }
           ],
           output_artifacts: [
-            { name: :plan, description: 'the full and detailed implementation plan that should implement the requirements given by the `ARTIFACT_REQUIREMENTS` artifact' }
+            {
+              name: :plan,
+              description: 'the full and detailed implementation plan that should implement the requirements given by the `ARTIFACT_REQUIREMENTS` artifact',
+              to_be_reviewed: true
+            }
           ],
           skills: %w[
             applying-ruby-conventions
