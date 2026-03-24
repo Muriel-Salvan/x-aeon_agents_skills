@@ -781,23 +781,34 @@ module XAeonAgentsSkills
         raise "Error: #{result.error}" unless result.error.nil?
         # Keep user's feedback in an artifact
         unless agent.params[:agent][:asks].empty?
-          @artifacts[:user_feedbacks] = '' if @artifacts[:user_feedbacks].nil?
-          @artifacts[:user_feedbacks] << <<~EO_Artifact.strip
-            ## User feedback given to #{agent.name} agent
+          @artifacts[:user_feedbacks] = <<~EO_Artifact if @artifacts[:user_feedbacks].nil?
+            The following is a conversation log.
+            Each section is independent and labeled by speaker.
+            Do not merge messages across roles.
+
+          EO_Artifact
+          @artifacts[:user_feedbacks] << <<~EO_Artifact
+            ## Conversation between Agent: #{agent.name} and User
             
             #{
               agent.params[:agent][:asks].map do |ask|
                 <<~EO_Ask
-                  ### #{agent.name} agent question
+                  ### Agent: #{agent.name}
                   
+                  ```
                   #{ask[:question]}
+                  ```
                   
-                  ### User response or feedback
+                  ### User
                   
+                  ```
                   #{ask[:feedback]}
+                  ```
+
                 EO_Ask
-              end
+              end.join
             }
+
           EO_Artifact
         end
         # Keep the log of the agent's run in an artifact
