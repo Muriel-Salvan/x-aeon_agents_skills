@@ -710,7 +710,7 @@ module XAeonAgentsSkills
         else
           git.add(all: true)
           git.commit <<~EO_Commit.strip
-            #{code_diffs}
+            #{code_diffs.join("\n\n")}
             
             Co-authored by: X-Aeon Agent #{author_agent.name} (#{author_agent.model})
           EO_Commit
