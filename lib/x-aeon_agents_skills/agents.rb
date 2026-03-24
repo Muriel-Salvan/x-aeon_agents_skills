@@ -645,7 +645,8 @@ module XAeonAgentsSkills
         head_branch = git.current_branch
 
         # Push the branch on the git_remote using --force-with-lease as it may have been rebased
-        git.push(git_remote, head_branch, force_with_lease: true)
+        # TODO: Use force_with_lease when it will be supported by ruby-git
+        git.push(git_remote, head_branch, force: true)
        
         # Check if PR already exists for the current branch
         existing_pr = github.pull_requests(repo_name, state: 'open').find { |pull_request| pull_request.head.ref == head_branch }
@@ -663,7 +664,7 @@ module XAeonAgentsSkills
               nil
             else
               <<~EO_Agent_Asks.strip
-                ## #{agent.name}
+                ## Feedback given to #{agent.name} agent
                 
                 #{
                   all_asks.map do |ask|
@@ -798,6 +799,7 @@ module XAeonAgentsSkills
         agent.params[:artifacts][:store] = @artifacts
         puts
         puts "===== #{agent.name}..."
+        agent.params[:agents_run] = @agents_run
         result = @runner.run(agent, prompt)
         raise "Error: #{result.error}" unless result.error.nil?
         @agents_run << agent
