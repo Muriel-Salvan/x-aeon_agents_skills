@@ -45,7 +45,7 @@ git switch {another_branch}
 
 The current branch gives you a safe space to modify files without impacting other branches.
 
-## When to use it
+## When to use this Skill
 
 - This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: enforcing-project-rules`.

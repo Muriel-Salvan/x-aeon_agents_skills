@@ -145,7 +145,7 @@ Before declaring the task complete:
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
 
-## When to use it
+## When to use this Skill
 
 - This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: addressing-pull-request-comments`.

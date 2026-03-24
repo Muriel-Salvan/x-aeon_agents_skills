@@ -24,7 +24,7 @@ description: Edits text files of any kind. What this does is defining a set of r
   Always check that the file is containing the edits you expect.
   If the edits were not performed, then always use `agent: write_in_file` with the whole file's content.
 
-## When to use it
+## When to use this Skill
 
 - Always use it every time another skill specifically mentions `skill: editing-files`.
 - Always use it every time the user asks you to create or edit a file.

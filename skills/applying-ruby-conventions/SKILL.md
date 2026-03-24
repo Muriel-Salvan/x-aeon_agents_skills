@@ -37,7 +37,7 @@ See [references/conventions-for-ruby-methods.md](references/conventions-for-ruby
 
 See [references/conventions-for-ruby-exceptions-handling.md](references/conventions-for-ruby-exceptions-handling.md)
 
-## When to use it
+## When to use this Skill
 
 - This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: applying-ruby-conventions`.

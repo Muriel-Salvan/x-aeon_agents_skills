@@ -29,7 +29,7 @@ Example with Linux file patterns that don't need to be escaped:
 C:\my-repo\.cline\skills\running-cli-in-wsl-portable\scripts\wsl_portable_bash.cmd "ls *.md"
 ```
 
-## When to use it
+## When to use this Skill
 
 - Always use it every time another skill specifically mentions `skill: running-cli-in-wsl-portable`.
 - Always use it every time the user asks you to run a CLI command using the WSL Portable environment.

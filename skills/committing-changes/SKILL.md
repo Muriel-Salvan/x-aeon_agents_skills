@@ -76,7 +76,7 @@ Before declaring the task complete:
 - Confirm each one was executed.
 - If any step was not executed, execute it now.
 
-## When to use it
+## When to use this Skill
 
 - Always use it every time another skill specifically mentions `skill: committing-changes`.
 - Always use it every time the user asks you to commit your changes.

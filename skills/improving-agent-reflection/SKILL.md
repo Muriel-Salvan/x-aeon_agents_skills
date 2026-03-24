@@ -130,7 +130,7 @@ Do not offer reflection if:
 - No rules or skills were active.
 - The task was very simple and involved no feedback.
 
-## When to use it
+## When to use this Skill
 
 - Always use it every time another skill specifically mentions `skill: improving-agent-reflection`.
 - Always use it every time the user asks you to improve rules or skills.

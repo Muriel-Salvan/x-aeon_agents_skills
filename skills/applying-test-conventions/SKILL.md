@@ -98,7 +98,7 @@ end
 
 Unit tests should have deterministic behaviour, whether they are run alone or grouped with other tests.
 
-## When to use it
+## When to use this Skill
 
 - This skill can be used when in Plan mode.
 - Always use it every time another skill specifically mentions `skill: applying-test-conventions`.
