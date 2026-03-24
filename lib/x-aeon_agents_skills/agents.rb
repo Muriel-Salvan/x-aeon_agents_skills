@@ -797,9 +797,9 @@ module XAeonAgentsSkills
       # * String: The result output
       def run(agent, prompt = '')
         agent.params[:artifacts][:store] = @artifacts
+        agent.params[:agent][:agents_run] = @agents_run
         puts
         puts "===== #{agent.name}..."
-        agent.params[:agents_run] = @agents_run
         result = @runner.run(agent, prompt)
         raise "Error: #{result.error}" unless result.error.nil?
         @agents_run << agent

@@ -48,7 +48,7 @@ module XAeonAgentsSkills
             #{payload[:artifacts][:input].map { |artifact| "- The `ARTIFACT_#{artifact[:name].to_s.upcase}` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it." }.join("\n")}
           EO_Context
         end
-        all_asks = payload[:agents_run].map do |agent|
+        all_asks = payload[:agent][:agents_run].map do |agent|
           if agent.params[:agent][:asks].empty?
             nil
           else
