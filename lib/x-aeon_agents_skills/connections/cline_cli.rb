@@ -37,9 +37,9 @@ module XAeonAgentsSkills
         prompt_json = {}
         prompt_json[:role] = payload[:agent][:role].strip unless payload[:agent][:role].strip.empty?
         prompt_json[:objective] = payload[:agent][:objective].strip unless payload[:agent][:objective].strip.empty?
-        context = ''
+        contexts = []
         unless payload[:artifacts][:input].empty?
-          context << <<~EO_Context.strip
+          contexts << <<~EO_Context.strip
             # Artifacts
 
             - Artifacts are text documents that you can get as input.
@@ -48,36 +48,12 @@ module XAeonAgentsSkills
             #{payload[:artifacts][:input].map { |artifact| "- The `ARTIFACT_#{artifact[:name].to_s.upcase}` artifact content is embedded directly in this message. It is NOT a file. Do NOT try to open it." }.join("\n")}
           EO_Context
         end
-        all_asks = payload[:agent][:agents_run].map do |agent|
-          if agent.params[:agent][:asks].empty?
-            nil
-          else
-            <<~EO_Agent_Asks.strip
-              ## Feedback given to #{agent.name} agent
-              
-              #{
-                all_asks.map do |ask|
-                  <<~EO_Ask
-                    ### #{agent.name} agent question
-                    
-                    #{ask[:question]}
-                    
-                    ### User response or feedback
-                    
-                    #{ask[:feedback]}
-                  EO_Ask
-                end
-              }
-            EO_Agent_Asks
-          end
-        end.compact
-        context << <<~EO_Context unless all_asks.empty?
-            # User guidance and feedback to agents
-            
-            #{all_asks.join("\n\n")}
+        contexts << <<~EO_Context.strip unless payload[:artifacts][:store][:user_feedbacks].nil?
+          # User guidance and feedback
+          
+          #{payload[:artifacts][:store][:user_feedbacks]}
         EO_Context
-        prompt_json[:context] = context unless context.empty?
-
+        prompt_json[:context] = contexts.join("\n\n") unless contexts.empty?
         unless payload[:artifacts][:input].empty?
           prompt_json[:artifacts] = payload[:artifacts][:input].to_h do |artifact|
             [
@@ -185,6 +161,7 @@ module XAeonAgentsSkills
         # If we were expecting an artifact, save it
         unless @expected_artifact.nil?
           if @expected_artifact[:to_be_reviewed]
+            log_debug "Asking user to review the `#{@expected_artifact[:name]}` artifact..."
             # Ask for user review of the artifact.
             # If user is not happy with the artifact, give extra feedback for the agent to improve it.
             

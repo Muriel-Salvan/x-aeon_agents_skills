@@ -272,7 +272,7 @@ module XAeonAgentsSkills
 
           step(:h_commit) { git_commit(documenter_agent) } if commit
 
-          step(:i_pr) { create_pr(@agents_run.uniq) } if pull_request
+          step(:i_pr) { create_pr } if pull_request
         end
         puts
         puts 'Requirements implemented successfully'
@@ -635,10 +635,7 @@ module XAeonAgentsSkills
       end
 
       # Create a Pull Request if it does not exist already for the current branch against main
-      #
-      # Parameters::
-      # * *implementation_agents* (Array<::Agents::Agent>): All agents that were involved in the implementation
-      def create_pr(implementation_agents)
+      def create_pr
         git_remote = git.remotes.find { |remote| remote.url.match(%r{github\.com[:/](.+)\.git}) }
         raise 'Can\'t find a Github remote in this repository' if git_remote.nil?
         repo_name = Regexp.last_match[1]
@@ -659,33 +656,15 @@ module XAeonAgentsSkills
               
               #{@artifacts[:requirements]}
           EO_Section
-          all_asks = implementation_agents.map do |agent|
-            if agent.params[:agent][:asks].empty?
-              nil
-            else
-              <<~EO_Agent_Asks.strip
-                ## Feedback given to #{agent.name} agent
-                
-                #{
-                  all_asks.map do |ask|
-                    <<~EO_Ask
-                      #{ask[:question].each_line.map { |line| "> #{line}<br/>" }.join("\n") }
-                      #{ask[:feedback].each_line.map { |line| ">> #{line}<br/>" }.join("\n") }
-                    EO_Ask
-                  end
-                }
-              EO_Agent_Asks
-            end
-          end.compact
-          sections << <<~EO_Section unless all_asks.empty?
+          sections << <<~EO_Section unless @artifacts[:user_feedbacks].nil?
               # User guidance and feedback to agents
               
-              #{all_asks.join("\n\n")}
+              #{@artifacts[:user_feedbacks]}
           EO_Section
-          sections << <<~EO_Section
+          sections << <<~EO_Section unless @artifacts[:agents_run].nil?
             # Co-authored by X-Aeon AI Agents
             
-            #{implementation_agents.map { |agent| "* #{agent.name}: #{agent.model}" }.join("\n")}
+            #{artifacts[:agents_run].each_line.uniq.join("\n")}
           EO_Section
           new_pr = github.create_pull_request(
             repo_name,
@@ -784,7 +763,6 @@ module XAeonAgentsSkills
         @run_id = run_id
         @runner = ::Agents::Runner.new
         @artifacts = {}
-        @agents_run = []
         yield
       end
 
@@ -797,12 +775,34 @@ module XAeonAgentsSkills
       # * String: The result output
       def run(agent, prompt = '')
         agent.params[:artifacts][:store] = @artifacts
-        agent.params[:agent][:agents_run] = @agents_run
         puts
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
         raise "Error: #{result.error}" unless result.error.nil?
-        @agents_run << agent
+        # Keep user's feedback in an artifact
+        unless agent.params[:agent][:asks].empty?
+          @artifacts[:user_feedbacks] = '' if @artifacts[:user_feedbacks].nil?
+          @artifacts[:user_feedbacks] << <<~EO_Artifact.strip
+            ## User feedback given to #{agent.name} agent
+            
+            #{
+              agent.params[:agent][:asks].map do |ask|
+                <<~EO_Ask
+                  ### #{agent.name} agent question
+                  
+                  #{ask[:question]}
+                  
+                  ### User response or feedback
+                  
+                  #{ask[:feedback]}
+                EO_Ask
+              end
+            }
+          EO_Artifact
+        end
+        # Keep the log of the agent's run in an artifact
+        @artifacts[:agents_run] = '' if @artifacts[:agents_run].nil?
+        @artifacts[:agents_run] << "* #{agent.name}: #{agent.model}\n"
         result.output
       end
 
