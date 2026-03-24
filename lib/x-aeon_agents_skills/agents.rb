@@ -394,7 +394,7 @@ module XAeonAgentsSkills
             applying-test-conventions
             enforcing-project-rules
           ],
-          plan_mode: true,
+          plan_mode: false,
           config: read_only_config,
           instructions: {
             ordered_list: [
@@ -435,18 +435,13 @@ module XAeonAgentsSkills
             applying-test-conventions
             enforcing-project-rules
           ],
-          plan_mode: true,
+          plan_mode: false,
           config: read_only_config,
-          instructions: {
-            ordered_list: [
-              'Read the full report of the code change intent from the `ARTIFACT_CHANGE_INTENT` artifact',
-              <<~EO_Step
-                Provide a 1-line summary of such code changes that could be used as a git commit title
-
-                - Follow standard git commit title conventions using `feat`, `fix`, etc... with impacted component names.
-              EO_Step
-            ]
-          },
+          instructions: <<~EO_Instructions,
+            ## Provide a 1-line summary of the code change intent described in the `ARTIFACT_CHANGE_INTENT` artifact
+            
+            - Follow standard git commit title conventions using `feat`, `fix`, etc... with impacted component names.
+          EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
