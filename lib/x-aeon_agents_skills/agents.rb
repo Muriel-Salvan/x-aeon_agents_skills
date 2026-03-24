@@ -403,22 +403,24 @@ module XAeonAgentsSkills
           ],
           plan_mode: false,
           config: read_only_config,
-          instructions: {
-            ordered_list: [
-              'Understand the full list of file changes from the `ARTIFACT_FILES_DIFFS` artifact',
-              'Analyze the project files',
-              <<~EO_Step
-                Explain properly the intent of those changes
+          instructions: <<~EO_Instructions,
+            ## 1. Read and analyze ALL file changes from the `ARTIFACT_FILES_DIFFS` artifact
+            
+            ## 2. Analyze the project files
+            
+            ## 3. Explain properly the changes reported by the `ARTIFACT_FILES_DIFFS` artifact
 
-                - Explain the files difference meaning and intent in the context of this project.
-                - Always enumerate the kinds of changes it brings (for example: new feature, bug fix, documentation...).
-                - Always enumerate the project's components impacted by this change (for example: backend, login screen, CLI...).
-              EO_Step
-            ]
-          },
+            - You MUST produce an output that includes:
+            1. A general explanation of the changes, their meaning and intent in the context of this project.
+            2. The types of changes (feature, bug fix, documentation, etc.).
+            3. The impacted architectural components (backend, login screen, CLI, etc.).
+          EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
+            - You already have ALL the information required.
+            - The user's intent is fully specified.
+            - The conversation log is provided for context only. You MUST NOT ask follow-up questions.
           EO_Constraints
         )
       end
@@ -666,7 +668,7 @@ module XAeonAgentsSkills
           sections << <<~EO_Section unless @artifacts[:agents_run].nil?
             # Co-authored by X-Aeon AI Agents
             
-            #{artifacts[:agents_run].each_line.uniq.join("\n")}
+            #{@artifacts[:agents_run].each_line.uniq.join("\n")}
           EO_Section
           new_pr = github.create_pull_request(
             repo_name,
