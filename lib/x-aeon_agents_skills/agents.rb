@@ -382,7 +382,14 @@ module XAeonAgentsSkills
       def diff_interpreter_agent
         @diff_interpreter_agent ||= cline_agent(
           name: 'Diff interpreter',
-          objective: 'Interpret code modifications and explain the changes properly with its meaning and intent.',
+          objective: <<~EO_Objective,
+            Interpret code modifications and explain the changes properly with its meaning and intent.
+
+            The goals are:
+            - Get a general explanation of those changes.
+            - Identify the kind of changes involved (new features, feature change, bug fix, documentation...).
+            - Identify the architectural components that are impacted by those changes (a specific plugin, CLI, UI...).
+          EO_Objective
           input_artifacts: [
             { name: :files_diffs, description: 'Full list of files changes and differences that have been done' }
           ],
