@@ -14,7 +14,7 @@ describe XAeonAgentsSkills::GenHelpers do
             EO_ERB
           )
         ).to eq <<~EXPECTED
-          ## When to use it
+          ## When to use this Skill
 
           - This skill can be used when in Plan mode.
           - Always use it every time another skill specifically mentions `skill: test_skill`.
@@ -35,7 +35,7 @@ describe XAeonAgentsSkills::GenHelpers do
             EO_ERB
           )
         ).to eq <<~EXPECTED
-          ## When to use it
+          ## When to use this Skill
 
           - Always use it every time another skill specifically mentions `skill: test_skill`.
           - Custom usage instruction for non-plan mode.
@@ -54,7 +54,7 @@ describe XAeonAgentsSkills::GenHelpers do
             EO_ERB
           )
         ).to eq <<~EXPECTED
-          ## When to use it
+          ## When to use this Skill
 
           - Always use it every time another skill specifically mentions `skill: test_skill`.
         EXPECTED
@@ -72,7 +72,7 @@ describe XAeonAgentsSkills::GenHelpers do
             EO_ERB
           )
         ).to eq <<~EXPECTED
-          ## When to use it
+          ## When to use this Skill
 
           - This skill can be used when in Plan mode.
           - Always use it every time another skill specifically mentions `skill: test_skill`.

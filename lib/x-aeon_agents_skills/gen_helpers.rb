@@ -188,7 +188,7 @@ module XAeonAgentsSkills
         blocks << "- Always use it every time another skill specifically mentions `skill: #{name}`."
         blocks << erb_content
         <<~EO_Markdown
-          ## When to use it
+          ## When to use this Skill
 
           #{blocks.join("\n").rstrip}
         EO_Markdown
