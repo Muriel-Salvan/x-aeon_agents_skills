@@ -62,6 +62,34 @@ The following helper methods are available in ERB templates:
 - `XAeonAgentsSkills::GenHelpers.init_skill_checklist` - Returns the "Create Execution Checklist (MANDATORY)" section
 - `XAeonAgentsSkills::GenHelpers.validate_skill_checklist` - Returns the "Final Verification (MANDATORY)" section
 
+## Addressing Pull Request Comments
+
+The `addressing-pull-request-comments` skill provides functionality to automatically address comments made on GitHub Pull Requests. This skill:
+
+- Fetches unresolved PR comments using the `check_unresolved_pr_comments` script
+- Identifies comments directed at the agent (starting with `/agent`)
+- Processes each comment to determine if code changes are needed
+- Implements required changes following project conventions
+- Generates appropriate replies to each comment
+- Uses the `reply_to_comment` script to post responses
+
+### Usage
+
+To address PR comments, use the following workflow:
+
+```bash
+# 1. Get comments
+ruby .cline/skills/addressing-pull-request-comments/scripts/check_unresolved_pr_comments
+
+# 2. For each unanswered comment starting with `/agent`:
+# 2.1. Apply necessary code changes if needed
+# 2.2. Create .x-aeon_agents/tmp/replies/comment_1234567_reply.md with the appropriate reply
+# 2.3. Reply to the comment
+ruby .cline/skills/addressing-pull-request-comments/scripts/reply_to_comment 3 1234567 .x-aeon_agents/tmp/replies/comment_1234567_reply.md
+```
+
+The skill automatically handles the complete workflow from comment detection to response generation and posting.
+
 ## License
 
 See [LICENSE file](LICENSE).

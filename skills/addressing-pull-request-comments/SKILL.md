@@ -25,7 +25,23 @@ When addressing Pull Request comments, follow those steps.
 
 - Always tell the user "SKILL: I am addressing Pull Request comments" to inform the user that you are running this skill.
 
-### 2. Fetch Pull Request comments (can be done during Plan mode)
+### 2. Use the automated address_pull_request_comments method
+
+- The `address_pull_request_comments` method in `lib/x-aeon_agents_skills/agents.rb` provides automated handling of PR comments
+- This method will:
+  - Find all open Pull Requests for the current branch
+  - Extract agent-directed comments (starting with `/agent`)
+  - Filter out comments that already have agent replies (starting with `[X-Aeon Agent ({model-name})]`)
+  - Create PRRequirementsExtractor agent to analyze comments and extract requirements
+  - Implement requirements if needed using the existing requirements workflow
+  - Create ReviewResponder agent to generate appropriate replies
+  - Post replies to each comment with the proper agent signature format
+
+### 3. Manual fallback process (if needed)
+
+If the automated method is not available or needs to be supplemented, follow these manual steps:
+
+#### 3.1. Fetch Pull Request comments (can be done during Plan mode)
 
 - Find this skill directory path, later referenced as {skill_path}.
 - Always use `cli: ruby {skill_path}/scripts/check_unresolved_pr_comments` to know about all the unresolved PR comments.
@@ -82,19 +98,19 @@ ruby .cline/skills/addressing-pull-request-comments/scripts/check_unresolved_pr_
 # Found 0 Pull Requests dealing with this branch (numbers )
 ```
 
-### 3. Consider all comments directed at the agent (can be done during Plan mode)
+#### 3.2. Consider all comments directed at the agent (can be done during Plan mode)
 
-- Select all the comments that start with the string `/agent` and that don't have a reply from an agent (starting with `[Cline ({model})]` in the reply).
+- Select all the comments that start with the string `/agent` and that don't have a reply from an agent (starting with `[X-Aeon Agent ({model-name})]` in the reply).
 - Store those selected comments in a list referenced as {comments_list}.
 
-### 4. Process each comment in {comments_list}
+#### 3.3. Process each comment in {comments_list}
 
 For each comment selected in {comments_list}, perform the following steps:
 
-#### 4.1. Check if the comment requests a change or improvement (can be done during Plan mode)
+##### 3.3.1. Check if the comment requests a change or improvement (can be done during Plan mode)
 
 - If yes, analyze the changes in Plan mode, the ask the user to switch to Act mode if not done already to perform those changes. Improve or fix the code as needed, following all existing rules.
-- If no, skip code changes and continue to step 4.2.
+- If no, skip code changes and continue to step 3.3.2.
 
 Example of a comment asking for a code change:
 ```
@@ -105,7 +121,7 @@ Example of a comment just asking a question, without needing code changes:
 /agent I don't understand. Why are we using this API?
 ```
 
-#### 4.2. Create a temporary file with your reply to the comment
+##### 3.3.2. Create a temporary file with your reply to the comment
 
 - If you added new commits because of that comment, then always explain what improvements you made in your reply body.
 - If the user was asking a question in his comment, then always give an answer to his question in your reply body.
@@ -125,7 +141,7 @@ This API is mainly used to fetch the results from our database.
 We use it as it is the official documented way of retrieving our data, and it handles security gates for us.
 ```
 
-#### 4.3. Reply to the comment
+##### 3.3.3. Reply to the comment
 
 - Find the Pull Request number (later referenced as {pull_request_number}) and original comment database ID (later referenced as {comment_database_id}) from the comment data.
 - Find this skill directory path, later referenced as {skill_path}.
@@ -156,7 +172,14 @@ Before declaring the task complete:
 
 Those examples are given for a Linux environment. Adapt them if you are running in a Windows environment.
 
-### Steps to perform to address new comments
+### Automated approach using address_pull_request_comments method
+
+```bash
+# Use the automated method to handle all PR comments
+bundle exec ruby -e "require 'x-aeon_agents_skills'; XAeonAgentsSkills::Agents.configure; XAeonAgentsSkills::Agents.address_pull_request_comments(123)"
+```
+
+### Manual approach (fallback if needed)
 
 ```bash
 # 1. Get comments
