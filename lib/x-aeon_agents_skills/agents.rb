@@ -320,6 +320,228 @@ module XAeonAgentsSkills
         puts 'Requirements implemented successfully'
       end
 
+      # Address Pull Request comments by finding open PRs, extracting agent-directed comments,
+      # implementing requirements, and replying to comments.
+      #
+      # Parameters::
+      # * *pull_request_number* (Integer): The Pull Request number to address comments for
+      # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
+      def address_pull_request_comments(pull_request_number, run_id: nil)
+        with_runner(run_id) do
+          # Find all open Pull Requests for the current branch
+          prs = find_open_prs_for_current_branch
+          
+          # Process each Pull Request
+          prs.each do |pr|
+            process_pr_comments(pr)
+          end
+        end
+        puts
+        puts 'Pull Request comments addressed successfully'
+      end
+
+      private
+
+      # Find all open Pull Requests for the current branch
+      #
+      # Result::
+      # * Array<Octokit::PullRequest>: Array of open Pull Requests for the current branch
+      def find_open_prs_for_current_branch
+        current_branch = git.current_branch
+        repo_name = github_repo
+        
+        # Get all open Pull Requests
+        all_prs = github.pull_requests(repo_name, state: 'open')
+        
+        # Filter PRs for the current branch
+        prs_for_branch = all_prs.select do |pr|
+          pr.head.ref == current_branch
+        end
+        
+        log_debug "Found #{prs_for_branch.size} open PR(s) for branch #{current_branch}"
+        prs_for_branch
+      end
+
+      # Process comments for a specific Pull Request
+      #
+      # Parameters::
+      # * *pr* (Octokit::PullRequest): The Pull Request to process comments for
+      def process_pr_comments(pr)
+        log_debug "Processing comments for PR ##{pr.number}: #{pr.title}"
+        
+        # Get all comments for this PR
+        comments = github.issue_comments(github_repo, pr.number)
+        
+        # Filter agent-directed comments that don't already have agent replies
+        agent_comments = filter_agent_directed_comments(comments)
+        
+        if agent_comments.empty?
+          log_debug "No agent-directed comments found for PR ##{pr.number}"
+          return
+        end
+        
+        log_debug "Found #{agent_comments.size} agent-directed comment(s) for PR ##{pr.number}"
+        
+        # Create artifacts for all comments and agent-directed comments
+        create_comment_artifacts(comments, agent_comments)
+        
+        # Extract requirements from agent-directed comments
+        requirements = extract_requirements_from_comments
+        
+        # If requirements exist, implement them
+        if requirements && !requirements.strip.empty? && requirements != "No requirements"
+          log_debug "Requirements found, implementing..."
+          plan, files_diff = implement_requirements_with_plan(requirements)
+        else
+          log_debug "No requirements to implement"
+          plan = "No implementation plan"
+          files_diff = "No changes"
+        end
+        
+        # Reply to each agent-directed comment
+        agent_comments.each do |comment|
+          reply_to_comment(comment, requirements, plan, files_diff)
+        end
+      end
+
+      # Filter comments to find agent-directed comments that don't already have agent replies
+      #
+      # Parameters::
+      # * *comments* (Array<Octokit::IssueComment>): Array of comments to filter
+      # Result::
+      # * Array<Octokit::IssueComment>: Filtered agent-directed comments
+      def filter_agent_directed_comments(comments)
+        agent_comments = []
+        
+        comments.each do |comment|
+          # Check if comment is directed to X-Aeon Agents
+          next unless comment.body&.start_with?('/agent')
+          
+          # Check if comment already has a reply from X-Aeon Agents
+          has_agent_reply = check_for_agent_reply(comment.id)
+          
+          unless has_agent_reply
+            agent_comments << comment
+          end
+        end
+        
+        agent_comments
+      end
+
+      # Check if a comment already has a reply from X-Aeon Agents
+      #
+      # Parameters::
+      # * *comment_id* (Integer): The comment ID to check
+      # Result::
+      # * Boolean: True if the comment has an agent reply, false otherwise
+      def check_for_agent_reply(comment_id)
+        begin
+          # Get replies to this comment
+          replies = github.issue_comment_replies(github_repo, comment_id)
+          
+          # Check if any reply starts with the agent signature pattern
+          replies.any? do |reply|
+            reply.body&.match(/^\[X-Aeon Agent \([^)]+\)\]/)
+          end
+        rescue Octokit::NotFound
+          # If no replies exist, return false
+          false
+        rescue => e
+          log_debug "Error checking for agent replies to comment ##{comment_id}: #{e.message}"
+          false
+        end
+      end
+
+      # Create artifacts for comments
+      #
+      # Parameters::
+      # * *all_comments* (Array<Octokit::IssueComment>): All comments in the PR
+      # * *agent_comments* (Array<Octokit::IssueComment>): Agent-directed comments
+      def create_comment_artifacts(all_comments, agent_comments)
+        # Create open_comments artifact with all comments
+        @artifacts[:open_comments] = format_comments_for_artifact(all_comments)
+        
+        # Create open_comments_to_agents artifact with only agent-directed comments
+        @artifacts[:open_comments_to_agents] = format_comments_for_artifact(agent_comments)
+      end
+
+      # Format comments for use in artifacts
+      #
+      # Parameters::
+      # * *comments* (Array<Octokit::IssueComment>): Comments to format
+      # Result::
+      # * String: Formatted comments as markdown
+      def format_comments_for_artifact(comments)
+        return "No comments" if comments.empty?
+        
+        comments.sort_by(&:created_at).map do |comment|
+          <<~EO_Comment
+            ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
+            
+            #{comment.body}
+          EO_Comment
+        end.join("\n\n")
+      end
+
+      # Extract requirements from agent-directed comments
+      #
+      # Result::
+      # * String: Extracted requirements or "No requirements" if none found
+      def extract_requirements_from_comments
+        run(pr_requirements_extractor_agent)
+        @artifacts[:requirements] || "No requirements"
+      end
+
+      # Implement requirements and return plan and files_diff
+      #
+      # Parameters::
+      # * *requirements* (String): Requirements to implement
+      # Result::
+      # * Array<String, String>: [plan, files_diff]
+      def implement_requirements_with_plan(requirements)
+        # Call implement_requirements with commit=true and pull_request=true
+        implement_requirements(requirements, commit: true, pull_request: true)
+        
+        # Return the plan and files_diff artifacts
+        [@artifacts[:plan], @artifacts[:files_diffs] || "No changes"]
+      end
+
+      # Reply to a specific comment
+      #
+      # Parameters::
+      # * *comment* (Octokit::IssueComment): The comment to reply to
+      # * *requirements* (String): Requirements that were implemented
+      # * *plan* (String): Implementation plan
+      # * *files_diff* (String): Code changes from implementation
+      def reply_to_comment(comment, requirements, plan, files_diff)
+        begin
+          # Create artifact for the specific comment
+          @artifacts[:open_comment_for_reply] = <<~EO_Comment
+            ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
+            
+            #{comment.body}
+          EO_Comment
+          
+          # Run ReviewResponder agent
+          run(review_responder_agent)
+          
+          # Get the reply text
+          reply_text = @artifacts[:reply]
+          
+          # Extract model name and format signature
+          model_name = review_responder_agent.model
+          signature = "[X-Aeon Agent (#{model_name})]"
+          
+          # Post the reply with signature
+          full_reply = "#{signature}\n\n#{reply_text}"
+          
+          github.create_pull_request_comment_reply(github_repo, comment.pull_request_number, comment.id, full_reply)
+          log_debug "Successfully replied to comment ##{comment.id}"
+        rescue => e
+          log_debug "Failed to reply to comment ##{comment.id}: #{e.message}"
+        end
+      end
+
       private
 
       # Loop over all Cline models
@@ -706,6 +928,94 @@ module XAeonAgentsSkills
         )
       end
 
+      # Create the PRRequirementsExtractor agent
+      #
+      # Result::
+      # * ::Agents::Agent: The PRRequirementsExtractor agent
+      def pr_requirements_extractor_agent
+        @pr_requirements_extractor_agent ||= cline_agent(
+          name: 'PRRequirementsExtractor',
+          objective: 'Extract requirements from PR comments directed at X-Aeon Agents',
+          input_artifacts: [
+            { name: :open_comments, description: 'Markdown document with ALL open comments (for context)' },
+            { name: :open_comments_to_agents, description: 'Markdown document with ONLY agent-directed comments' }
+          ],
+          output_artifacts: [
+            { name: :requirements, description: 'Requirements to implement, or "No requirements" if no implementation needed' }
+          ],
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            enforcing-project-rules
+          ],
+          plan_mode: false,
+          config: read_only_config,
+          instructions: {
+            ordered_list: [
+              'Read the open_comments artifact to understand the full context of the PR conversation',
+              'Read the open_comments_to_agents artifact to focus on agent-directed comments',
+              'Analyze agent-directed comments to identify specific requirements or tasks that need implementation',
+              'Extract clear, actionable requirements from the comments',
+              'If no implementation is required (e.g., comments are just questions), output "No requirements"'
+            ]
+          },
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+            - Focus only on agent-directed comments (/agent) for requirement extraction.
+            - Output clear, actionable requirements or "No requirements" if none exist.
+          EO_Constraints
+        )
+      end
+
+      # Create the ReviewResponder agent
+      #
+      # Result::
+      # * ::Agents::Agent: The ReviewResponder agent
+      def review_responder_agent
+        @review_responder_agent ||= cline_agent(
+          name: 'ReviewResponder',
+          objective: 'Generate replies to review comments',
+          input_artifacts: [
+            { name: :open_comments, description: 'Same document used by PRRequirementsExtractor (context)' },
+            { name: :open_comment_for_reply, description: 'Exact comment to be replied to' },
+            { name: :requirements, description: 'Requirements implemented (or "No requirements")' },
+            { name: :plan, description: 'Implementation plan from implement_requirements workflow (or "No implementation plan")' },
+            { name: :files_diff, description: 'Code changes from implement_requirements workflow (or "No changes")' }
+          ],
+          output_artifacts: [
+            { name: :reply, description: 'Exact reply text to post (without agent signature prefix)' }
+          ],
+          skills: %w[
+            applying-ruby-conventions
+            applying-test-conventions
+            enforcing-project-rules
+          ],
+          plan_mode: false,
+          config: read_only_config,
+          instructions: {
+            ordered_list: [
+              'Read the open_comments artifact to understand the full PR context',
+              'Read the open_comment_for_reply artifact to understand the specific comment to respond to',
+              'Read the requirements artifact to understand what was implemented',
+              'Read the plan artifact to understand the implementation approach',
+              'Read the files_diff artifact to understand the specific code changes made',
+              'Generate a professional, helpful reply that addresses the comment appropriately',
+              'If requirements were implemented, explain what was done and how it addresses the comment',
+              'If no requirements existed, provide a helpful response explaining the situation',
+              'Output the reply text without any agent signature prefix (the signature will be added by the calling code)'
+            ]
+          },
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+            - Generate a professional, helpful response to the review comment.
+            - Do NOT include any agent signature prefix in the output.
+            - Focus on addressing the specific comment content appropriately.
+          EO_Constraints
+        )
+      end
+
       # Get current code diffs interpretation
       #
       # Parameters::
@@ -842,15 +1152,25 @@ module XAeonAgentsSkills
       end
 
       # Setup an agents runner.
+      # This method is re-entrant, meaning it can be called multiple times within the same execution context.
+      # If a runner is already initialized, it will reuse the existing runner and artifacts.
       #
       # Parameters::
       # * *run_id* (String or nil): The run ID, or nil if persistence is not needed [default = nil]
       # * Proc: Code called with the runner setup
       def with_runner(run_id = nil)
-        @run_id = run_id
-        @runner = ::Agents::Runner.new
-        @artifacts = {}
-        yield
+        # If runner is already initialized, reuse existing runner and artifacts
+        if @runner
+          # Update run_id if provided and not already set
+          @run_id = run_id if @run_id.nil? && !run_id.nil?
+          yield
+        else
+          # Initialize new runner and artifacts
+          @run_id = run_id
+          @runner = ::Agents::Runner.new
+          @artifacts = {}
+          yield
+        end
       end
 
       # Run an agent with a prompt.
