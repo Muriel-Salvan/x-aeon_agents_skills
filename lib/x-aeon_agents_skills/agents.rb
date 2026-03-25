@@ -212,15 +212,7 @@ module XAeonAgentsSkills
           This is the conversation log that happened in this issue.
           This is provided as a reference to better understand the requirements.
 
-          #{
-            issue_comments.sort_by(&:created_at).map do |comment|
-              <<~EO_Comment
-                ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
-                
-                #{align_markdown_headers(comment.body, level: 3)}
-              EO_Comment
-            end.join
-          }
+          #{format_comments_for_artifact(issue_comments)}
         EO_Section
         sections << <<~EO_Section
           # Associated Github issue
@@ -249,28 +241,28 @@ module XAeonAgentsSkills
         with_runner(run_id) do
 
           # Initial artifacts
-          step(:a_setup_requirements) do
+          step(:ir_a_setup_requirements) do
              @artifacts.merge!(
               requirements: requirements,
               base_sha: git.gcommit('HEAD').sha
              )
           end
 
-          step(:b_plan) do
+          step(:ir_b_plan) do
             run(planner_agent)
             puts "===== Implementation plan:\n#{@artifacts[:plan]}"
           end
 
           # TODO: Add interactive review step here
 
-          step(:c_develop) do
+          step(:ir_c_develop) do
             run(developer_agent)
             puts "===== Developer changes: #{git.status.changed.keys.join(", ")}"
           end
 
-          step(:d_commit) { git_commit(developer_agent) } if commit
+          step(:ir_d_commit) { git_commit(developer_agent) } if commit
 
-          step(:e_test) do
+          step(:ir_e_test) do
             tests_cmd = 'bundle exec rspec --format documentation'
             @artifacts[:tests_cmd] = tests_cmd
             idx_test = 0
@@ -304,17 +296,17 @@ module XAeonAgentsSkills
             end
           end
 
-          step(:f_commit) { git_commit(tester_agent) } if commit
+          step(:ir_f_commit) { git_commit(tester_agent) } if commit
 
-          step(:g_document) do
+          step(:ir_g_document) do
             @artifacts[:files_diffs] = artifact_files_diffs(@artifacts[:base_sha])
             run(documenter_agent)
             puts "===== Documenter changes: #{git.status.changed.keys.join(", ")}"
           end
 
-          step(:h_commit) { git_commit(documenter_agent) } if commit
+          step(:ir_h_commit) { git_commit(documenter_agent) } if commit
 
-          step(:i_pr) { create_pr } if pull_request
+          step(:ir_i_pr) { create_pr } if pull_request
         end
         puts
         puts 'Requirements implemented successfully'
@@ -328,12 +320,65 @@ module XAeonAgentsSkills
       # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
       def address_pull_request_comments(pull_request_number, run_id: nil)
         with_runner(run_id) do
-          # Find all open Pull Requests for the current branch
-          prs = find_open_prs_for_current_branch
-          
-          # Process each Pull Request
-          prs.each do |pr|
-            process_pr_comments(pr)
+          step(:aprc_a_gather_comments) do
+            # Get the specific Pull Request by number
+            pr = github.pull_request(github_repo, pull_request_number)
+            log_debug "Processing comments for PR ##{pull_request_number}: #{pr.title}"
+            
+            # Get all comments for this PR
+            comments = github.issue_comments(github_repo, pull_request_number)
+            # TODO: Filter only the open ones
+              
+            # Filter agent-directed comments that don't already have agent replies
+            agent_comments = comments.select do |comment|
+              comment.body.start_with?('/agent') &&
+                github.issue_comment_replies(github_repo, comment.id).any? { |reply| reply.body.match(/^\[X-Aeon Agent \([^)]+\)\]/) }
+            end
+
+            @artifacts[:agent_comments_json] = agent_comments.map do |comment|
+              {
+                id: comment.id,
+                user_login: comment.user.login,
+                created_at: comment.created_at.utc.strftime('%F %T UTC'),
+                body: comment.body
+              }
+            end.to_json
+            unless agent_comments.empty?
+              log_debug "Found #{agent_comments.size} agent-directed comment(s) for PR ##{pull_request_number}"
+              @artifacts[:open_comments] = format_comments_for_artifact(comments)
+              @artifacts[:open_comments_to_agents] = format_comments_for_artifact(agent_comments)
+            end
+          end
+
+          if JSON.parse(@artifacts[:agent_comments_json], symbolize_names: true).empty?
+            log_debug "No agent-directed comments found for PR ##{pull_request_number}"
+          else
+            step(:aprc_b_extract_requirements) do
+              run(pr_requirements_extractor_agent)
+              @artifacts[:requirements] = 'No requirements' if @artifacts[:requirements].strip.downcase == 'no requirements'
+            end
+            if @artifacts[:requirements] == 'No requirements'
+              log_debug 'No requirements to implement'
+              @artifacts[:plan] = 'No implementation plan'
+              @artifacts[:files_diffs] = 'No changes'
+            else
+              log_debug 'Requirements found, implementing...'
+              implement_requirements(@artifacts[:requirements], commit: true, pull_request: true)
+            end
+            
+            # Reply to each agent-directed comment
+            JSON.parse(@artifacts[:agent_comments_json], symbolize_names: true).each.with_index do |comment, comment_idx|
+              step("aprc_c#{comment_idx}_reply_to_comment".to_sym) do
+                @artifacts[:open_comment_for_reply] = <<~EO_Comment
+                  ## #{comment[:user_login]} at #{comment[:created_at]}
+                  
+                  #{comment[:body]}
+                EO_Comment
+                run(review_responder_agent)
+                github.create_pull_request_comment_reply(github_repo, pull_request_number, comment[:id], "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}")
+                log_debug "Successfully replied to comment ##{comment[:id]}"
+              end
+            end
           end
         end
         puts
@@ -341,129 +386,6 @@ module XAeonAgentsSkills
       end
 
       private
-
-      # Find all open Pull Requests for the current branch
-      #
-      # Result::
-      # * Array<Octokit::PullRequest>: Array of open Pull Requests for the current branch
-      def find_open_prs_for_current_branch
-        current_branch = git.current_branch
-        repo_name = github_repo
-        
-        # Get all open Pull Requests
-        all_prs = github.pull_requests(repo_name, state: 'open')
-        
-        # Filter PRs for the current branch
-        prs_for_branch = all_prs.select do |pr|
-          pr.head.ref == current_branch
-        end
-        
-        log_debug "Found #{prs_for_branch.size} open PR(s) for branch #{current_branch}"
-        prs_for_branch
-      end
-
-      # Process comments for a specific Pull Request
-      #
-      # Parameters::
-      # * *pr* (Octokit::PullRequest): The Pull Request to process comments for
-      def process_pr_comments(pr)
-        log_debug "Processing comments for PR ##{pr.number}: #{pr.title}"
-        
-        # Get all comments for this PR
-        comments = github.issue_comments(github_repo, pr.number)
-        
-        # Filter agent-directed comments that don't already have agent replies
-        agent_comments = filter_agent_directed_comments(comments)
-        
-        if agent_comments.empty?
-          log_debug "No agent-directed comments found for PR ##{pr.number}"
-          return
-        end
-        
-        log_debug "Found #{agent_comments.size} agent-directed comment(s) for PR ##{pr.number}"
-        
-        # Create artifacts for all comments and agent-directed comments
-        create_comment_artifacts(comments, agent_comments)
-        
-        # Extract requirements from agent-directed comments
-        requirements = extract_requirements_from_comments
-        
-        # If requirements exist, implement them
-        if requirements && !requirements.strip.empty? && requirements != "No requirements"
-          log_debug "Requirements found, implementing..."
-          plan, files_diff = implement_requirements_with_plan(requirements)
-        else
-          log_debug "No requirements to implement"
-          plan = "No implementation plan"
-          files_diff = "No changes"
-        end
-        
-        # Reply to each agent-directed comment
-        agent_comments.each do |comment|
-          reply_to_comment(comment, requirements, plan, files_diff)
-        end
-      end
-
-      # Filter comments to find agent-directed comments that don't already have agent replies
-      #
-      # Parameters::
-      # * *comments* (Array<Octokit::IssueComment>): Array of comments to filter
-      # Result::
-      # * Array<Octokit::IssueComment>: Filtered agent-directed comments
-      def filter_agent_directed_comments(comments)
-        agent_comments = []
-        
-        comments.each do |comment|
-          # Check if comment is directed to X-Aeon Agents
-          next unless comment.body&.start_with?('/agent')
-          
-          # Check if comment already has a reply from X-Aeon Agents
-          has_agent_reply = check_for_agent_reply(comment.id)
-          
-          unless has_agent_reply
-            agent_comments << comment
-          end
-        end
-        
-        agent_comments
-      end
-
-      # Check if a comment already has a reply from X-Aeon Agents
-      #
-      # Parameters::
-      # * *comment_id* (Integer): The comment ID to check
-      # Result::
-      # * Boolean: True if the comment has an agent reply, false otherwise
-      def check_for_agent_reply(comment_id)
-        begin
-          # Get replies to this comment
-          replies = github.issue_comment_replies(github_repo, comment_id)
-          
-          # Check if any reply starts with the agent signature pattern
-          replies.any? do |reply|
-            reply.body&.match(/^\[X-Aeon Agent \([^)]+\)\]/)
-          end
-        rescue Octokit::NotFound
-          # If no replies exist, return false
-          false
-        rescue => e
-          log_debug "Error checking for agent replies to comment ##{comment_id}: #{e.message}"
-          false
-        end
-      end
-
-      # Create artifacts for comments
-      #
-      # Parameters::
-      # * *all_comments* (Array<Octokit::IssueComment>): All comments in the PR
-      # * *agent_comments* (Array<Octokit::IssueComment>): Agent-directed comments
-      def create_comment_artifacts(all_comments, agent_comments)
-        # Create open_comments artifact with all comments
-        @artifacts[:open_comments] = format_comments_for_artifact(all_comments)
-        
-        # Create open_comments_to_agents artifact with only agent-directed comments
-        @artifacts[:open_comments_to_agents] = format_comments_for_artifact(agent_comments)
-      end
 
       # Format comments for use in artifacts
       #
@@ -478,68 +400,9 @@ module XAeonAgentsSkills
           <<~EO_Comment
             ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
             
-            #{comment.body}
+            #{align_markdown_headers(comment.body, level: 3)}
           EO_Comment
-        end.join("\n\n")
-      end
-
-      # Extract requirements from agent-directed comments
-      #
-      # Result::
-      # * String: Extracted requirements or "No requirements" if none found
-      def extract_requirements_from_comments
-        run(pr_requirements_extractor_agent)
-        @artifacts[:requirements] || "No requirements"
-      end
-
-      # Implement requirements and return plan and files_diff
-      #
-      # Parameters::
-      # * *requirements* (String): Requirements to implement
-      # Result::
-      # * Array<String, String>: [plan, files_diff]
-      def implement_requirements_with_plan(requirements)
-        # Call implement_requirements with commit=true and pull_request=true
-        implement_requirements(requirements, commit: true, pull_request: true)
-        
-        # Return the plan and files_diff artifacts
-        [@artifacts[:plan], @artifacts[:files_diffs] || "No changes"]
-      end
-
-      # Reply to a specific comment
-      #
-      # Parameters::
-      # * *comment* (Octokit::IssueComment): The comment to reply to
-      # * *requirements* (String): Requirements that were implemented
-      # * *plan* (String): Implementation plan
-      # * *files_diff* (String): Code changes from implementation
-      def reply_to_comment(comment, requirements, plan, files_diff)
-        begin
-          # Create artifact for the specific comment
-          @artifacts[:open_comment_for_reply] = <<~EO_Comment
-            ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
-            
-            #{comment.body}
-          EO_Comment
-          
-          # Run ReviewResponder agent
-          run(review_responder_agent)
-          
-          # Get the reply text
-          reply_text = @artifacts[:reply]
-          
-          # Extract model name and format signature
-          model_name = review_responder_agent.model
-          signature = "[X-Aeon Agent (#{model_name})]"
-          
-          # Post the reply with signature
-          full_reply = "#{signature}\n\n#{reply_text}"
-          
-          github.create_pull_request_comment_reply(github_repo, comment.pull_request_number, comment.id, full_reply)
-          log_debug "Successfully replied to comment ##{comment.id}"
-        rescue => e
-          log_debug "Failed to reply to comment ##{comment.id}: #{e.message}"
-        end
+        end.join("\n")
       end
 
       private
@@ -941,19 +804,13 @@ module XAeonAgentsSkills
             { name: :open_comments_to_agents, description: 'Markdown document with ONLY agent-directed comments' }
           ],
           output_artifacts: [
-            { name: :requirements, description: 'Requirements to implement, or "No requirements" if no implementation needed' }
+            { name: :requirements, description: 'the requirements to implement (reply "No requirements" if no implementation needed)' }
           ],
-          skills: %w[
-            applying-ruby-conventions
-            applying-test-conventions
-            enforcing-project-rules
-          ],
-          plan_mode: false,
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the open_comments artifact to understand the full context of the PR conversation',
-              'Read the open_comments_to_agents artifact to focus on agent-directed comments',
+              'Read the `ARTIFACT_OPEN_COMMENTS` artifact to understand the full context of the PR conversation',
+              'Read the `ARTIFACT_OPEN_COMMENTS_TO_AGENTS` artifact to focus on agent-directed comments',
               'Analyze agent-directed comments to identify specific requirements or tasks that need implementation',
               'Extract clear, actionable requirements from the comments',
               'If no implementation is required (e.g., comments are just questions), output "No requirements"'
@@ -977,14 +834,14 @@ module XAeonAgentsSkills
           name: 'ReviewResponder',
           objective: 'Generate replies to review comments',
           input_artifacts: [
-            { name: :open_comments, description: 'Same document used by PRRequirementsExtractor (context)' },
+            { name: :open_comments, description: 'Markdown document with ALL open comments (for context)' },
             { name: :open_comment_for_reply, description: 'Exact comment to be replied to' },
             { name: :requirements, description: 'Requirements implemented (or "No requirements")' },
             { name: :plan, description: 'Implementation plan from implement_requirements workflow (or "No implementation plan")' },
-            { name: :files_diff, description: 'Code changes from implement_requirements workflow (or "No changes")' }
+            { name: :files_diffs, description: 'Code changes from implement_requirements workflow (or "No changes")' }
           ],
           output_artifacts: [
-            { name: :reply, description: 'Exact reply text to post (without agent signature prefix)' }
+            { name: :reply, description: 'the exact reply text to post' }
           ],
           skills: %w[
             applying-ruby-conventions
@@ -995,23 +852,22 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the open_comments artifact to understand the full PR context',
-              'Read the open_comment_for_reply artifact to understand the specific comment to respond to',
-              'Read the requirements artifact to understand what was implemented',
-              'Read the plan artifact to understand the implementation approach',
-              'Read the files_diff artifact to understand the specific code changes made',
+              'Read the `ARTIFACT_OPEN_COMMENTS` artifact to understand the full PR context',
+              'Read the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact to understand the specific comment to respond to',
+              'Read the `ARTIFACT_REQUIREMENTS` artifact to understand what was implemented',
+              'Read the `ARTIFACT_PLAN` artifact to understand the implementation approach',
+              'Read the `ARTIFACT_FILES_DIFFS` artifact to understand the specific code changes made',
               'Generate a professional, helpful reply that addresses the comment appropriately',
               'If requirements were implemented, explain what was done and how it addresses the comment',
-              'If no requirements existed, provide a helpful response explaining the situation',
-              'Output the reply text without any agent signature prefix (the signature will be added by the calling code)'
+              'If no requirements existed, provide a helpful response explaining the situation'
             ]
           },
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
             - Generate a professional, helpful response to the review comment.
-            - Do NOT include any agent signature prefix in the output.
-            - Focus on addressing the specific comment content appropriately.
+            - ONLY focus on addressing the specific comment of the  `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
+            - Do NOT answer or reply to any other comment.
           EO_Constraints
         )
       end
