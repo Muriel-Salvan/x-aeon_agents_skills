@@ -629,50 +629,46 @@ module XAeonAgentsSkills
             enforcing-project-rules
             updating-doc
           ],
-          instructions: {
-            ordered_list: [
-              <<~EO_Step,
-                Understand the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
+          instructions: <<~EO_Instructions,
+            ## 1. Analyze the initial requirements from the `ARTIFACT_REQUIREMENTS` artifact
+            
+            - Those give you information about the requirements you should be documenting.
                 
-                - Understand those requirements.
-              EO_Step
-              <<~EO_Step,
-                Understand the implementation plan from the `ARTIFACT_PLAN` artifact
+            ## 2. Analyze all the steps of the implementation plan from the `ARTIFACT_PLAN` artifact
+
+            - Those give you every step that should have been followed for this new development.
                 
-                - Understand all the steps of the implementation plan.
-              EO_Step
-              <<~EO_Step,
-                Understand the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
+            ## 3. Analyze the concrete changes from the `ARTIFACT_FILES_DIFFS` artifact
 
-                - Understand what was the intent of the developer implementing those requirements.
-              EO_Step
-              <<~EO_Step,
-                Derive documentation impact
+            - Understand what was the intent of the developer implementing those requirements.
 
-              - Based ONLY on artifacts, determine:
-                - What documentation should change.
-                - What wording should be updated.
-              EO_Step
-              <<~EO_Step,
-                Explore filesystem to locate documentation
+            ## 4. Explore the filesystem to locate documentation files
 
-                - Now search the filesystem to find relevant documentation files.
-                - Start with README.md and docs/.
-                - Find documentation files that are referenced recursively from other documentation files.
-                - Understand the documentation structure and content.
-              EO_Step
-              <<~EO_Step
-                Apply updates
+            Guidelines:
+            - Start with README.md and docs/**/*.md if they exist.
+            - Look for files mentioning related features or APIs.
+            - Find documentation files that are referenced recursively from other documentation files.
+            - Understand the documentation structure and content.
+            - If no relevant documentation is found, proceed by assuming documentation needs to be created or extended.
+            - If you are unsure which documentation file to update: default to updating README.md.
 
-                - Update the documentation files according to the new requirements that were implemented.
-                - Keep in mind the implementation plan that was used and the corresponding files diffs.
-              EO_Step
-            ]
-          },
+            This step is best-effort and should not block progress.
+
+            ## 5. Update the relevant documentation files
+
+            - Use artifacts as the source of truth for understanding the changes to be documented.
+            - Use the filesystem to locate where documentation should be updated.
+            - After exploring the filesystem, if relevant documentation files are found: update them.
+                          
+            When updating documentation:
+            - Modify existing sections if they already describe related functionality.
+            - Add new sections if the feature is not documented.
+            - Keep consistency with existing documentation style.
+            - Prefer minimal, precise updates over large rewrites.
+          EO_Instructions
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.
-            - Do NOT explore unrelated parts of the repository.
           EO_Constraints
         )
       end
