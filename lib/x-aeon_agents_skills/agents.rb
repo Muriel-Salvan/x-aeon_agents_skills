@@ -449,18 +449,18 @@ module XAeonAgentsSkills
         @diff_interpreter_agent ||= cline_agent(
           name: 'Diff interpreter',
           objective: <<~EO_Objective,
-            Interpret code modifications and explain the changes properly with its meaning and intent.
+            Interpret files modifications and explain the changes properly with its meaning and intent.
 
             The goals are:
             - Get a general explanation of those changes.
             - Identify the kind of changes involved (new features, feature change, bug fix, documentation...).
-            - Identify the architectural components that are impacted by those changes (a specific plugin, CLI, UI...).
+            - Identify the components that are impacted by those changes (a specific plugin, CLI, UI...).
           EO_Objective
           input_artifacts: [
             { name: :files_diffs, description: 'Full list of files changes and differences that have been done' }
           ],
           output_artifacts: [
-            { name: :change_intent, description: 'the full explanation of the code changes' }
+            { name: :change_intent, description: 'the full explanation of the changes, as in a git commit description' }
           ],
           skills: %w[
             applying-ruby-conventions
@@ -472,7 +472,12 @@ module XAeonAgentsSkills
           instructions: <<~EO_Instructions,
             ## 1. Read and analyze ALL file changes from the `ARTIFACT_FILES_DIFFS` artifact
             
+            - Those changes are the ones you must explain.
+            
             ## 2. Analyze the project files
+            
+            - Those files give you context to understand the changes.
+            - Changes made on those files should NOT be explained unless they are part of the `ARTIFACT_FILES_DIFFS` artifact.
             
             ## 3. Explain properly the changes reported by the `ARTIFACT_FILES_DIFFS` artifact
 
@@ -481,10 +486,13 @@ module XAeonAgentsSkills
             2. The types of changes (feature, bug fix, documentation, etc.).
             3. The impacted architectural components (backend, login screen, CLI, etc.).
             - Describe those changes as in a git commit or pull request description.
+            - ONLY cover changes from the `ARTIFACT_FILES_DIFFS` artifact.
+            - Do NOT explain changes for other files.
           EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
+            - You must ONLY explain the changes of the `ARTIFACT_FILES_DIFFS` artifact content, NOT other changes.
             - You already have ALL the information required.
             - The user's intent is fully specified.
             - The conversation log is provided for context only. You MUST NOT ask follow-up questions.
