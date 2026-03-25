@@ -1,9 +1,11 @@
 require 'agents'
+require 'commonmarker'
 require 'front_matter_parser'
 require 'git'
 require 'json'
 require 'octokit'
 require 'ruby_llm/model/info'
+require 'time'
 require 'x-aeon_agents_skills/gen_helpers'
 require 'x-aeon_agents_skills/helpers'
 require 'x-aeon_agents_skills/logger'
@@ -198,20 +200,39 @@ module XAeonAgentsSkills
       # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
       def implement_github_issue(github_issue_number, run_id: nil)
         issue = github.issue(github_repo, github_issue_number)
-        implement_requirements(
-          {
-            number: issue.number,
-            title: issue.title,
-            body: issue.body,
-            comments: issue.comments,
-            labels: issue.labels.map(&:name),
-            state: issue.state,
-            url: issue.html_url
-          }.to_json,
-          run_id:,
-          commit: true,
-          pull_request: true
-        )
+        issue_comments = github.issue_comments(github_repo, github_issue_number)
+        sections = [
+          <<~EO_Section
+            # #{issue.title}
+            
+            #{align_markdown_headers(issue.body, level: 2)}
+          EO_Section
+        ]
+        sections << <<~EO_Section unless issue_comments.empty?
+          # Comments
+            
+          This is the conversation log that happened in this issue.
+          This is provided as a reference to better understand the requirements.
+
+          #{
+            issue_comments.sort_by(&:created_at).map do |comment|
+              <<~EO_Comment
+                ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
+                
+                #{align_markdown_headers(comment.body, level: 3)}
+              EO_Comment
+            end.join
+          }
+        EO_Section
+        sections << <<~EO_Section
+          # Associated Github issue
+          
+          - Number: #{issue.number}
+          - Labels: #{issue.labels.map(&:name).join(', ')}
+          - State: #{issue.state}
+          - URL: #{issue.html_url}
+        EO_Section
+        implement_requirements(sections.map(&:strip).join("\n\n"), run_id:, commit: true, pull_request: true)
       end
 
       # Implement some requirements, given a classic dev cycle:
@@ -977,6 +998,52 @@ module XAeonAgentsSkills
             end
           end
         end.flatten(1).join("\n\n")
+      end
+
+      # Align markdown headers in a String to a given level.
+      # This method parses the String as a markdown document, sees the minimum current header level,
+      # and changes it while preserving the structure and hierarchy so that this min level is equal to `level`.
+      #
+      # Parameters::
+      # * *markdown* (String): The markdown content to align
+      # * *level* (Integer): The target level for the minimum header [default: 2]
+      # Result::
+      # * String: The aligned markdown content
+      def align_markdown_headers(markdown, level: 2)
+        doc = Commonmarker.parse(markdown)
+        min_level = find_minimum_header_level(doc)
+        return markdown if min_level.nil? || min_level == level
+        
+        adjust_header_levels(doc, level - min_level)
+        doc.to_commonmark
+      end
+
+      # Find the minimum header level in a CommonMarker document
+      #
+      # Parameters::
+      # * *doc* (CommonMarker::Document): The parsed CommonMarker document
+      # Result::
+      # * Integer or nil: The minimum header level found, or nil if no headers exist
+      def find_minimum_header_level(doc)
+        min_level = nil
+        doc.walk do |node|
+          if node.type == :heading
+            current_level = node.header_level
+            min_level = current_level if min_level.nil? || current_level < min_level
+          end
+        end
+        min_level
+      end
+
+      # Adjust header levels in a CommonMarker document by a given difference
+      #
+      # Parameters::
+      # * *doc* (CommonMarker::Document): The parsed CommonMarker document
+      # * *level_diff* (Integer): The difference to add to each header level
+      def adjust_header_levels(doc, level_diff)
+        doc.walk do |node|
+          node.header_level = node.header_level + level_diff if node.type == :heading
+        end
       end
 
     end
