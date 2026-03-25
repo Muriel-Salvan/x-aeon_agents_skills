@@ -727,17 +727,17 @@ module XAeonAgentsSkills
           sections << <<~EO_Section if @artifacts[:requirements]
               # Initial requirements given
               
-              #{@artifacts[:requirements]}
+              #{align_markdown_headers(@artifacts[:requirements], level: 2)}
           EO_Section
           sections << <<~EO_Section unless @artifacts[:user_feedbacks].nil?
               # User guidance and feedback to agents
               
-              #{@artifacts[:user_feedbacks]}
+              #{align_markdown_headers(@artifacts[:user_feedbacks], level: 2)}
           EO_Section
           sections << <<~EO_Section unless @artifacts[:agents_run].nil?
             # Co-authored by X-Aeon AI Agents
             
-            #{@artifacts[:agents_run].each_line.uniq.join("\n")}
+            #{@artifacts[:agents_run].each_line.uniq.join}
           EO_Section
           new_pr = github.create_pull_request(
             repo_name,
