@@ -14,4 +14,4 @@ XAeonAgentsSkills::Agents.configure(
   debug: true
 )
 
-XAeonAgentsSkills::Agents.implement_requirements(`gh issue view #{github_issue_number} --json=number,title,body,comments,labels,state,url`, run_id:, commit: true)
+XAeonAgentsSkills::Agents.implement_github_issue(github_issue_number, run_id:)

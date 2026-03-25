@@ -191,6 +191,29 @@ module XAeonAgentsSkills
         end
       end
 
+      # Implement a Github issue
+      #
+      # Parameters::
+      # * *github_issue_number* (Integer): The Github issue number to implement
+      # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
+      def implement_github_issue(github_issue_number, run_id: nil)
+        issue = github.issue(github_repo, github_issue_number)
+        implement_requirements(
+          {
+            number: issue.number,
+            title: issue.title,
+            body: issue.body,
+            comments: issue.comments,
+            labels: issue.labels.map(&:name),
+            state: issue.state,
+            url: issue.html_url
+          }.to_json,
+          run_id:,
+          commit: true,
+          pull_request: true
+        )
+      end
+
       # Implement some requirements, given a classic dev cycle:
       # 1. Planning
       # 2. Development
@@ -296,6 +319,28 @@ module XAeonAgentsSkills
       # * Octokit::Client: The Octokit client
       def github
         @github_octokit ||= Octokit::Client.new(access_token: config[:github_token])
+      end
+
+      # Get the Github remote from the Git remotes.
+      # Keep a cache of it.
+      #
+      # Result::
+      # * Git::Remote: The Github remote instance
+      def github_remote
+        @github_remote ||= begin
+          remote = git.remotes.find { |remote| remote.url.match(%r{github\.com[:/].+\.git}) }
+          raise 'Can\'t find a Github remote in this repository' if remote.nil?
+          remote
+        end
+      end
+
+      # Get the current repository name from the Git remote URL.
+      # Keep a cache of it.
+      #
+      # Result::
+      # * String: The repository name in the format "owner/repo"
+      def github_repo
+        @github_repo ||= github_remote.url.match(%r{github\.com[:/](.+)\.git})[1]
       end
 
       # Get the read-only configuration used by agents that are planning and analyzing code
@@ -641,14 +686,12 @@ module XAeonAgentsSkills
 
       # Create a Pull Request if it does not exist already for the current branch against main
       def create_pr
-        git_remote = git.remotes.find { |remote| remote.url.match(%r{github\.com[:/](.+)\.git}) }
-        raise 'Can\'t find a Github remote in this repository' if git_remote.nil?
-        repo_name = Regexp.last_match[1]
+        repo_name = github_repo
         head_branch = git.current_branch
 
         # Push the branch on the git_remote using --force-with-lease as it may have been rebased
         # TODO: Use force_with_lease when it will be supported by ruby-git
-        git.push(git_remote, head_branch, force: true)
+        git.push(github_remote, head_branch, force: true)
        
         # Check if PR already exists for the current branch
         existing_pr = github.pull_requests(repo_name, state: 'open').find { |pull_request| pull_request.head.ref == head_branch }
