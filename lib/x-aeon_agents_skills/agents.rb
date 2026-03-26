@@ -390,9 +390,16 @@ module XAeonAgentsSkills
               conversation.select { |comment| comment[:need_ai_reply] }
             end.flatten(1)
 
-            step(:aprc_b_extract_requirements) do
-              @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
-              @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
+          step(:aprc_b_extract_requirements) do
+            pr = github.pull_request(github_repo, pull_request_number)
+            @artifacts[:pr_description] = <<~EO_Description.strip
+              # #{pr.title}
+
+              #{align_markdown_headers(pr.body, level: 2)}
+            EO_Description
+            @artifacts[:pr_files_diffs] = git.diff("#{pr.base.sha}...#{pr.head.sha}")
+            @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
+            @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
               run(pr_requirements_extractor_agent)
               @artifacts[:requirements] = 'No requirements' if @artifacts[:requirements].strip.downcase == 'no requirements'
             end
@@ -840,22 +847,38 @@ module XAeonAgentsSkills
           name: 'PRRequirementsExtractor',
           objective: 'Extract requirements from PR comments directed at X-Aeon Agents',
           input_artifacts: [
-            { name: :conversations, description: 'All PR conversations and comments to be considered (context)' },
-            { name: :open_comments_to_agents, description: 'Exact list of agent-directed comments that need a reply from you' }
+            { name: :pr_description, description: 'Pull Request description (context)' },
+            { name: :pr_files_diffs, description: 'Files modifications that were done in this Pull Request (context)' },
+            { name: :conversations, description: 'All Pull Request conversations and comments to be considered (context)' },
+            { name: :open_comments_to_agents, description: 'Exact list of agent-directed comments that need to be addressed' }
           ],
           output_artifacts: [
-            { name: :requirements, description: 'the requirements to implement (reply "No requirements" if no implementation needed)' }
+            { name: :requirements, description: 'the requirements that will implement what is needed by the agent-directed comments (reply "No requirements" if there is no implementation needed)' }
           ],
           config: read_only_config,
-          instructions: {
-            ordered_list: [
-              'Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations',
-              'Read the `ARTIFACT_OPEN_COMMENTS_TO_AGENTS` artifact to focus on agent-directed comments',
-              'Analyze agent-directed comments to identify specific requirements or tasks that need implementation',
-              'Extract clear, actionable requirements from the comments',
-              'If no implementation is required (e.g., comments are just questions), output "No requirements"'
-            ]
-          },
+          instructions: <<~EO_Instructions,
+            ## 1. Read the `ARTIFACT_PR_DESCRIPTION` artifact to understand the purpose of this Pull Request
+            
+            - This gives you context on what is the purpose of this Pull Request.
+
+            ## 2. Read the `ARTIFACT_PR_FILES_DIFFS` artifact to understand all changes made by this Pull Request
+            
+            - This gives you context on how has this Pull Request been implemented.
+
+            ## 3. Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations
+            
+            - This gives you context on the discussions around this Pull Request.
+
+            ## 4. Read the `ARTIFACT_OPEN_COMMENTS_TO_AGENTS` artifact to focus on agent-directed comments
+            
+            - You must devise requirements that will address those exact comments.
+
+            ## 5. Analyze agent-directed comments to identify specific requirements or tasks that need implementation
+            
+            ## 6. Extract clear, actionable requirements from the comments
+            
+            - If no implementation is required (e.g., comments are just questions), output "No requirements"
+          EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
