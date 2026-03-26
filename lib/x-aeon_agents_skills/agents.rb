@@ -868,7 +868,7 @@ module XAeonAgentsSkills
       def review_responder_agent
         @review_responder_agent ||= cline_agent(
           name: 'ReviewResponder',
-          objective: 'Generate replies to review comments',
+          objective: 'Generate a reply to a review comment',
           input_artifacts: [
             { name: :conversations, description: 'All PR conversations and comments to be considered (context)' },
             { name: :open_comment_for_reply, description: 'Exact comment to be replied to' },
@@ -879,31 +879,42 @@ module XAeonAgentsSkills
           output_artifacts: [
             { name: :reply, description: 'the exact reply text to post' }
           ],
-          skills: %w[
-            applying-ruby-conventions
-            applying-test-conventions
-            enforcing-project-rules
-          ],
           plan_mode: false,
           config: read_only_config,
-          instructions: {
-            ordered_list: [
-              'Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations',
-              'Read the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact to understand the specific comment to respond to',
-              'Read the `ARTIFACT_REQUIREMENTS` artifact to understand what was implemented',
-              'Read the `ARTIFACT_PLAN` artifact to understand the implementation approach',
-              'Read the `ARTIFACT_FILES_DIFFS` artifact to understand the specific code changes made',
-              'Generate a professional, helpful reply that addresses the comment appropriately',
-              'If requirements were implemented, explain what was done and how it addresses the comment',
-              'If no requirements existed, provide a helpful response explaining the situation'
-            ]
-          },
+          instructions: <<~EO_Instructions,
+            ## 1. Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations
+            
+            - This gives you context on the discussions around this Pull Request.
+            
+            ## 2. Read the `ARTIFACT_REQUIREMENTS` artifact to understand what was implemented
+            
+            - This gives you context on what has been implemented by other agents.
+            
+            ## 3. Read the `ARTIFACT_PLAN` artifact to understand the implementation approach
+            
+            - This gives you context on how other agents implemented the requirements.
+
+            ## 4. Read the `ARTIFACT_FILES_DIFFS` artifact to understand the specific code changes made
+
+            - This gives you context on what files have been modified.
+
+            ## 5. Read the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact to understand the specific comment to respond to
+            
+            - This is the EXACT comment that you should reply to.
+
+            ## 6. Generate a professional, helpful reply that addresses the comment appropriately
+            
+            - If requirements were implemented, explain what was done and how it addresses the comment.
+            - If no requirements existed, provide a helpful response explaining the situation.
+          EO_Instructions
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
+            - The implementation work is already complete (captured in the artifacts).
             - Generate a professional, helpful response to the review comment.
-            - ONLY focus on addressing the specific comment of the  `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
+            - ONLY focus on addressing the specific comment of the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
             - Do NOT answer or reply to any other comment.
+            - You already have ALL the information required.
           EO_Constraints
         )
       end
