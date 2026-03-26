@@ -411,8 +411,8 @@ module XAeonAgentsSkills
               step("aprc_c#{comment_idx}_reply_to_comment".to_sym) do
                 @artifacts[:open_comment_for_reply] = JSON.pretty_generate(comment)
                 run(review_responder_agent)
-                github.create_pull_request_comment_reply(github_repo, pull_request_number, comment[:id], "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}")
-                log_debug "Successfully replied to comment ##{comment[:id]}"
+                reply = github.create_pull_request_comment_reply(github_repo, pull_request_number, "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}", comment[:comment_id])
+                log_debug "Successfully replied to comment ##{comment[:comment_id]}: #{reply[:url]}"
               end
             end
           end
