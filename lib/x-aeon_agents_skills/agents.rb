@@ -412,7 +412,7 @@ module XAeonAgentsSkills
                 @artifacts[:open_comment_for_reply] = JSON.pretty_generate(comment)
                 run(review_responder_agent)
                 reply = github.create_pull_request_comment_reply(github_repo, pull_request_number, "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}", comment[:comment_id])
-                log_debug "Successfully replied to comment ##{comment[:comment_id]}: #{reply[:url]}"
+                log_debug "Successfully replied to comment ##{comment[:comment_id]}: #{reply[:html_url]}"
               end
             end
           end
