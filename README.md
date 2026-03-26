@@ -73,16 +73,6 @@ The `address_pull_request_comments` CLI tool provides functionality to automatic
 - Generates appropriate replies to each comment
 - Uses the `reply_to_comment` script to post responses
 
-### Code Documentation
-
-The `address_pull_request_comments` method in `lib/x-aeon_agents_skills/agents.rb` uses the "aprc" prefix in its step names, which stands for "Address Pull Request Comments". This prefix helps organize and identify the sequential steps involved in the PR comment addressing workflow:
-
-- `aprc_a_gather_comments`: Gather and analyze PR comments directed at the agent
-- `aprc_b_extract_requirements`: Extract actionable requirements from agent-directed comments  
-- `aprc_c_reply_to_comment`: Generate and post replies to each processed comment
-
-Each step is clearly documented with inline comments explaining its purpose and functionality within the overall workflow.
-
 ### Usage
 
 To address PR comments, use the following workflow:
