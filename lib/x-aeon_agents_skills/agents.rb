@@ -915,6 +915,7 @@ module XAeonAgentsSkills
             - ONLY focus on addressing the specific comment of the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
             - Do NOT answer or reply to any other comment.
             - You already have ALL the information required.
+            - You MUST NOT ask follow-up questions.
           EO_Constraints
         )
       end
