@@ -390,16 +390,16 @@ module XAeonAgentsSkills
               conversation.select { |comment| comment[:need_ai_reply] }
             end.flatten(1)
 
-          step(:aprc_b_extract_requirements) do
-            pr = github.pull_request(github_repo, pull_request_number)
-            @artifacts[:pr_description] = <<~EO_Description.strip
-              # #{pr.title}
+            step(:aprc_b_extract_requirements) do
+              pr = github.pull_request(github_repo, pull_request_number)
+              @artifacts[:pr_description] = <<~EO_Description.strip
+                # #{pr.title}
 
-              #{align_markdown_headers(pr.body, level: 2)}
-            EO_Description
-            @artifacts[:pr_files_diffs] = git.diff("#{pr.base.sha}...#{pr.head.sha}")
-            @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
-            @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
+                #{align_markdown_headers(pr.body, level: 2)}
+              EO_Description
+              @artifacts[:pr_files_diffs] = git.diff("#{pr.base.sha}...#{pr.head.sha}").to_s
+              @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
+              @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
               run(pr_requirements_extractor_agent)
               @artifacts[:requirements] = 'No requirements' if @artifacts[:requirements].strip.downcase == 'no requirements'
             end
@@ -447,8 +447,6 @@ module XAeonAgentsSkills
           EO_Comment
         end.join("\n")
       end
-
-      private
 
       # Loop over all Cline models
       #
@@ -1115,7 +1113,7 @@ module XAeonAgentsSkills
         puts
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
-        raise "Error: #{result.error}" unless result.error.nil?
+        raise "Error: #{result.error}\n#{result.error.backtrace.join("\n")}" unless result.error.nil?
         # Keep user's feedback in an artifact
         unless agent.params[:agent][:asks].empty?
           @artifacts[:user_feedbacks] = <<~EO_Artifact if @artifacts[:user_feedbacks].nil?
