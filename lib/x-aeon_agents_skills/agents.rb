@@ -315,6 +315,12 @@ module XAeonAgentsSkills
       # Address Pull Request comments by finding open PRs, extracting agent-directed comments,
       # implementing requirements, and replying to comments.
       #
+      # This method uses the "aprc" prefix in its step names, which stands for "Address Pull Request Comments".
+      # The aprc prefix helps organize and identify the sequential steps involved in the PR comment addressing workflow:
+      # - aprc_a_gather_comments: Gather and analyze PR comments directed at the agent
+      # - aprc_b_extract_requirements: Extract actionable requirements from agent-directed comments
+      # - aprc_c_reply_to_comment: Generate and post replies to each processed comment
+      #
       # Parameters::
       # * *pull_request_number* (Integer): The Pull Request number to address comments for
       # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]

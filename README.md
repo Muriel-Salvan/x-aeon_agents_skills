@@ -64,7 +64,7 @@ The following helper methods are available in ERB templates:
 
 ## Addressing Pull Request Comments
 
-The `addressing-pull-request-comments` skill provides functionality to automatically address comments made on GitHub Pull Requests. This skill:
+The `address_pull_request_comments` CLI tool provides functionality to automatically address comments made on GitHub Pull Requests. This tool:
 
 - Fetches unresolved PR comments using the `check_unresolved_pr_comments` script
 - Identifies comments directed at the agent (starting with `/agent`)
