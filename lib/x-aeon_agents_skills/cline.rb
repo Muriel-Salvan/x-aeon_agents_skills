@@ -308,6 +308,8 @@ module XAeonAgentsSkills
       sections
     end
 
+    private
+
     # Convert a string to a single line by replacing newlines with spaces and removing carriage returns
     #
     # Parameters::
@@ -317,8 +319,6 @@ module XAeonAgentsSkills
     def self.one_lining(text)
       text.strip.gsub("\n", ' ').gsub("\r", '')
     end
-
-    private
 
     # Get the current task messages file
     #
