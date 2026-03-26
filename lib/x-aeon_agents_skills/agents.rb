@@ -321,42 +321,76 @@ module XAeonAgentsSkills
       def address_pull_request_comments(pull_request_number, run_id: nil)
         with_runner(run_id) do
           step(:aprc_a_gather_comments) do
-            # Get the specific Pull Request by number
-            pr = github.pull_request(github_repo, pull_request_number)
-            log_debug "Processing comments for PR ##{pull_request_number}: #{pr.title}"
-            
-            # Get all comments for this PR
-            comments = github.issue_comments(github_repo, pull_request_number)
-            # TODO: Filter only the open ones
-              
-            # Filter agent-directed comments that don't already have agent replies
-            agent_comments = comments.select do |comment|
-              comment.body.start_with?('/agent') &&
-                github.issue_comment_replies(github_repo, comment.id).any? { |reply| reply.body.match(/^\[X-Aeon Agent \([^)]+\)\]/) }
-            end
-
-            @artifacts[:agent_comments_json] = agent_comments.map do |comment|
+            owner, repo = github_repo.split('/')
+            pr_json = github.post('/graphql',
               {
-                id: comment.id,
-                user_login: comment.user.login,
-                created_at: comment.created_at.utc.strftime('%F %T UTC'),
-                body: comment.body
-              }
+                query: File.read("#{__dir__}/gh_comments.gql"),
+                variables: {
+                  owner:,
+                  repo:,
+                  pr: pull_request_number
+                }
+              }.to_json
+            )[:data][:repository][:pullRequest]
+            # Select only conversations for which we need an AI Agent to contribute. That means:
+            # * Not resolved.
+            # * With at least 1 comment directed at the AI Agent (body starting with `/agent``) that does not have a reply (direct or indirect) from an AI Agent (body starting with `[X-Aeon Agent (.+)]``)).
+            @artifacts[:pr_conversations] = pr_json[:reviewThreads][:edges].select do |review_thread|
+              !review_thread[:node][:isResolved] &&
+                !review_thread[:node][:comments][:nodes].select do |comment|
+                  # Check if comment is directed at AI Agent and does not have an AI Agent reply (recursively)
+                  # Mark it using an extra variable that we will use later to retrieve it
+                  comment[:needAIReply] = comment[:body]&.start_with?('/agent') &&
+                    !has_ai_reply_to_comment?(review_thread[:node][:comments][:nodes], comment[:databaseId])
+                  comment[:needAIReply]
+                end.empty?
+            end.map do |review_thread|
+              # Simplify the schema and only keep what is useful to us.
+              # Sort it by creation date too.
+              review_thread[:node][:comments][:nodes].sort_by { |comment| comment[:createdAt] }.map do |comment|
+                {
+                  comment_id: comment[:databaseId],
+                  created_at: comment[:createdAt],
+                  reply_to_comment_id: comment[:replyTo],
+                  author: comment[:author][:login],
+                  body: comment[:body],
+                  subject_type: comment[:subjectType],
+                  path: comment[:path],
+                  commit: {
+                    sha: comment[:commit][:oid],
+                    message: comment[:commit][:message]
+                  },
+                  line: comment[:line],
+                  start_line: comment[:startLine],
+                  original_commit: {
+                    sha: comment[:originalCommit][:oid],
+                    message: comment[:originalCommit][:message]
+                  },
+                  original_line: comment[:originalLine],
+                  original_start_line: comment[:originalStartLine],
+                  diff_hunk: comment[:diffHunk],
+                  need_ai_reply: comment[:needAIReply]
+                }
+              end
             end.to_json
-            unless agent_comments.empty?
-              log_debug "Found #{agent_comments.size} agent-directed comment(s) for PR ##{pull_request_number}"
-              @artifacts[:open_comments] = format_comments_for_artifact(comments)
-              @artifacts[:open_comments_to_agents] = format_comments_for_artifact(agent_comments)
-            end
           end
 
-          if JSON.parse(@artifacts[:agent_comments_json], symbolize_names: true).empty?
-            log_debug "No agent-directed comments found for PR ##{pull_request_number}"
+          pr_conversations = JSON.parse(@artifacts[:pr_conversations], symbolize_names: true)
+          if pr_conversations.empty?
+            log_debug "No PR reviews conversations found that need X-Aeon Agents input for PR ##{pull_request_number}"
           else
+            log_debug "Found #{pr_conversations.size} PR reviews conversations that need X-Aeon Agents input for PR ##{pull_request_number}"
+            open_comments_to_agents = pr_conversations.map do |conversation|
+              conversation.select { |comment| comment[:need_ai_reply] }
+            end.flatten(1)
+
             step(:aprc_b_extract_requirements) do
+              @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
+              @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
               run(pr_requirements_extractor_agent)
               @artifacts[:requirements] = 'No requirements' if @artifacts[:requirements].strip.downcase == 'no requirements'
             end
+
             if @artifacts[:requirements] == 'No requirements'
               log_debug 'No requirements to implement'
               @artifacts[:plan] = 'No implementation plan'
@@ -367,13 +401,9 @@ module XAeonAgentsSkills
             end
             
             # Reply to each agent-directed comment
-            JSON.parse(@artifacts[:agent_comments_json], symbolize_names: true).each.with_index do |comment, comment_idx|
+            open_comments_to_agents.each.with_index do |comment, comment_idx|
               step("aprc_c#{comment_idx}_reply_to_comment".to_sym) do
-                @artifacts[:open_comment_for_reply] = <<~EO_Comment
-                  ## #{comment[:user_login]} at #{comment[:created_at]}
-                  
-                  #{comment[:body]}
-                EO_Comment
+                @artifacts[:open_comment_for_reply] = JSON.pretty_generate(comment)
                 run(review_responder_agent)
                 github.create_pull_request_comment_reply(github_repo, pull_request_number, comment[:id], "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}")
                 log_debug "Successfully replied to comment ##{comment[:id]}"
@@ -800,8 +830,8 @@ module XAeonAgentsSkills
           name: 'PRRequirementsExtractor',
           objective: 'Extract requirements from PR comments directed at X-Aeon Agents',
           input_artifacts: [
-            { name: :open_comments, description: 'Markdown document with ALL open comments (for context)' },
-            { name: :open_comments_to_agents, description: 'Markdown document with ONLY agent-directed comments' }
+            { name: :conversations, description: 'All PR conversations and comments to be considered (context)' },
+            { name: :open_comments_to_agents, description: 'Exact list of agent-directed comments that need a reply from you' }
           ],
           output_artifacts: [
             { name: :requirements, description: 'the requirements to implement (reply "No requirements" if no implementation needed)' }
@@ -809,7 +839,7 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the `ARTIFACT_OPEN_COMMENTS` artifact to understand the full context of the PR conversation',
+              'Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations',
               'Read the `ARTIFACT_OPEN_COMMENTS_TO_AGENTS` artifact to focus on agent-directed comments',
               'Analyze agent-directed comments to identify specific requirements or tasks that need implementation',
               'Extract clear, actionable requirements from the comments',
@@ -834,7 +864,7 @@ module XAeonAgentsSkills
           name: 'ReviewResponder',
           objective: 'Generate replies to review comments',
           input_artifacts: [
-            { name: :open_comments, description: 'Markdown document with ALL open comments (for context)' },
+            { name: :conversations, description: 'All PR conversations and comments to be considered (context)' },
             { name: :open_comment_for_reply, description: 'Exact comment to be replied to' },
             { name: :requirements, description: 'Requirements implemented (or "No requirements")' },
             { name: :plan, description: 'Implementation plan from implement_requirements workflow (or "No implementation plan")' },
@@ -852,7 +882,7 @@ module XAeonAgentsSkills
           config: read_only_config,
           instructions: {
             ordered_list: [
-              'Read the `ARTIFACT_OPEN_COMMENTS` artifact to understand the full PR context',
+              'Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations',
               'Read the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact to understand the specific comment to respond to',
               'Read the `ARTIFACT_REQUIREMENTS` artifact to understand what was implemented',
               'Read the `ARTIFACT_PLAN` artifact to understand the implementation approach',
@@ -1192,6 +1222,22 @@ module XAeonAgentsSkills
             end
           end
         end.flatten(1).join("\n\n")
+      end
+
+      # Check if there's an AI Agent reply to a specific comment, recursively checking all reply levels
+      #
+      # Parameters::
+      # * *comments* (Array<Hash>): All comments in the thread
+      # * *comment_id* (Integer): The databaseId of the comment to check for replies
+      # Result::
+      # * Boolean: true if there's an AI Agent reply to the comment, false otherwise
+      def has_ai_reply_to_comment?(comments, comment_id)
+        comments.any? do |reply|
+          reply[:replyTo]&.fetch(:databaseId, nil) == comment_id && (
+            reply[:body].match(/^\[X-Aeon Agent \([^)]+\)\]/) ||
+              has_ai_reply_to_comment?(comments, reply[:databaseId])
+          )
+        end
       end
 
       # Align markdown headers in a String to a given level.
