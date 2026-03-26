@@ -600,7 +600,9 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           plan_mode: false,
-          config: read_only_config,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
           instructions: <<~EO_Instructions,
             ## 1. Read and analyze ALL file changes from the `ARTIFACT_FILES_DIFFS` artifact
             
@@ -652,7 +654,9 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           plan_mode: false,
-          config: read_only_config,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
           instructions: <<~EO_Instructions,
             ## Provide a 1-line summary of the code change intent described in the `ARTIFACT_CHANGE_INTENT` artifact
             
@@ -880,7 +884,9 @@ module XAeonAgentsSkills
             { name: :reply, description: 'the exact reply text to post' }
           ],
           plan_mode: false,
-          config: read_only_config,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
           instructions: <<~EO_Instructions,
             ## 1. Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations
             
@@ -916,6 +922,7 @@ module XAeonAgentsSkills
             - Do NOT answer or reply to any other comment.
             - You already have ALL the information required.
             - You MUST NOT ask follow-up questions.
+            - You MUST NOT ask for user confirmation.
           EO_Constraints
         )
       end
