@@ -159,7 +159,7 @@ module XAeonAgentsSkills
         when 'say'
           case message[:say]
           when 'text', 'task'
-            message[:text].strip.gsub("\n", ' ')
+            one_lining(message[:text])
           when 'api_req_started'
             api_details = JSON.parse(message[:text], symbolize_names: true)
             fields = []
@@ -177,7 +177,7 @@ module XAeonAgentsSkills
             section_size = (limit - ts_str.size - fields_str.size) / sections.size - section_delimiter.size
             "#{fields_str}#{
               sections.map do |section|
-                "#{section[:name].nil? ? '' : "#{section[:name]}: "}#{section[:content].strip.gsub("\n", ' ')}".ellipsized(section_size)
+                "#{section[:name].nil? ? '' : "#{section[:name]}: "}#{one_lining(section[:content])}".ellipsized(section_size)
               end.join('|')
             }"
           when 'tool'
@@ -201,30 +201,30 @@ module XAeonAgentsSkills
               else
                 raise NotImplementedError.new("Unknown tool @ts #{message[:ts]}: #{message}")
               end
-            "#{tool_header}#{tool_details.key?(:content) ? ": #{tool_details[:content].strip.gsub("\n", ' ')}".ellipsized(limit - ts_str.size - tool_header.size) : ''}"
+            "#{tool_header}#{tool_details.key?(:content) ? ": #{one_lining(tool_details[:content])}".ellipsized(limit - ts_str.size - tool_header.size) : ''}"
           when 'api_req_retried'
             'API request retried'
           when 'command'
-            "Command: #{message[:text].strip.gsub("\n", ' ')}"
+            "Command: #{one_lining(message[:text])}"
           when 'command_output'
-            "Command output: #{message[:text].strip.gsub("\n", ' ')}"
+            "Command output: #{one_lining(message[:text])}"
           when 'diff_error'
-            "Diff error: #{message[:text].strip.gsub("\n", ' ')}"
+            "Diff error: #{one_lining(message[:text])}"
           when 'error_retry'
-            "Error retry: #{message[:text].strip.gsub("\n", ' ')}"
+            "Error retry: #{one_lining(message[:text])}"
           when 'reasoning'
-            "Reasoning: #{message[:text].strip.gsub("\n", ' ')}"
+            "Reasoning: #{one_lining(message[:text])}"
           when 'user_feedback'
-            "User feedback: #{message[:text].strip.gsub("\n", ' ')}"
+            "User feedback: #{one_lining(message[:text])}"
           when 'task_progress'
             # Count completed vs total tasks
             completed_tasks = message[:text].scan(/- \[x\]/).size
             total_tasks = message[:text].scan(/- \[[ x]\]/).size
             "Task progress: #{completed_tasks}/#{total_tasks} tasks"
           when 'completion_result'
-            "Task completed: #{message[:text].strip.gsub("\n", ' ')}"
+            "Task completed: #{one_lining(message[:text])}"
           when 'error'
-            "Error: #{message[:text].strip.gsub("\n", ' ')}"
+            "Error: #{one_lining(message[:text])}"
           else
             raise NotImplementedError.new("Unknown say @ts #{message[:ts]}: #{message}")
           end
@@ -237,9 +237,9 @@ module XAeonAgentsSkills
               'Resume completed task'
             when 'api_req_failed'
               details = JSON.parse(message[:text], symbolize_names: true)
-              "API request failed - #{details[:code]} - #{details[:message].strip.gsub("\n", ' ')}"
+              "API request failed - #{details[:code]} - #{one_lining(details[:message])}"
             when 'command_output'
-              "Command output - #{message[:text].strip.gsub("\n", ' ')}"
+              "Command output - #{one_lining(message[:text])}"
             when 'completion_result'
               'Completion result'
             when 'followup'
@@ -247,15 +247,15 @@ module XAeonAgentsSkills
               "Follow-up - #{details[:question]}#{details[:options].nil? || details[:options].empty? ? '' : " - Options: #{details[:options].join(', ')}"}"
             when 'plan_mode_respond'
               details = JSON.parse(message[:text], symbolize_names: true)
-              "Plan mode respond - #{details[:response].strip.gsub("\n", ' ')}"
+              "Plan mode respond - #{one_lining(details[:response])}}"
             when 'tool'
               details = JSON.parse(message[:text], symbolize_names: true)
               tool_name = details.delete(:tool)
               "Use tool - #{tool_name} - #{details.to_json}}"
             when 'mistake_limit_reached'
-              "Mistake limit reached - #{message[:text].strip.gsub("\n", ' ')}}"
+              "Mistake limit reached - #{one_lining(message[:text])}}"
             when 'new_task'
-              "New task - #{message[:text].strip.gsub("\n", ' ')}"
+              "New task - #{one_lining(message[:text])}"
             else
               raise NotImplementedError.new("Unknown ask @ts #{message[:ts]}: #{message}")
             end
@@ -306,6 +306,16 @@ module XAeonAgentsSkills
         end
       end
       sections
+    end
+
+    # Convert a string to a single line by replacing newlines with spaces and removing carriage returns
+    #
+    # Parameters::
+    # * *text* (String): The text to convert to one line
+    # Result::
+    # * String: The text converted to a single line
+    def self.one_lining(text)
+      text.strip.gsub("\n", ' ').gsub("\r", '')
     end
 
     private
