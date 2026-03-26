@@ -357,7 +357,7 @@ module XAeonAgentsSkills
                 {
                   comment_id: comment[:databaseId],
                   created_at: comment[:createdAt],
-                  reply_to_comment_id: comment[:replyTo],
+                  reply_to_comment_id: comment.dig(:replyTo, :databaseId),
                   author: comment[:author][:login],
                   body: comment[:body],
                   subject_type: comment[:subjectType],
