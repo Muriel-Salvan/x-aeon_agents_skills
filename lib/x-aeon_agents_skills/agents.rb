@@ -105,59 +105,57 @@ module XAeonAgentsSkills
         RubyLLM::Provider.register(:cline, XAeonAgentsSkills::Providers::Cline)
 
         # Register our models
-        RubyLLM::Models.register!(
-          id: 'kwaipilot/kat-coder-pro',
-          name: 'Cline CLI - kwaipilot/kat-coder-pro',
-          provider: 'cline',
-          family: 'cline',
-          # TODO: Find those parameters from cline cli itself
-          created_at: '2026-03-03 00:00:00 UTC',
-          context_window: 200000,
-          max_output_tokens: 8192,
-          knowledge_cutoff: '2024-07-31',
-          modalities: {
-            input: [
-              'text',
-              'image',
-              'pdf'
+        for_each_cline_model do |cline_model_name, cline_model|
+          RubyLLM::Models.register!(
+            id: cline_model_name,
+            name: "Cline CLI - #{cline_model_name}",
+            provider: 'cline',
+            family: 'cline',
+            created_at: '2026-01-01 00:00:00 UTC',
+            context_window: cline_model[:contextWindow],
+            max_output_tokens: cline_model[:maxTokens],
+            knowledge_cutoff: '2026-01-01',
+            modalities: {
+              input: [
+                'text'
+              ] + (cline_model[:supportsImages] ? ['image'] : []),
+              output: [
+                'text'
+              ]
+            },
+            capabilities: [
+              'function_calling',
+              'vision'
             ],
-            output: [
-              'text'
-            ]
-          },
-          capabilities: [
-            'function_calling',
-            'vision'
-          ],
-          pricing: {
-            text_tokens: {
-              standard: {
-                input_per_million: 0.8,
-                output_per_million: 4,
-                cached_input_per_million: 0.08
+            pricing: {
+              text_tokens: {
+                standard: {
+                  input_per_million: cline_model[:inputPrice],
+                  output_per_million: cline_model[:outputPrice]
+                }.merge(cline_model.key?(:cacheReadsPrice) ? { cached_input_per_million: cline_model[:cacheReadsPrice] } : {})
               }
+            },
+            metadata: {
+              source: 'models.dev',
+              provider_id: 'cline',
+              open_weights: false,
+              attachment: true,
+              temperature: true,
+              last_updated: '2024-10-22',
+              cost: {
+                input: cline_model[:inputPrice],
+                output: cline_model[:outputPrice]
+              }.
+                merge(cline_model.key?(:cacheReadsPrice) ? { cache_read: cline_model[:cacheReadsPrice] } : {}).
+                merge(cline_model.key?(:cacheWritesPrice) ? { cache_write: cline_model[:cacheWritesPrice] } : {}),
+              limit: {
+                context: cline_model[:contextWindow],
+                output: cline_model[:maxTokens]
+              },
+              knowledge: '2026-01-01'
             }
-          },
-          metadata: {
-            source: 'models.dev',
-            provider_id: 'cline',
-            open_weights: false,
-            attachment: true,
-            temperature: true,
-            last_updated: '2024-10-22',
-            cost: {
-              input: 0.8,
-              output: 4,
-              cache_read: 0.08,
-              cache_write: 1
-            },
-            limit: {
-              context: 200000,
-              output: 8192
-            },
-            knowledge: '2024-07-31'
-          }
-        )
+          )
+        end
 
         # Initialize our dependencies
         ENV['RUBYLLM_DEBUG'] = '1' if config[:debug]
@@ -323,6 +321,19 @@ module XAeonAgentsSkills
       end
 
       private
+
+      # Loop over all Cline models
+      #
+      # Parameters::
+      # * Proc: Code called for each Cline model
+      #   * Parameters::
+      #     * *cline_model_name* (String): The Cline mode name
+      #     * *cline_model* (Hash): The Cline model definition
+      def for_each_cline_model
+        JSON.parse(File.read("#{ENV['VSCODE_PORTABLE'] ? "#{ENV['VSCODE_PORTABLE']}/user-data" : "#{ENV['APPDATA']}/Code"}/User/globalStorage/saoudrizwan.claude-dev/cache/cline_models.json"), symbolize_names: true).each do |name, info|
+          yield name.to_s, info
+        end
+      end
 
       # Get a Git instance on the current directory.
       # Keep a cache of it.
@@ -529,6 +540,9 @@ module XAeonAgentsSkills
           constraints: <<~EO_Constraints
             - You are in read-only mode.
             - Do NOT modify or write any file.
+            - You already have ALL the information required.
+            - The user's intent is fully specified.
+            - You MUST NOT ask follow-up questions.
           EO_Constraints
         )
       end
