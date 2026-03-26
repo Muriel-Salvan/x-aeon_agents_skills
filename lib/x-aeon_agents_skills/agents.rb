@@ -1046,17 +1046,13 @@ module XAeonAgentsSkills
       # * Proc: Code called with the runner setup
       def with_runner(run_id = nil)
         # If runner is already initialized, reuse existing runner and artifacts
-        if @runner
-          # Update run_id if provided and not already set
-          @run_id = run_id if @run_id.nil? && !run_id.nil?
-          yield
-        else
+        unless @runner
           # Initialize new runner and artifacts
           @run_id = run_id
           @runner = ::Agents::Runner.new
           @artifacts = {}
-          yield
         end
+        yield
       end
 
       # Run an agent with a prompt.
