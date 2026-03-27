@@ -763,7 +763,7 @@ module XAeonAgentsSkills
       def documenter_agent
         @documenter_agent ||= cline_agent(
           name: 'Documenter',
-          objective: 'Update relevant documentation when a task is being implemented.',
+          objective: 'Ensure documentation reflects the current product behavior and usage after a new development.',
           input_artifacts: [
             { name: :requirements, description: 'Initial requirements' },
             { name: :plan, description: 'Implementation plan that introduced features and fixes to be documented' },
@@ -789,7 +789,28 @@ module XAeonAgentsSkills
 
             - Understand what was the intent of the developer implementing those requirements.
 
-            ## 4. Explore the filesystem to locate documentation files
+            ## 4. Decide if documentation is needed
+
+            Before making any change, classify the development:
+
+            - If the change affects:
+              - Features
+              - Usage
+              - APIs
+              - Behavior visible to users
+              → Documentation update MAY be required
+
+            - If the change is:
+              - Internal refactor
+              - Cleanup (removal of useless content)
+              - Formatting
+              - Documentation-only removal of irrelevant info
+              → NO documentation update is required
+
+            If no documentation is required:
+            → STOP and do nothing
+
+            ## 5. Explore the filesystem to locate documentation files
 
             Guidelines:
             - Start with README.md and docs/**/*.md if they exist.
@@ -801,8 +822,9 @@ module XAeonAgentsSkills
 
             This step is best-effort and should not block progress.
 
-            ## 5. Update the relevant documentation files
+            ## 6. Update the relevant documentation files
 
+            - Only perform this step if you think documentation is required.
             - Use artifacts as the source of truth for understanding the changes to be documented.
             - Use the filesystem to locate where documentation should be updated.
             - After exploring the filesystem, if relevant documentation files are found: update them.
@@ -816,6 +838,10 @@ module XAeonAgentsSkills
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.
+            - NEVER document the fact that a change happened.
+            - NEVER explain that something was removed, renamed, or fixed.
+            - Documentation describes the CURRENT STATE only.
+            - Documentation is NOT a changelog.
           EO_Constraints
         )
       end
