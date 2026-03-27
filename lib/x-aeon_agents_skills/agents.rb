@@ -43,7 +43,7 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *cline_api_key* (String): Cline API key to be used [default: ENV['CLINE_API_KEY']]
-      # * *default_cline_model* (String): Default Cline model [default: 'kwaipilot/kat-coder-pro']
+      # * *default_cline_model* (String): Default Cline model [default: 'arcee-ai/trinity-large-preview:free']
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
       # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
@@ -51,7 +51,7 @@ module XAeonAgentsSkills
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
-        default_cline_model: 'kwaipilot/kat-coder-pro',
+        default_cline_model: 'arcee-ai/trinity-large-preview:free',
         default_cline_config: {
           actModeReasoningEffort: 'xhigh',
           autoApprovalSettings: {
@@ -341,7 +341,7 @@ module XAeonAgentsSkills
                   # Check if comment is directed at AI Agent and does not have an AI Agent reply (recursively)
                   # Mark it using an extra variable that we will use later to retrieve it
                   comment[:needAIReply] = comment[:body]&.start_with?('/agent') &&
-                    !has_ai_reply_to_comment?(review_thread[:node][:comments][:nodes], comment[:databaseId])
+                    !comment_replies(review_thread[:node][:comments][:nodes], comment).any? { |reply| reply[:body].match(/^\[X-Aeon Agent \([^)]+\)\]/) }
                   comment[:needAIReply]
                 end.empty?
             end.map do |review_thread|
@@ -932,7 +932,6 @@ module XAeonAgentsSkills
             - You are in read-only mode.
             - Do NOT modify or write any file.
             - The implementation work is already complete (captured in the artifacts).
-            - Generate a professional, helpful response to the review comment.
             - ONLY focus on addressing the specific comment of the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
             - Do NOT answer or reply to any other comment.
             - You already have ALL the information required.
@@ -1260,20 +1259,32 @@ module XAeonAgentsSkills
         end.flatten(1).join("\n\n")
       end
 
-      # Check if there's an AI Agent reply to a specific comment, recursively checking all reply levels
+      # Get all the replies of a given comment.
+      # Replies are:
+      # * all the comments that have this comment as a direct reply,
+      # * plus the next (closest next creation date) comment that replied to the parent of the given comment,
+      # * plus all the replies of those replies (recursively).
       #
       # Parameters::
       # * *comments* (Array<Hash>): All comments in the thread
-      # * *comment_id* (Integer): The databaseId of the comment to check for replies
+      # * *comment* (Hash): The comment to check for replies
       # Result::
-      # * Boolean: true if there's an AI Agent reply to the comment, false otherwise
-      def has_ai_reply_to_comment?(comments, comment_id)
-        comments.any? do |reply|
-          reply[:replyTo]&.fetch(:databaseId, nil) == comment_id && (
-            reply[:body].match(/^\[X-Aeon Agent \([^)]+\)\]/) ||
-              has_ai_reply_to_comment?(comments, reply[:databaseId])
-          )
+      # * Array<Hash>: List of all the replies
+      def comment_replies(comments, comment)
+        comment_id = comment[:databaseId]
+        # All direct replies
+        replies = comments.select { |c| c.dig(:replyTo, :databaseId) == comment_id }
+        # All replies to the same parent, sorted by creation date
+        parent_comment_id = comment.dig(:replyTo, :databaseId)
+        unless parent_comment_id.nil?
+          created_at = Time.parse(comment[:createdAt])
+          next_parent_reply = comments.
+            select { |c| c.dig(:replyTo, :databaseId) == comment_id && Time.parse(c[:createdAt]) > created_at }.
+            sort_by { |c| c[:created_at] }.
+            first
+          replies << next_parent_reply unless next_parent_reply.nil?
         end
+        replies.map { |c| [c] + comment_replies(comments, c) }.flatten(1)
       end
 
       # Align markdown headers in a String to a given level.
