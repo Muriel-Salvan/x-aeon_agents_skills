@@ -648,11 +648,6 @@ module XAeonAgentsSkills
           output_artifacts: [
             { name: :one_line_summary, description: 'the 1-line summary of the code change intent' }
           ],
-          skills: %w[
-            applying-ruby-conventions
-            applying-test-conventions
-            enforcing-project-rules
-          ],
           plan_mode: false,
           config: read_only_config.merge(
             doubleCheckCompletionEnabled: false
@@ -666,6 +661,7 @@ module XAeonAgentsSkills
             - You are in read-only mode.
             - Do NOT modify or write any file.
             - You already have ALL the information required.
+            - You MUST NOT use other tools to gather information.
             - The user's intent is fully specified.
             - You MUST NOT ask follow-up questions.
           EO_Constraints
