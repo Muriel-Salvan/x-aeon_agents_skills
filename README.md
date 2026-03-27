@@ -90,6 +90,8 @@ ruby .cline/skills/addressing-pull-request-comments/scripts/reply_to_comment 3 1
 
 The skill automatically handles the complete workflow from comment detection to response generation and posting.
 
+**Note**: The "Rollback of Modifications" section was removed from this document as it contained information about rolling back changes to the `addressing-pull-request-comments` skill that is no longer relevant. This section previously documented the rollback of modifications to the skill file that restored it to its original state from the `main` branch.
+
 
 ## License
 
