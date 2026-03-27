@@ -47,6 +47,60 @@ module XAeonAgentsSkills
         )
       end
 
+      def list_models
+        JSON.parse(File.read("#{ENV['VSCODE_PORTABLE'] ? "#{ENV['VSCODE_PORTABLE']}/user-data" : "#{ENV['APPDATA']}/Code"}/User/globalStorage/saoudrizwan.claude-dev/cache/cline_models.json"), symbolize_names: true).map do |name, info|
+          RubyLLM::Model::Info.new(
+            id: name.to_s,
+            name: "Cline - #{name}",
+            provider: 'clinecli',
+            family: 'cline',
+            created_at: '2026-01-01 00:00:00 UTC',
+            context_window: info[:contextWindow],
+            max_output_tokens: info[:maxTokens],
+            knowledge_cutoff: '2026-01-01',
+            modalities: {
+              input: [
+                'text'
+              ] + (info[:supportsImages] ? ['image'] : []),
+              output: [
+                'text'
+              ]
+            },
+            capabilities: [
+              'function_calling',
+              'vision'
+            ],
+            pricing: {
+              text_tokens: {
+                standard: {
+                  input_per_million: info[:inputPrice],
+                  output_per_million: info[:outputPrice]
+                }.merge(info.key?(:cacheReadsPrice) ? { cached_input_per_million: info[:cacheReadsPrice] } : {})
+              }
+            },
+            metadata: {
+              source: 'models.dev',
+              provider_id: 'cline',
+              open_weights: false,
+              attachment: true,
+              temperature: true,
+              last_updated: '2024-10-22',
+              cost: {
+                input: info[:inputPrice],
+                output: info[:outputPrice]
+              }.
+                merge(info.key?(:cacheReadsPrice) ? { cache_read: info[:cacheReadsPrice] } : {}).
+                merge(info.key?(:cacheWritesPrice) ? { cache_write: info[:cacheWritesPrice] } : {}),
+              limit: {
+                context: info[:contextWindow],
+                output: info[:maxTokens]
+              },
+              knowledge: '2026-01-01'
+            }
+          )
+        end
+      end
+
       class << self
 
         def local?
