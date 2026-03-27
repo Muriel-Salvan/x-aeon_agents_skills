@@ -308,6 +308,16 @@ module XAeonAgentsSkills
       sections
     end
 
+    # Convert a string to a single line by replacing newlines with spaces and removing carriage returns
+    #
+    # Parameters::
+    # * *text* (String): The text to convert to one line
+    # Result::
+    # * String: The text converted to a single line
+    def self.one_lining(text)
+      text.strip.gsub("\n", ' ').gsub("\r", '')
+    end
+
     private
 
     # Convert a string to a single line by replacing newlines with spaces and removing carriage returns

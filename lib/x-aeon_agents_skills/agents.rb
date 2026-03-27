@@ -43,7 +43,7 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *cline_api_key* (String): Cline API key to be used [default: ENV['CLINE_API_KEY']]
-      # * *default_cline_model* (String): Default Cline model [default: 'kwaipilot/kat-coder-pro']
+      # * *default_cline_model* (String): Default Cline model [default: 'arcee-ai/trinity-large-preview:free']
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
       # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
@@ -51,7 +51,7 @@ module XAeonAgentsSkills
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
-        default_cline_model: 'kwaipilot/kat-coder-pro',
+        default_cline_model: 'arcee-ai/trinity-large-preview:free',
         default_cline_config: {
           actModeReasoningEffort: 'xhigh',
           autoApprovalSettings: {
@@ -212,15 +212,7 @@ module XAeonAgentsSkills
           This is the conversation log that happened in this issue.
           This is provided as a reference to better understand the requirements.
 
-          #{
-            issue_comments.sort_by(&:created_at).map do |comment|
-              <<~EO_Comment
-                ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
-                
-                #{align_markdown_headers(comment.body, level: 3)}
-              EO_Comment
-            end.join
-          }
+          #{format_comments_for_artifact(issue_comments)}
         EO_Section
         sections << <<~EO_Section
           # Associated Github issue
@@ -249,28 +241,28 @@ module XAeonAgentsSkills
         with_runner(run_id) do
 
           # Initial artifacts
-          step(:a_setup_requirements) do
+          step(:ir_a_setup_requirements) do
              @artifacts.merge!(
               requirements: requirements,
               base_sha: git.gcommit('HEAD').sha
              )
           end
 
-          step(:b_plan) do
+          step(:ir_b_plan) do
             run(planner_agent)
             puts "===== Implementation plan:\n#{@artifacts[:plan]}"
           end
 
           # TODO: Add interactive review step here
 
-          step(:c_develop) do
+          step(:ir_c_develop) do
             run(developer_agent)
             puts "===== Developer changes: #{git.status.changed.keys.join(", ")}"
           end
 
-          step(:d_commit) { git_commit(developer_agent) } if commit
+          step(:ir_d_commit) { git_commit(developer_agent) } if commit
 
-          step(:e_test) do
+          step(:ir_e_test) do
             tests_cmd = 'bundle exec rspec --format documentation'
             @artifacts[:tests_cmd] = tests_cmd
             idx_test = 0
@@ -304,23 +296,152 @@ module XAeonAgentsSkills
             end
           end
 
-          step(:f_commit) { git_commit(tester_agent) } if commit
+          step(:ir_f_commit) { git_commit(tester_agent) } if commit
 
-          step(:g_document) do
+          step(:ir_g_document) do
             @artifacts[:files_diffs] = artifact_files_diffs(@artifacts[:base_sha])
             run(documenter_agent)
             puts "===== Documenter changes: #{git.status.changed.keys.join(", ")}"
           end
 
-          step(:h_commit) { git_commit(documenter_agent) } if commit
+          step(:ir_h_commit) { git_commit(documenter_agent) } if commit
 
-          step(:i_pr) { create_pr } if pull_request
+          step(:ir_i_pr) { create_pr } if pull_request
         end
         puts
         puts 'Requirements implemented successfully'
       end
 
+      # Address Pull Request comments by finding open PRs, extracting agent-directed comments,
+      # implementing requirements, and replying to comments.
+      #
+      # Parameters::
+      # * *pull_request_number* (Integer): The Pull Request number to address comments for
+      # * *run_id* (String or nil): The associated run ID, or nil if no persistence needed [default: nil]
+      def address_pull_request_comments(pull_request_number, run_id: nil)
+        with_runner(run_id) do
+          step(:aprc_a_gather_comments) do
+            owner, repo = github_repo.split('/')
+            pr_json = github.post('/graphql',
+              {
+                query: File.read("#{__dir__}/gh_comments.gql"),
+                variables: {
+                  owner:,
+                  repo:,
+                  pr: pull_request_number
+                }
+              }.to_json
+            )[:data][:repository][:pullRequest]
+            # Select only conversations for which we need an AI Agent to contribute. That means:
+            # * Not resolved.
+            # * With at least 1 comment directed at the AI Agent (body starting with `/agent``) that does not have a reply (direct or indirect) from an AI Agent (body starting with `[X-Aeon Agent (.+)]``)).
+            @artifacts[:pr_conversations] = pr_json[:reviewThreads][:edges].select do |review_thread|
+              !review_thread[:node][:isResolved] &&
+                !review_thread[:node][:comments][:nodes].select do |comment|
+                  # Check if comment is directed at AI Agent and does not have an AI Agent reply (recursively)
+                  # Mark it using an extra variable that we will use later to retrieve it
+                  comment[:needAIReply] = comment[:body].start_with?('/agent') &&
+                    !comment_replies(review_thread[:node][:comments][:nodes], comment).any? { |reply| reply[:body].match(/^\[X-Aeon Agent \([^)]+\)\]/) }
+                  comment[:needAIReply]
+                end.empty?
+              end.map do |review_thread|
+                # Simplify the schema and only keep what is useful to us.
+                # Sort it by creation date too.
+                review_thread[:node][:comments][:nodes].sort_by { |comment| comment[:createdAt] }.map do |comment|
+                  {
+                    comment_id: comment[:databaseId],
+                    created_at: comment[:createdAt],
+                    reply_to_comment_id: comment.dig(:replyTo, :databaseId),
+                    author: comment[:author][:login],
+                    body: comment[:body],
+                    subject_type: comment[:subjectType],
+                    path: comment[:path],
+                    commit: {
+                      sha: comment[:commit][:oid],
+                      message: comment[:commit][:message]
+                    },
+                    line: comment[:line],
+                    start_line: comment[:startLine],
+                    original_commit: {
+                      sha: comment[:originalCommit][:oid],
+                      message: comment[:originalCommit][:message]
+                    },
+                    original_line: comment[:originalLine],
+                    original_start_line: comment[:originalStartLine],
+                    diff_hunk: comment[:diffHunk],
+                    need_ai_reply: comment[:needAIReply]
+                  }
+                end
+              end.to_json
+          end
+
+          pr_conversations = JSON.parse(@artifacts[:pr_conversations], symbolize_names: true)
+          if pr_conversations.empty?
+            log_debug "No PR reviews conversations found that need X-Aeon Agents input for PR ##{pull_request_number}"
+          else
+            log_debug "Found #{pr_conversations.size} PR reviews conversations that need X-Aeon Agents input for PR ##{pull_request_number}"
+            open_comments_to_agents = pr_conversations.map do |conversation|
+              conversation.select { |comment| comment[:need_ai_reply] }
+            end.flatten(1)
+            log_debug "Found #{open_comments_to_agents.size} PR review comments that need X-Aeon Agents to reply for PR ##{pull_request_number}:\n#{open_comments_to_agents.map { |comment| "* #{comment[:body]}" }.join("\n")}"
+
+            step(:aprc_b_extract_requirements) do
+              pr = github.pull_request(github_repo, pull_request_number)
+              @artifacts[:pr_description] = <<~EO_Description.strip
+                # #{pr.title}
+
+                #{align_markdown_headers(pr.body, level: 2)}
+              EO_Description
+              @artifacts[:pr_files_diffs] = git.diff("#{pr.base.sha}...#{pr.head.sha}").to_s
+              @artifacts[:conversations] = JSON.pretty_generate(pr_conversations)
+              @artifacts[:open_comments_to_agents] = JSON.pretty_generate(open_comments_to_agents)
+              run(pr_requirements_extractor_agent)
+              @artifacts[:requirements] = 'No requirements' if @artifacts[:requirements].strip.downcase == 'no requirements'
+            end
+
+            if @artifacts[:requirements] == 'No requirements'
+              log_debug 'No requirements to implement'
+              @artifacts[:plan] = 'No implementation plan'
+              @artifacts[:files_diffs] = 'No changes'
+            else
+              log_debug 'Requirements found, implementing...'
+              implement_requirements(@artifacts[:requirements], commit: true, pull_request: true)
+            end
+            
+            # Reply to each agent-directed comment
+            open_comments_to_agents.each.with_index do |comment, comment_idx|
+              step("aprc_c#{comment_idx}_reply_to_comment".to_sym) do
+                @artifacts[:open_comment_for_reply] = JSON.pretty_generate(comment)
+                run(review_responder_agent)
+                reply = github.create_pull_request_comment_reply(github_repo, pull_request_number, "[X-Aeon Agent (#{review_responder_agent.model})] - #{@artifacts[:reply]}", comment[:comment_id])
+                log_debug "Successfully replied to comment ##{comment[:comment_id]}: #{reply[:html_url]}"
+              end
+            end
+          end
+        end
+        puts
+        puts 'Pull Request comments addressed successfully'
+      end
+
       private
+
+      # Format comments for use in artifacts
+      #
+      # Parameters::
+      # * *comments* (Array<Octokit::IssueComment>): Comments to format
+      # Result::
+      # * String: Formatted comments as markdown
+      def format_comments_for_artifact(comments)
+        return "No comments" if comments.empty?
+        
+        comments.sort_by(&:created_at).map do |comment|
+          <<~EO_Comment
+            ## #{comment.user.login} at #{comment.created_at.utc.strftime('%F %T UTC')}
+            
+            #{align_markdown_headers(comment.body, level: 3)}
+          EO_Comment
+        end.join("\n")
+      end
 
       # Loop over all Cline models
       #
@@ -479,7 +600,9 @@ module XAeonAgentsSkills
             enforcing-project-rules
           ],
           plan_mode: false,
-          config: read_only_config,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
           instructions: <<~EO_Instructions,
             ## 1. Read and analyze ALL file changes from the `ARTIFACT_FILES_DIFFS` artifact
             
@@ -525,13 +648,10 @@ module XAeonAgentsSkills
           output_artifacts: [
             { name: :one_line_summary, description: 'the 1-line summary of the code change intent' }
           ],
-          skills: %w[
-            applying-ruby-conventions
-            applying-test-conventions
-            enforcing-project-rules
-          ],
           plan_mode: false,
-          config: read_only_config,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
           instructions: <<~EO_Instructions,
             ## Provide a 1-line summary of the code change intent described in the `ARTIFACT_CHANGE_INTENT` artifact
             
@@ -541,6 +661,7 @@ module XAeonAgentsSkills
             - You are in read-only mode.
             - Do NOT modify or write any file.
             - You already have ALL the information required.
+            - You MUST NOT use other tools to gather information.
             - The user's intent is fully specified.
             - You MUST NOT ask follow-up questions.
           EO_Constraints
@@ -638,7 +759,7 @@ module XAeonAgentsSkills
       def documenter_agent
         @documenter_agent ||= cline_agent(
           name: 'Documenter',
-          objective: 'Update relevant documentation when a task is being implemented.',
+          objective: 'Ensure documentation reflects the current product behavior and usage after a new development.',
           input_artifacts: [
             { name: :requirements, description: 'Initial requirements' },
             { name: :plan, description: 'Implementation plan that introduced features and fixes to be documented' },
@@ -664,7 +785,28 @@ module XAeonAgentsSkills
 
             - Understand what was the intent of the developer implementing those requirements.
 
-            ## 4. Explore the filesystem to locate documentation files
+            ## 4. Decide if documentation is needed
+
+            Before making any change, classify the development:
+
+            - If the change affects:
+              - Features
+              - Usage
+              - APIs
+              - Behavior visible to users
+              → Documentation update MAY be required
+
+            - If the change is:
+              - Internal refactor
+              - Cleanup (removal of useless content)
+              - Formatting
+              - Documentation-only removal of irrelevant info
+              → NO documentation update is required
+
+            If no documentation is required:
+            → STOP and do nothing
+
+            ## 5. Explore the filesystem to locate documentation files
 
             Guidelines:
             - Start with README.md and docs/**/*.md if they exist.
@@ -676,8 +818,9 @@ module XAeonAgentsSkills
 
             This step is best-effort and should not block progress.
 
-            ## 5. Update the relevant documentation files
+            ## 6. Update the relevant documentation files
 
+            - Only perform this step if you think documentation is required.
             - Use artifacts as the source of truth for understanding the changes to be documented.
             - Use the filesystem to locate where documentation should be updated.
             - After exploring the filesystem, if relevant documentation files are found: update them.
@@ -691,6 +834,10 @@ module XAeonAgentsSkills
           constraints: <<~EO_Constraints
             - Only update documentation files.
             - Do NOT change any code or test.
+            - NEVER document the fact that a change happened.
+            - NEVER explain that something was removed, renamed, or fixed.
+            - Documentation describes the CURRENT STATE only.
+            - Documentation is NOT a changelog.
           EO_Constraints
         )
       end
@@ -703,6 +850,117 @@ module XAeonAgentsSkills
         @releaser_agent ||= cline_agent(
           name: 'Releaser',
           objective: 'Release a new feature or bugfix to its branch on Github, with a Pull Request'
+        )
+      end
+
+      # Create the PRRequirementsExtractor agent
+      #
+      # Result::
+      # * ::Agents::Agent: The PRRequirementsExtractor agent
+      def pr_requirements_extractor_agent
+        @pr_requirements_extractor_agent ||= cline_agent(
+          name: 'PRRequirementsExtractor',
+          objective: 'Extract requirements from PR comments directed at X-Aeon Agents',
+          input_artifacts: [
+            { name: :pr_description, description: 'Pull Request description (context)' },
+            { name: :pr_files_diffs, description: 'Files modifications that were done in this Pull Request (context)' },
+            { name: :conversations, description: 'All Pull Request conversations and comments to be considered (context)' },
+            { name: :open_comments_to_agents, description: 'Exact list of agent-directed comments that need to be addressed' }
+          ],
+          output_artifacts: [
+            { name: :requirements, description: 'the requirements that will implement what is needed by the agent-directed comments (reply "No requirements" if there is no implementation needed)' }
+          ],
+          config: read_only_config,
+          instructions: <<~EO_Instructions,
+            ## 1. Read the `ARTIFACT_PR_DESCRIPTION` artifact to understand the purpose of this Pull Request
+            
+            - This gives you context on what is the purpose of this Pull Request.
+
+            ## 2. Read the `ARTIFACT_PR_FILES_DIFFS` artifact to understand all changes made by this Pull Request
+            
+            - This gives you context on how has this Pull Request been implemented.
+
+            ## 3. Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations
+            
+            - This gives you context on the discussions around this Pull Request.
+
+            ## 4. Read the `ARTIFACT_OPEN_COMMENTS_TO_AGENTS` artifact to focus on agent-directed comments
+            
+            - You must devise requirements that will address those exact comments.
+
+            ## 5. Analyze agent-directed comments to identify specific requirements or tasks that need implementation
+            
+            ## 6. Extract clear, actionable requirements from the comments
+            
+            - If no implementation is required (e.g., comments are just questions), output "No requirements"
+          EO_Instructions
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+            - Focus only on agent-directed comments (/agent) for requirement extraction.
+            - Output clear, actionable requirements or "No requirements" if none exist.
+          EO_Constraints
+        )
+      end
+
+      # Create the ReviewResponder agent
+      #
+      # Result::
+      # * ::Agents::Agent: The ReviewResponder agent
+      def review_responder_agent
+        @review_responder_agent ||= cline_agent(
+          name: 'ReviewResponder',
+          objective: 'Generate a reply to a review comment',
+          input_artifacts: [
+            { name: :conversations, description: 'All PR conversations and comments to be considered (context)' },
+            { name: :open_comment_for_reply, description: 'Exact comment to be replied to' },
+            { name: :requirements, description: 'Requirements implemented (or "No requirements")' },
+            { name: :plan, description: 'Implementation plan from implement_requirements workflow (or "No implementation plan")' },
+            { name: :files_diffs, description: 'Code changes from implement_requirements workflow (or "No changes")' }
+          ],
+          output_artifacts: [
+            { name: :reply, description: 'the exact reply text to post' }
+          ],
+          plan_mode: false,
+          config: read_only_config.merge(
+            doubleCheckCompletionEnabled: false
+          ),
+          instructions: <<~EO_Instructions,
+            ## 1. Read the `ARTIFACT_CONVERSATIONS` artifact to understand the full context of the PR conversations
+            
+            - This gives you context on the discussions around this Pull Request.
+            
+            ## 2. Read the `ARTIFACT_REQUIREMENTS` artifact to understand what was implemented
+            
+            - This gives you context on what has been implemented by other agents.
+            
+            ## 3. Read the `ARTIFACT_PLAN` artifact to understand the implementation approach
+            
+            - This gives you context on how other agents implemented the requirements.
+
+            ## 4. Read the `ARTIFACT_FILES_DIFFS` artifact to understand the specific code changes made
+
+            - This gives you context on what files have been modified.
+
+            ## 5. Read the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact to understand the specific comment to respond to
+            
+            - This is the EXACT comment that you should reply to.
+
+            ## 6. Generate a professional, helpful reply that addresses the comment appropriately
+            
+            - If requirements were implemented, explain what was done and how it addresses the comment.
+            - If no requirements existed, provide a helpful response explaining the situation.
+          EO_Instructions
+          constraints: <<~EO_Constraints
+            - You are in read-only mode.
+            - Do NOT modify or write any file.
+            - The implementation work is already complete (captured in the artifacts).
+            - ONLY focus on addressing the specific comment of the `ARTIFACT_OPEN_COMMENT_FOR_REPLY` artifact appropriately.
+            - Do NOT answer or reply to any other comment.
+            - You already have ALL the information required.
+            - You MUST NOT ask follow-up questions.
+            - You MUST NOT ask for user confirmation.
+          EO_Constraints
         )
       end
 
@@ -842,14 +1100,20 @@ module XAeonAgentsSkills
       end
 
       # Setup an agents runner.
+      # This method is re-entrant, meaning it can be called multiple times within the same execution context.
+      # If a runner is already initialized, it will reuse the existing runner and artifacts.
       #
       # Parameters::
       # * *run_id* (String or nil): The run ID, or nil if persistence is not needed [default = nil]
       # * Proc: Code called with the runner setup
       def with_runner(run_id = nil)
-        @run_id = run_id
-        @runner = ::Agents::Runner.new
-        @artifacts = {}
+        # If runner is already initialized, reuse existing runner and artifacts
+        unless @runner
+          # Initialize new runner and artifacts
+          @run_id = run_id
+          @runner = ::Agents::Runner.new
+          @artifacts = {}
+        end
         yield
       end
 
@@ -865,7 +1129,7 @@ module XAeonAgentsSkills
         puts
         puts "===== #{agent.name}..."
         result = @runner.run(agent, prompt)
-        raise "Error: #{result.error}" unless result.error.nil?
+        raise "Error: #{result.error}\n#{result.error.backtrace.join("\n")}" unless result.error.nil?
         # Keep user's feedback in an artifact
         unless agent.params[:agent][:asks].empty?
           @artifacts[:user_feedbacks] = <<~EO_Artifact if @artifacts[:user_feedbacks].nil?
@@ -1016,6 +1280,34 @@ module XAeonAgentsSkills
             end
           end
         end.flatten(1).join("\n\n")
+      end
+
+      # Get all the replies of a given comment.
+      # Replies are:
+      # * all the comments that have this comment as a direct reply,
+      # * plus the next (closest next creation date) comment that replied to the parent of the given comment,
+      # * plus all the replies of those replies (recursively).
+      #
+      # Parameters::
+      # * *comments* (Array<Hash>): All comments in the thread
+      # * *comment* (Hash): The comment to check for replies
+      # Result::
+      # * Array<Hash>: List of all the replies
+      def comment_replies(comments, comment)
+        comment_id = comment[:databaseId]
+        # All direct replies
+        replies = comments.select { |c| c.dig(:replyTo, :databaseId) == comment_id }
+        # All replies to the same parent, sorted by creation date
+        parent_comment_id = comment.dig(:replyTo, :databaseId)
+        unless parent_comment_id.nil?
+          created_at = Time.parse(comment[:createdAt])
+          next_parent_reply = comments.
+            select { |c| c.dig(:replyTo, :databaseId) == parent_comment_id && Time.parse(c[:createdAt]) > created_at }.
+            sort_by { |c| c[:created_at] }.
+            first
+          replies << next_parent_reply unless next_parent_reply.nil?
+        end
+        replies.map { |c| [c] + comment_replies(comments, c) }.flatten(1)
       end
 
       # Align markdown headers in a String to a given level.
