@@ -18,11 +18,14 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'ai-agents', '~> 0.9'
   spec.add_dependency 'commonmarker', '~> 2.7'
+  spec.add_dependency 'ellipsized', '~> 0.3'
+  spec.add_dependency 'erb', '~> 6.0'
   spec.add_dependency 'front_matter_parser', '~> 1.0'
   spec.add_dependency 'git', '~> 4.3'
   spec.add_dependency 'json', '~> 2.18'
+  spec.add_dependency 'launchy', '~> 3.1'
   spec.add_dependency 'octokit', '~> 10.0'
-  spec.add_dependency 'ruby_llm', '~> 1.13'
+  spec.add_dependency 'ruby_llm', '~> 1.14'
   spec.add_dependency 'sqlite3', '~> 2.9'
   spec.add_dependency 'thor', '~> 1.5'
 end

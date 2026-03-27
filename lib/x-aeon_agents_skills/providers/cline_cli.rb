@@ -53,6 +53,14 @@ module XAeonAgentsSkills
           true
         end
 
+        def configuration_requirements
+          %i[cline_api_key]
+        end
+
+        def configuration_options
+          %i[cline_api_key]
+        end
+
       end
 
     end

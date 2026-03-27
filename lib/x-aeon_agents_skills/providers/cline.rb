@@ -57,10 +57,17 @@ module XAeonAgentsSkills
       private
 
       class << self
+
         def configuration_requirements
-          %i[cline_api_key]
+          %i[cline_api_base cline_api_key]
         end
+
+        def configuration_options
+          %i[cline_api_base cline_api_key]
+        end
+
       end
+
     end
 
   end
