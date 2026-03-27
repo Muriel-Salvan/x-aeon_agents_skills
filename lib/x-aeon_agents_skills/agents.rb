@@ -340,39 +340,39 @@ module XAeonAgentsSkills
                 !review_thread[:node][:comments][:nodes].select do |comment|
                   # Check if comment is directed at AI Agent and does not have an AI Agent reply (recursively)
                   # Mark it using an extra variable that we will use later to retrieve it
-                  comment[:needAIReply] = comment[:body]&.start_with?('/agent') &&
+                  comment[:needAIReply] = comment[:body].start_with?('/agent') &&
                     !comment_replies(review_thread[:node][:comments][:nodes], comment).any? { |reply| reply[:body].match(/^\[X-Aeon Agent \([^)]+\)\]/) }
                   comment[:needAIReply]
                 end.empty?
-            end.map do |review_thread|
-              # Simplify the schema and only keep what is useful to us.
-              # Sort it by creation date too.
-              review_thread[:node][:comments][:nodes].sort_by { |comment| comment[:createdAt] }.map do |comment|
-                {
-                  comment_id: comment[:databaseId],
-                  created_at: comment[:createdAt],
-                  reply_to_comment_id: comment.dig(:replyTo, :databaseId),
-                  author: comment[:author][:login],
-                  body: comment[:body],
-                  subject_type: comment[:subjectType],
-                  path: comment[:path],
-                  commit: {
-                    sha: comment[:commit][:oid],
-                    message: comment[:commit][:message]
-                  },
-                  line: comment[:line],
-                  start_line: comment[:startLine],
-                  original_commit: {
-                    sha: comment[:originalCommit][:oid],
-                    message: comment[:originalCommit][:message]
-                  },
-                  original_line: comment[:originalLine],
-                  original_start_line: comment[:originalStartLine],
-                  diff_hunk: comment[:diffHunk],
-                  need_ai_reply: comment[:needAIReply]
-                }
-              end
-            end.to_json
+              end.map do |review_thread|
+                # Simplify the schema and only keep what is useful to us.
+                # Sort it by creation date too.
+                review_thread[:node][:comments][:nodes].sort_by { |comment| comment[:createdAt] }.map do |comment|
+                  {
+                    comment_id: comment[:databaseId],
+                    created_at: comment[:createdAt],
+                    reply_to_comment_id: comment.dig(:replyTo, :databaseId),
+                    author: comment[:author][:login],
+                    body: comment[:body],
+                    subject_type: comment[:subjectType],
+                    path: comment[:path],
+                    commit: {
+                      sha: comment[:commit][:oid],
+                      message: comment[:commit][:message]
+                    },
+                    line: comment[:line],
+                    start_line: comment[:startLine],
+                    original_commit: {
+                      sha: comment[:originalCommit][:oid],
+                      message: comment[:originalCommit][:message]
+                    },
+                    original_line: comment[:originalLine],
+                    original_start_line: comment[:originalStartLine],
+                    diff_hunk: comment[:diffHunk],
+                    need_ai_reply: comment[:needAIReply]
+                  }
+                end
+              end.to_json
           end
 
           pr_conversations = JSON.parse(@artifacts[:pr_conversations], symbolize_names: true)
@@ -1279,7 +1279,7 @@ module XAeonAgentsSkills
         unless parent_comment_id.nil?
           created_at = Time.parse(comment[:createdAt])
           next_parent_reply = comments.
-            select { |c| c.dig(:replyTo, :databaseId) == comment_id && Time.parse(c[:createdAt]) > created_at }.
+            select { |c| c.dig(:replyTo, :databaseId) == parent_comment_id && Time.parse(c[:createdAt]) > created_at }.
             sort_by { |c| c[:created_at] }.
             first
           replies << next_parent_reply unless next_parent_reply.nil?
