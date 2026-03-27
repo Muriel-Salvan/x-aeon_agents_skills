@@ -90,19 +90,6 @@ ruby .cline/skills/addressing-pull-request-comments/scripts/reply_to_comment 3 1
 
 The skill automatically handles the complete workflow from comment detection to response generation and posting.
 
-### Rollback of Modifications
-
-**Important**: The `skills/addressing-pull-request-comments/SKILL.md` file was modified in a recent PR but should not have been. All modifications to this file have been rolled back to restore the original content from the `main` branch.
-
-**Changes Rolled Back**:
-- Section 2 restored to "Fetch Pull Request comments" (was changed to "Use the automated address_pull_request_comments method")
-- Section 3 restored to "Process each comment in {comments_list}" (was changed to "Manual fallback process (if needed)")
-- Section 4 restored to original subsections 4.1, 4.2, 4.3 with proper numbering
-- Agent signature format restored to `[Cline ({model})]` (was changed to `[X-Aeon Agent ({model-name})]`)
-- Usage examples restored to original "Steps to perform to address new comments" structure
-- Automated method documentation removed and original manual process restored
-
-The file now matches the original content from the `main` branch exactly.
 
 ## License
 
