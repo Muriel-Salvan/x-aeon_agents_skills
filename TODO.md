@@ -1,6 +1,7 @@
+* Integrate price and progression with ai-agents.
+* Add desktop notification when user input is needed.
 * Test with other models.
 * Implement non-debug logs with progress bars (one char per message received).
-* Integrate price and progression with ai-agents.
 * Cache the cli auth call for performace between several agents of the same run.
 * Make the WSL CLI tool a Ruby script to avoid paths and slashes issues.
 * The model reported is wrong. Fix this.
