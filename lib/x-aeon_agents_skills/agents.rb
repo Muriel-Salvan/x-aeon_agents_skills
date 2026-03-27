@@ -383,6 +383,7 @@ module XAeonAgentsSkills
             open_comments_to_agents = pr_conversations.map do |conversation|
               conversation.select { |comment| comment[:need_ai_reply] }
             end.flatten(1)
+            log_debug "Found #{open_comments_to_agents.size} PR review comments that need X-Aeon Agents to reply for PR ##{pull_request_number}:\n#{open_comments_to_agents.map { |comment| "* #{comment[:body]}" }.join("\n")}"
 
             step(:aprc_b_extract_requirements) do
               pr = github.pull_request(github_repo, pull_request_number)
