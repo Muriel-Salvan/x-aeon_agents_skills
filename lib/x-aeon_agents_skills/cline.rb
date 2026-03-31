@@ -51,7 +51,7 @@ module XAeonAgentsSkills
 
         # Authenticate and generate the configuration directory
         system "cline auth --config #{config_dir} --provider cline --apikey #{@api_key} --modelid #{model}", exception: true
-        log_debug 'Cline CLI authenticated successfully'
+        log_debug "Cline CLI authenticated successfully in config dir #{config_dir} for model #{model}"
 
         # Merge configuration options from payload into the globalState.json file
         global_state_path = "#{config_dir}/data/globalState.json"

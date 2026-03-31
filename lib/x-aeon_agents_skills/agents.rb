@@ -85,6 +85,7 @@ module XAeonAgentsSkills
 
         # Register our providers
         RubyLLM::Provider.register(:clinecli, XAeonAgentsSkills::Providers::ClineCli)
+        RubyLLM::Models.refresh!
 
         # Initialize our dependencies
         ENV['RUBYLLM_DEBUG'] = '1' if config[:debug]
