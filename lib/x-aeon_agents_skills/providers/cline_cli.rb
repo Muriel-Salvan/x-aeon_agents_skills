@@ -1,5 +1,6 @@
 require 'ruby_llm/message'
 require 'ruby_llm/provider'
+require 'x-aeon_agents_skills/cline'
 require 'x-aeon_agents_skills/connections/cline_cli'
 
 module XAeonAgentsSkills
@@ -15,11 +16,11 @@ module XAeonAgentsSkills
 
       def api_base
         # CLI tools don't have a REST API endpoint
-        '.'
+        nil
       end
 
       def completion_url
-        '.'
+        nil
       end
 
       def render_payload(messages, tools:, temperature:, model:, stream: false, schema: nil, thinking: nil, tool_prefs: nil)
@@ -44,7 +45,7 @@ module XAeonAgentsSkills
       end
 
       def list_models
-        Cline.models.map do |name, info|
+        XAeonAgentsSkills::Cline.models.map do |name, info|
           RubyLLM::Model::Info.new(
             # From an AI Agents model perspective, the models served by this provider are different than the ones served by API-based providers.
             # They are not interchangeable.

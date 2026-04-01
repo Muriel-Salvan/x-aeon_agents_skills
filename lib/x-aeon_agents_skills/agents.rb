@@ -86,7 +86,6 @@ module XAeonAgentsSkills
 
         # Register our providers
         RubyLLM::Provider.register(:clinecli, XAeonAgentsSkills::Providers::ClineCli)
-        RubyLLM::Models.refresh!
 
         # Initialize our dependencies
         ENV['RUBYLLM_DEBUG'] = '1' if config[:debug]
@@ -97,6 +96,9 @@ module XAeonAgentsSkills
         RubyLLM.configure do |ruby_llm_config|
           ruby_llm_config.cline_api_key = config[:cline_api_key]
         end
+
+        # Discover all the models
+        RubyLLM::Models.refresh!
       end
 
       # Execute a simple task
@@ -991,12 +993,12 @@ module XAeonAgentsSkills
       end
 
       # Return a list of patch description of diffs in the git staging area.
-      # Equivalent to git diff --cached
       #
       # Result::
-      # * Array<String>: List of patches in the staging area
+      # * String: Patches in the staging area
       def git_diff_cached
-        git.diff('HEAD').to_a.map(&:patch) - git.diff(nil).to_a.map(&:patch)
+        # TODO: Use ruby-git when the --cached feature will be implemented
+        `git diff --cached`.strip
       end
 
       # Get a current files diffs
@@ -1009,7 +1011,7 @@ module XAeonAgentsSkills
             ### git diff --cached
 
             ```
-            #{git_diff_cached.join("\n")}
+            #{git_diff_cached}
             ```
           EO_Artifact
         else
@@ -1103,7 +1105,7 @@ module XAeonAgentsSkills
             llm_call_complete: [proc { |_agent_name, _model, response, _context_wrapper| raw_response = response.raw }]
           }
         )
-        puts "===== #{agent.name} - Total cost: $#{(raw_response[:usage] || {}).values.map { |stats| stats[:cost] || 0 }.sum }"
+        puts "===== #{agent.name} - Total cost: $#{(raw_response[:usage] || {}).values.map { |stats| stats[:cost] || 0 }.sum }" unless raw_response.nil?
         raise "Error: #{result.error}\n#{result.error.backtrace.join("\n")}" unless result.error.nil?
         # Keep user's feedback in an artifact
         unless agent.params[:agent][:asks].empty?
@@ -1178,7 +1180,6 @@ module XAeonAgentsSkills
       )
         ::Agents::Agent.new(
           model:,
-          provider: 'clinecli',
           name:,
           params: {
             agent: {
