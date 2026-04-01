@@ -27,7 +27,7 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *cline_api_key* (String): Cline API key to be used [default: ENV['CLINE_API_KEY']]
-      # * *default_cline_model* (String): Default Cline model [default: 'qwen/qwen3.6-plus-preview:free']
+      # * *default_cline_model* (String): Default Cline model [default: 'clinecli/qwen/qwen3.6-plus-preview:free']
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
       # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
@@ -35,7 +35,7 @@ module XAeonAgentsSkills
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
-        default_cline_model: 'qwen/qwen3.6-plus-preview:free',
+        default_cline_model: 'clinecli/qwen/qwen3.6-plus-preview:free',
         default_cline_config: {
           actModeReasoningEffort: 'xhigh',
           autoApprovalSettings: {
@@ -92,8 +92,10 @@ module XAeonAgentsSkills
         ENV['RUBYLLM_DEBUG'] = '1' if config[:debug]
         Logger.debug = config[:debug]
         ::Agents.configure do |ai_agents_config|
-          ai_agents_config.cline_api_key = config[:cline_api_key]
           ai_agents_config.debug = config[:debug]
+        end
+        RubyLLM.configure do |ruby_llm_config|
+          ruby_llm_config.cline_api_key = config[:cline_api_key]
         end
       end
 

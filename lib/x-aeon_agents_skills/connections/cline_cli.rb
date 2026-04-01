@@ -86,7 +86,7 @@ module XAeonAgentsSkills
         log_debug { "Cline prompt:\n#{JSON.pretty_generate(prompt_json)}" }
         @cline.prompt(
           prompt_json.to_json,
-          model: payload[:model],
+          model: payload[:model].match(/^clinecli\/(.+)$/)[1],
           plan_mode: @plan_mode,
           config: payload[:cline][:config],
           skills: payload[:cline][:skills],

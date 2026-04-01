@@ -46,7 +46,10 @@ module XAeonAgentsSkills
       def list_models
         Cline.models.map do |name, info|
           RubyLLM::Model::Info.new(
-            id: name,
+            # From an AI Agents model perspective, the models served by this provider are different than the ones served by API-based providers.
+            # They are not interchangeable.
+            # Therefore we prefix them to make sure they won't be considered the same ones when model/provider selection happens.
+            id: "clinecli/#{name}",
             name: "Cline - #{name}",
             provider: 'clinecli',
             family: 'cline',
