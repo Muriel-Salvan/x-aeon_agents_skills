@@ -82,6 +82,7 @@ module XAeonAgentsSkills
         @output_artifacts = payload[:artifacts][:output]
         @expected_artifact = nil
         @asks = payload[:agent][:asks]
+        @usage = nil
         log_debug { "Cline prompt:\n#{JSON.pretty_generate(prompt_json)}" }
         @cline.prompt(
           prompt_json.to_json,
@@ -91,8 +92,8 @@ module XAeonAgentsSkills
           skills: payload[:cline][:skills],
           skillkit_agents: true,
           cli_args: payload[:cline][:cli_args],
-          on_message: proc do |message, last, _previous_version|
-            log_debug { Cline.human_message(message, limit: 128) }
+          on_message: proc do |message, last, _previous_version, usage|
+            @usage = usage
             if message[:type] == 'ask' && last
               case message[:ask]
               when 'tool'
@@ -136,7 +137,8 @@ module XAeonAgentsSkills
         payload[:artifacts][:store].merge!(@artifacts)
         {
           body: @completion_result,
-          model: payload[:model]
+          model: payload[:model],
+          usage: @usage
         }
       end
 

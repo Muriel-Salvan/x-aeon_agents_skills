@@ -1,11 +1,16 @@
 require 'ellipsized'
 require 'fileutils'
 require 'front_matter_parser'
+require 'human_number'
 require 'json'
 require 'time'
 require 'tmpdir'
 require 'x-aeon_agents_skills/helpers'
 require 'x-aeon_agents_skills/logger'
+
+# Load the HumanNumber locale files, as it does not do it automatically.
+# TODO: Remove this when human_number will be fixed.
+I18n.load_path += Dir[File.join(File.join(Gem::Specification.find_by_name('human_number').gem_dir, 'lib'), 'locales', '*.yml')]
 
 module XAeonAgentsSkills
 
@@ -42,6 +47,14 @@ module XAeonAgentsSkills
     #     * *message* (Hash): Message that has happened
     #     * *last* (Boolean): Is this the last message fetched?
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
+    #     * *usage* (Hash<Integer,Hash<Symbol,Object>>): Information on the usage, per timestamp. The information can have the following properties:
+    #       * *cost* (Float): Query cost, in $.
+    #       * *input_tokens* (Integer): Input tokens of the query
+    #       * *output_tokens* (Integer): Output tokens of the query
+    #       * *cache_read_tokens* (Integer): Cache read tokens of the query
+    #       * *cache_write_tokens* (Integer): Cache write tokens of the query
+    #       * *context_tokens* (Integer): Size of the context
+    #       * *context_tokens_limit* (Integer): Limit of the size of the context
     # * *stdout_echo* (Boolean): Do we echo stdout of Cline CLI? [default: false]
     # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
     def prompt(prompt_str, model:, plan_mode: false, config: {}, skills: [], skillkit_agents: false, cli_args: '', on_message: nil, stdout_echo: false, ignore_partials: false)
@@ -66,7 +79,7 @@ module XAeonAgentsSkills
         )
 
         with_selected_skills(skills, config_dir:, skillkit_agents:) do
-          with_messages_monitoring(config_dir:, on_message:, ignore_partials:) do
+          with_messages_monitoring(config_dir:, model:, on_message:, ignore_partials:) do
             @task_id = nil
             begin
               @next_prompt = prompt_str
@@ -144,42 +157,92 @@ module XAeonAgentsSkills
       end
     end
 
+    # Return the list of Cline models information.
+    # Keep a cache of it.
+    #
+    # Result::
+    # * Hash<String,Hash<Symbol,Object>>: Each model's information, per model name
+    def self.models
+      @cached_models ||= JSON.parse(File.read("#{ENV['VSCODE_PORTABLE'] ? "#{ENV['VSCODE_PORTABLE']}/user-data" : "#{ENV['APPDATA']}/Code"}/User/globalStorage/saoudrizwan.claude-dev/cache/cline_models.json"), symbolize_names: true).transform_keys(&:to_s)
+    end
+
+    private
+
+    # Use a single regex to match complete tag pairs
+    # This regex matches <tag>content</tag> patterns
+    COMPLETE_TAG_PATTERN = %r{<([a-zA-Z0-9_:]*)>(.*?)</\1>}m
+
+    # Parse sections from a string with HTML-like tags.
+    # Sections are delimited by html-like tags, for example `<toto>...</toto>` is the section named `toto`.
+    # Sections without tags should still be part of the result, with a nil section name.
+    # Only considers top-level tags (no recursion).
+    #
+    # Parameters::
+    # * *content* (String): The input string to parse
+    # Result::
+    # * Array<Hash>: List of sections:
+    #   * *name* (String or nil): Section name
+    #   * *content* (String): Section content
+    def parse_sections(content)
+      sections = []
+      current_pos = 0
+      content_length = content.length
+      # Use cursor progression to maintain order
+      while current_pos < content_length
+        # Find the next complete tag pair starting from current position
+        match = content.match(COMPLETE_TAG_PATTERN, current_pos)
+        if match
+          # Add any untagged content before this tag
+          if match.begin(0) > current_pos
+            untagged_content = content[current_pos...match.begin(0)]
+            sections << { name: nil, content: untagged_content } unless untagged_content.strip.empty?
+          end
+          # Add the tagged section
+          sections << { name: match[1], content: match[2] }
+          current_pos = match.end(0)
+        else
+          # No more tags found, add remaining content
+          remaining_content = content[current_pos..-1]
+          sections << { name: nil, content: remaining_content } unless remaining_content.strip.empty?
+          current_pos = content_length
+        end
+      end
+      sections
+    end
+
     # Return a human-friendly version of a message.
     # Useful for stdout or logging.
     #
     # Parameters::
     # * *message* (Hash): Message to translate to humans
+    # * *usage* (Hash): Usage statistics of the current prompt
     # * *limit* (Integer): Number of characters the message should be limited to [default: 128]
     # Result::
     # * String: The human translation
-    def self.human_message(message, limit: 128)
-      ts_str = "[#{Time.at(message[:ts] / 1000.0).strftime('%H:%M:%S')}] - "
-      "#{ts_str}#{
+    def human_message(message, usage:, limit: 128)
+      last_usage = usage.values.last
+      prefix = "[#{Time.at(message[:ts] / 1000.0).strftime('%H:%M:%S')}]#{
+        if last_usage.nil?
+          ''
+        else
+          " (#{HumanNumber.currency(usage.values.map { |stats| stats[:cost] || 0.0 }.sum, currency_code: 'USD')} #{HumanNumber.human_number(last_usage[:context_tokens], max_digits: 2)}/#{HumanNumber.human_number(last_usage[:context_tokens_limit], max_digits: 2)})"
+        end
+      } - "
+      "#{prefix}#{
         case message[:type]
         when 'say'
           case message[:say]
           when 'text', 'task'
             one_lining(message[:text])
           when 'api_req_started'
-            api_details = JSON.parse(message[:text], symbolize_names: true)
-            fields = []
-            fields << "#{api_details[:cost]}$" if api_details.key?(:cost)
-            sections = parse_sections(api_details[:request])
-            env_section = sections.find { |section| section[:name] == 'environment_details' }
-            if !env_section.nil? && env_section[:content] =~ /^([^ ]+) \/ ([^ ]+) tokens used \((\d+)%\)$/
-              tokens_used, tokens_limit, _tokens_percent = Regexp.last_match[1..3]
-              fields << "#{tokens_used}/#{tokens_limit}"
-            end
-            fields_str = "#{fields.empty? ? '' : "#{fields.join(' ')} - "}"
+            sections = parse_sections(JSON.parse(message[:text], symbolize_names: true)[:request])
             section_delimiter = '|'
             # Ignore some sections
             sections.select! { |section| section[:name] != 'environment_details' }
-            section_size = (limit - ts_str.size - fields_str.size) / sections.size - section_delimiter.size
-            "#{fields_str}#{
-              sections.map do |section|
-                "#{section[:name].nil? ? '' : "#{section[:name]}: "}#{one_lining(section[:content])}".ellipsized(section_size)
-              end.join('|')
-            }"
+            section_size = (limit - prefix.size) / sections.size - section_delimiter.size
+            sections.map do |section|
+              "#{section[:name].nil? ? '' : "#{section[:name]}: "}#{one_lining(section[:content])}".ellipsized(section_size)
+            end.join('|')
           when 'tool'
             tool_details = JSON.parse(message[:text], symbolize_names: true)
             tool_header =
@@ -201,7 +264,7 @@ module XAeonAgentsSkills
               else
                 raise NotImplementedError.new("Unknown tool @ts #{message[:ts]}: #{message}")
               end
-            "#{tool_header}#{tool_details.key?(:content) ? ": #{one_lining(tool_details[:content])}".ellipsized(limit - ts_str.size - tool_header.size) : ''}"
+            "#{tool_header}#{tool_details.key?(:content) ? ": #{one_lining(tool_details[:content])}".ellipsized(limit - prefix.size - tool_header.size) : ''}"
           when 'api_req_retried'
             'API request retried'
           when 'command'
@@ -266,67 +329,13 @@ module XAeonAgentsSkills
       }".ellipsized(limit)
     end
 
-    # Use a single regex to match complete tag pairs
-    # This regex matches <tag>content</tag> patterns
-    COMPLETE_TAG_PATTERN = %r{<([a-zA-Z0-9_:]*)>(.*?)</\1>}m
-
-    # Parse sections from a string with HTML-like tags.
-    # Sections are delimited by html-like tags, for example `<toto>...</toto>` is the section named `toto`.
-    # Sections without tags should still be part of the result, with a nil section name.
-    # Only considers top-level tags (no recursion).
-    #
-    # Parameters::
-    # * *content* (String): The input string to parse
-    # Result::
-    # * Array<Hash>: List of sections:
-    #   * *name* (String or nil): Section name
-    #   * *content* (String): Section content
-    def self.parse_sections(content)
-      sections = []
-      current_pos = 0
-      content_length = content.length
-      # Use cursor progression to maintain order
-      while current_pos < content_length
-        # Find the next complete tag pair starting from current position
-        match = content.match(COMPLETE_TAG_PATTERN, current_pos)
-        if match
-          # Add any untagged content before this tag
-          if match.begin(0) > current_pos
-            untagged_content = content[current_pos...match.begin(0)]
-            sections << { name: nil, content: untagged_content } unless untagged_content.strip.empty?
-          end
-          # Add the tagged section
-          sections << { name: match[1], content: match[2] }
-          current_pos = match.end(0)
-        else
-          # No more tags found, add remaining content
-          remaining_content = content[current_pos..-1]
-          sections << { name: nil, content: remaining_content } unless remaining_content.strip.empty?
-          current_pos = content_length
-        end
-      end
-      sections
-    end
-
     # Convert a string to a single line by replacing newlines with spaces and removing carriage returns
     #
     # Parameters::
     # * *text* (String): The text to convert to one line
     # Result::
     # * String: The text converted to a single line
-    def self.one_lining(text)
-      text.strip.gsub("\n", ' ').gsub("\r", '')
-    end
-
-    private
-
-    # Convert a string to a single line by replacing newlines with spaces and removing carriage returns
-    #
-    # Parameters::
-    # * *text* (String): The text to convert to one line
-    # Result::
-    # * String: The text converted to a single line
-    def self.one_lining(text)
+    def one_lining(text)
       text.strip.gsub("\n", ' ').gsub("\r", '')
     end
 
@@ -355,6 +364,7 @@ module XAeonAgentsSkills
     #
     # Parameters::
     # * *config_dir* (String): Configuration from which the task should be found
+    # * *model* (String): Cline model to be used
     # * *on_message* (Proc or nil): Callback to be called everytime a new message happens in the task being executed, or nil if no callback [default: nil]
     #   * Parameters::
     #     * *message* (Hash): Message that has happened
@@ -362,12 +372,13 @@ module XAeonAgentsSkills
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
     # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
     # * Proc: Code called with monitoring in place
-    def with_messages_monitoring(config_dir:, on_message: nil, ignore_partials: false)
+    def with_messages_monitoring(config_dir:, model:, on_message: nil, ignore_partials: false)
       monitoring = true
       @processing_messages = true
       monitoring_thread = Thread.new do
         ui_messages_file = nil
         ui_messages_file_mtime = nil
+        usage = {}
         # Keep messages per timestamp to detect updates
         messages = {}
         while monitoring
@@ -386,7 +397,22 @@ module XAeonAgentsSkills
                 new_messages.each.with_index do |message, idx|
                   ts = message[:ts]
                   if message != messages[ts]
-                    on_message.call(message, idx == last_idx, messages[ts])
+                    log_debug { human_message(message, usage:, limit: 128) }
+                    # Handle usage tracking
+                    if message[:type] == 'say' && message[:say] == 'api_req_started'
+                      api_details = JSON.parse(message[:text], symbolize_names: true)
+                      usage[messages[ts]] = {
+                        cost: api_details[:cost],
+                        input_tokens: api_details[:tokensIn],
+                        output_tokens: api_details[:tokensOut],
+                        cache_read_tokens: api_details[:cacheReads],
+                        cache_write_tokens: api_details[:cacheWrites],
+                        context_tokens: %i[tokensIn tokensOut cacheReads cacheWrites].map { |token_measure| api_details[token_measure] || 0 }.sum,
+                        context_tokens_limit: Cline.models[model][:contextWindow]
+                      }.compact
+                    end
+                    on_message.call(message, idx == last_idx, messages[ts], usage) unless on_message.nil?
+                    # Handle errors
                     if message[:say] == 'error'
                       # If we are encountering an error, be prepared for the process to exit with code 1 and retry.
                       # The way to retry after an error is to tell the agent about the error, and delete the conversation task that lead to the error before retrying.

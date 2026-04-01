@@ -48,9 +48,9 @@ module XAeonAgentsSkills
       end
 
       def list_models
-        JSON.parse(File.read("#{ENV['VSCODE_PORTABLE'] ? "#{ENV['VSCODE_PORTABLE']}/user-data" : "#{ENV['APPDATA']}/Code"}/User/globalStorage/saoudrizwan.claude-dev/cache/cline_models.json"), symbolize_names: true).map do |name, info|
+        Cline.models.map do |name, info|
           RubyLLM::Model::Info.new(
-            id: name.to_s,
+            id: name,
             name: "Cline - #{name}",
             provider: 'clinecli',
             family: 'cline',

@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'erb', '~> 6.0'
   spec.add_dependency 'front_matter_parser', '~> 1.0'
   spec.add_dependency 'git', '~> 4.3'
+  spec.add_dependency 'human_number', '~> 0.2'
   spec.add_dependency 'json', '~> 2.18'
   spec.add_dependency 'launchy', '~> 3.1'
   spec.add_dependency 'octokit', '~> 10.0'
