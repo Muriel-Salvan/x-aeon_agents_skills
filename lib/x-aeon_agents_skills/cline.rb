@@ -370,6 +370,7 @@ module XAeonAgentsSkills
     #     * *message* (Hash): Message that has happened
     #     * *last* (Boolean): Is this the last message fetched?
     #     * *previous_version* (Hash or nil): Previous version of this message if it got updated, or nil if it is a new one
+    #     * *usage* (Hash): Usage statistics
     # * *ignore_partials* (Boolean): Should we ignore partial messages? If true, then on_message will only be called for messages that have been fully received. [default: false]
     # * Proc: Code called with monitoring in place
     def with_messages_monitoring(config_dir:, model:, on_message: nil, ignore_partials: false)

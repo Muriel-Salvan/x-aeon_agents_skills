@@ -34,14 +34,10 @@ module XAeonAgentsSkills
         RubyLLM::Message.new(
           role: :assistant,
           content: response[:body],
-          # TODO: Implement those attributes from the CLI output
-          # thinking: Thinking.build(text: thinking_text, signature: thinking_signature),
-          # tool_calls: parse_tool_calls(message_data['tool_calls']),
-          # input_tokens: usage['prompt_tokens'],
-          # output_tokens: usage['completion_tokens'],
-          # cached_tokens: cached_tokens,
-          # cache_creation_tokens: 0,
-          # thinking_tokens: thinking_tokens,
+          input_tokens: response[:usage].values.map { |stats| stats[:input_tokens] || 0 }.sum,
+          output_tokens: response[:usage].values.map { |stats| stats[:output_tokens] || 0 }.sum,
+          cached_tokens: response[:usage].values.map { |stats| stats[:cache_read_tokens] || 0 }.sum,
+          cache_creation_tokens: response[:usage].values.map { |stats| stats[:cache_write_tokens] || 0 }.sum,
           model_id: response[:model],
           raw: response
         )
@@ -79,8 +75,8 @@ module XAeonAgentsSkills
               }
             },
             metadata: {
-              source: 'models.dev',
-              provider_id: 'cline',
+              source: 'cline',
+              provider_id: 'clinecli',
               open_weights: false,
               attachment: true,
               temperature: true,

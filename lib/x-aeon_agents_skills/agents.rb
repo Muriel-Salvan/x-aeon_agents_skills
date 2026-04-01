@@ -1045,7 +1045,15 @@ module XAeonAgentsSkills
         agent.params[:artifacts][:store] = @artifacts
         puts
         puts "===== #{agent.name}..."
-        result = @runner.run(agent, prompt)
+        raw_response = nil
+        result = @runner.run(
+          agent,
+          prompt,
+          callbacks: {
+            llm_call_complete: [proc { |_agent_name, _model, response, _context_wrapper| raw_response = response.raw }]
+          }
+        )
+        puts "===== #{agent.name} - Total cost: $#{(raw_response[:usage] || {}).values.map { |stats| stats[:cost] || 0 }.sum }"
         raise "Error: #{result.error}\n#{result.error.backtrace.join("\n")}" unless result.error.nil?
         # Keep user's feedback in an artifact
         unless agent.params[:agent][:asks].empty?
