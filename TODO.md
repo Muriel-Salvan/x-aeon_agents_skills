@@ -1,7 +1,6 @@
-* Integrate price and progression with ai-agents.
 * Add desktop notification when user input is needed.
 * Test with other models.
-* Use RubyLLM structured JSON output capabilities for a more deteministic behaviour.
+* Provide a unified CLI with Thor and actions to not pollute the user CLI environment too much.
 * Implement non-debug logs with progress bars (one char per message received).
 * Cache the cli auth call for performace between several agents of the same run.
 * Make the WSL CLI tool a Ruby script to avoid paths and slashes issues.

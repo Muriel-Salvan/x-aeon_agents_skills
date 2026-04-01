@@ -3,6 +3,7 @@ require 'commonmarker'
 require 'front_matter_parser'
 require 'git'
 require 'json'
+require 'launchy'
 require 'octokit'
 require 'ruby_llm/model/info'
 require 'time'
@@ -26,7 +27,7 @@ module XAeonAgentsSkills
       #
       # Parameters::
       # * *cline_api_key* (String): Cline API key to be used [default: ENV['CLINE_API_KEY']]
-      # * *default_cline_model* (String): Default Cline model [default: 'arcee-ai/trinity-large-preview:free']
+      # * *default_cline_model* (String): Default Cline model [default: 'qwen/qwen3.6-plus-preview:free']
       # * *default_cline_config* (Hash): Default Cline config [default: See signature]
       # * *default_cline_cli_args* (String): Default Cline CLI arguments [default: '--thinking 1024']
       # * *default_cline_skills* (Array<string>): Default Cline skills [default: []]
@@ -34,7 +35,7 @@ module XAeonAgentsSkills
       # * *debug* (Boolean): Do we activate debug mode? [default: false]
       def configure(
         cline_api_key: ENV['CLINE_API_KEY'],
-        default_cline_model: 'arcee-ai/trinity-large-preview:free',
+        default_cline_model: 'qwen/qwen3.6-plus-preview:free',
         default_cline_config: {
           actModeReasoningEffort: 'xhigh',
           autoApprovalSettings: {
@@ -102,6 +103,36 @@ module XAeonAgentsSkills
       # * *prompt* (String): The prompt for this task
       def execute_simple_task(prompt)
         with_runner { puts run(cline_agent, prompt) }
+      end
+
+      # Commit current code diffs.
+      # If the staging area is empty, add everything.
+      # Ask for a confirmation on the message from an editor.
+      def commit
+        with_runner do
+          # If nothing is staged, stage everything
+          git.add(all: true) if git_diff_cached.empty?
+          commit_file = '.x-aeon_agents/commit.md'
+          FileUtils.mkdir_p File.dirname(commit_file)
+          File.write(
+            commit_file,
+            <<~EO_Commit
+              #{code_diffs(:cached).join("\n\n")}
+              
+              Co-authored by: X-Aeon Agent #{diff_interpreter_agent.name} (#{diff_interpreter_agent.model})
+            EO_Commit
+          )
+          begin
+            Launchy.open(commit_file)
+            puts
+            puts 'Review and edit the commit file description and hit Enter to create the commit or Ctrl-C to cancel...'
+            $stdin.gets
+            git.commit File.read(commit_file).strip
+            puts 'Commit created successfully.'
+          ensure
+            FileUtils.rm_f commit_file
+          end
+        end
       end
 
       # Interpret current code diffs
@@ -182,8 +213,6 @@ module XAeonAgentsSkills
             run(planner_agent)
             puts "===== Implementation plan:\n#{@artifacts[:plan]}"
           end
-
-          # TODO: Add interactive review step here
 
           step(:ir_c_develop) do
             run(developer_agent)
@@ -884,7 +913,7 @@ module XAeonAgentsSkills
       # Get current code diffs interpretation
       #
       # Parameters::
-      # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
+      # * *base* (Object): Git base (sha, objectish...) with which we diff, or :cached to only get diff of the staging area [default = 'HEAD']
       # Result::
       # * String: The current code diffs summarized as 1 line
       # * String: The current code diffs with details
@@ -959,29 +988,48 @@ module XAeonAgentsSkills
         end
       end
 
+      # Return a list of patch description of diffs in the git staging area.
+      # Equivalent to git diff --cached
+      #
+      # Result::
+      # * Array<String>: List of patches in the staging area
+      def git_diff_cached
+        git.diff('HEAD').to_a.map(&:patch) - git.diff(nil).to_a.map(&:patch)
+      end
+
       # Get a current files diffs
       #
       # Parameters::
-      # * *base* (Object): Git base (sha, objectish...) with which we diff [default = 'HEAD']
+      # * *base* (Object): Git base (sha, objectish...) with which we diff, or :cached to only get diff of the staging area [default = 'HEAD']
       def artifact_files_diffs(base = 'HEAD')
-        <<~EO_Artifact
-          ### New untracked files
+        if base == :cached
+          <<~EO_Artifact
+            ### git diff --cached
 
-          #{git.status.untracked.keys.map do |file|
-            <<~EO_Untracked_File
-              #### #{file}
-              ```
-              #{File.read(file)}
-              ```
-            EO_Untracked_File
-          end.join("\n")}
+            ```
+            #{git_diff_cached.join("\n")}
+            ```
+          EO_Artifact
+        else
+          <<~EO_Artifact
+            ### New untracked files
 
-          ### git diff
+            #{git.status.untracked.keys.map do |file|
+              <<~EO_Untracked_File
+                #### #{file}
+                ```
+                #{File.read(file)}
+                ```
+              EO_Untracked_File
+            end.join("\n")}
 
-          ```
-          #{git.diff(base)}
-          ```
-        EO_Artifact
+            ### git diff
+
+            ```
+            #{git.diff(base)}
+            ```
+          EO_Artifact
+        end
       end
 
       # Define a step that can be serialized and resumed.
