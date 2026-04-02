@@ -11,13 +11,12 @@ When syncing the current branch with its base, follow those steps.
 
 ### Create the syncing-branch-with-base Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist named syncing-branch-with-base Execution Checklist with all steps of this skill.
+- Before executing anything, create a checklist named syncing-branch-with-base Execution Checklist with all steps of these instructions.
 - The syncing-branch-with-base Execution Checklist must include all numbered steps explicitly.
-- The syncing-branch-with-base Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the syncing-branch-with-base Execution Checklist as completed.
+- After completing each step of these instructions, mark the item in the syncing-branch-with-base Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
-- Never mark the skill as completed while any item from the syncing-branch-with-base Execution Checklist remains open.
+- Never mark the task as completed while any item from the syncing-branch-with-base Execution Checklist remains open.
 
 ### 1. Inform the user
 

@@ -1,3 +1,83 @@
+# [v1.0.18](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.17...v1.0.18) (2026-04-02 18:29:45)
+
+## Global changes
+### Patches
+
+* [docs: add Cline rubygem creation task to project TODO list](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/f3ee3306dc8c08ca4406835755ba8f22f4218f2d)
+* [build(deps): update ai-agents gem to use GitHub fork branch](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b8b7e2b8be84b4e618e7b563a16ae5e3af457ba2)
+* [fix: resolve initialization order, add nil-safety, and fix provider namespacing](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/4a4562069596445b1d20fedea8e76e32475c2915)
+* [feat(provider): namespace Cline CLI models with `clinecli/` prefix to prevent model confusion](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/f345d9726699f355351e0b70f4f1e8e4f73f96c9)
+* [feat(commit): add interactive commit workflow with diff interpreter agent and Launchy review](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8f7e7b2a1c5fb8228505da3f4bba0f89cbae3de4)
+* [feat(cline_cli): add token usage tracking and cost reporting](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8097d56c553cbee9ad4400f5f87398c741711796)
+* [feat(cline): add model caching, usage metrics, and tag parsing](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/a383bd29edc8a791451346aa9a469cda82f95c07)
+* [Add refresh! to register Cline CLI provider](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/e33c2a4b6e6e73fa83e36a62413017abbd5e29b7)
+* [Remove Cline provider and use Cline CLI instead](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b8c6b5a161c03b50bd49499b15e8c89230ff6a71)
+* [Update gemspec to include new dependencies and remove local gem references](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/ee931c20f813838d3d059bfcc0bd283a9a7929cc)
+* [feat: Add automated Pull Request comment handling system with GitHub API integration](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/629ddba789ef402797cd51715ae249a5e757c5cb)
+* [refactor: replace hardcoded model registration with dynamic Cline model discovery](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/3d790e72542744fdefaccdf261630786f433fde6)
+* [refactor(cline): move private methods to proper section](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/f28eb27a4d2f4bdf12cdb006e43ed9bd22c2979d)
+* [refactor: extract one-lining method for consistent text formatting](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/e5b933b0a91bcbccbb2d04cd94ea71d11c3a536e)
+* [refactor: improve markdown formatting in PR generation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/9b0c110abe93bad377d1edddb374245384c7737c)
+* [refactor: rename 'code modifications' to 'files modifications' in diff interpreter agent](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/248f367c6e88c15612899cf58fe874e7d1902d7e)
+* [refactor: simplify documentation agent instructions for clarity](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/44db9eb4ae391db9ebf13314b8df181264954a21)
+* [feat: enhance GitHub issue implementation with improved markdown handling](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/4f4476c2f96ebdccd36d61de62e044ab15f6cc60)
+* [refactor: simplify implement_github_issue method and improve code organization](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/72b9871a5025695fe82294a2adf23ca6d9116a2d)
+* [feat: add address_pull_request_comments script and improve change intent description](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/10d453a8d2917410346639d593e84c955ce76d35)
+* [refactor: simplify agent instructions for file change analysis](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/f94b4649b8cb931a4b85f823cd13531f1ee558f6)
+* [feat: enhance diff interpreter agent objective with detailed goals](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/30cdf6d4dddda7a89aced44c4d23b1a6340f9d34)
+* [feat(agents): simplify commit message generation instructions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/ef63dfa4875b39068f26845cf6d4d20535a34b9f)
+* [refactor: simplify user feedback artifact generation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8d5696aabf0356f2c172f60b23ec715c8201f001)
+* [refactor: simplify PR creation and agent run tracking](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/53f5eb0d3581393f5ec120c62fe4095da1df3a72)
+* [Fix agent parameter access in CLI connection and agent runner](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/2dc5fb8a17e307bd7a02734a6a0b26071730725b)
+* [refactor: improve agent feedback and artifact handling](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/87154ccdc751e6e5e2b8239881f715da9dfd3d18)
+* [fix: join code diffs with double newlines for proper formatting](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/ebe9f91bc9b243b3c077bfe08f9d76b5e59b81a7)
+* [feat(agents): mark implementation plan artifact as requiring review](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/4995b3d2b294d6f09e2d11788dd2b7575bee477a)
+* [fix: push branch before checking for existing PR](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/12d3d5bd66d2444d96b104fa995e879ea13d4705)
+* [refactor: standardize agent input/output artifact definitions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/e2c9b4036dd6d14323c0ddce110caee19a09117f)
+* [feat: add GitHub token support and PR creation for requirements implementation](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/de5e5a7e4f2b241a5730721eaeaa0d390b3b22da)
+* [refactor: standardize artifact references in agent instructions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/15c587b45d0e58316856974c35ff06099163de0d)
+* [refactor: rename artifacts to use ARTIFACT_ prefix for clarity](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/3f955279beec1ddadf2a2b990b8589bd84803825)
+* [Refactor documentation agent instructions for clarity and structure](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/1c8c6ada9e40a266f1058d7129060f157d73f6ea)
+* [fix: Handle new_task event in CLI connection](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/aa51ee8f8dfb011ecf144523d8647a6bc13e14cc)
+* [refactor: improve message formatting for better readability](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/3a37e904ed9beda995d335833b36ad4444fcb3f3)
+* [refactor: simplify git commit process by removing temporary file usage](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/e8089465b537a1a38586e1e9946894adfb0733c7)
+* [refactor: improve git diff handling and agent workflow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/1705f973e54a9eeb8cde5ee67d47cd2ed47cc232)
+* [refactor: add Git dependency and improve diff handling in agents](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/90220a654cf71762b72645053c3da685468cd5cb)
+* [refactor: update checklist execution instructions for consistency](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8b1d796ad02fa0df62faeb41540b86df00b31b6e)
+* [feat: add code diff interpretation system with automated testing and git integration](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/8a54527f8051b173e079d6db74b2bd0ba7517a40)
+* [refactor: simplify agent configuration and improve plan execution workflow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b21e1739cd233a5d910a2c26617a25be25503952)
+* [refactor: standardize temporary directory paths to .x-aeon_agents/tmp](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b947335ebb219b14bac6ac55cd09b961dda0155d)
+* [feat: Add step-based execution with persistence and run ID support](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/5e90fb60429338c540ee198ef1406a2ac5ef5bb2)
+* [refactor: remove unused `gen_helpers` dependency and simplify agent instructions](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/09739a9b4e159d1a8f30fd72833bcc797d83d451)
+* [refactor: simplify agent instructions and add objectives](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/b698502a5bcf848f31facb8e835052cc4e6b1d10)
+* [refactor: enhance agent configuration with structured input/output artifacts](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/6d46bb13da67eb3f1ad0428555cde9982f651946)
+* [chore: add git status output to agent workflow debugging](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/e82bab73661cb50c1d9f270607a805994b5bea0d)
+* [fix: Improve tester and documenter agents with better regression handling and documentation workflow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/abd0dde68bf2408702d5fe0cee969af3a1cb50ea)
+* [refactor: simplify agent configuration and improve plan execution flow](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/a8d09e53fe355f8793fbec149966cab860cc93ed)
+* [fix: Correct partial message filtering logic in Cline and CLI connections](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/0508807b140ba00fea2c3555d9e6b59a596a0386)
+* [feat(cline): add support for new message types and API error handling](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/d0da089cfd973aa4a0cc45c5e908ee9467d9723e)
+* [refactor: enhance Cline prompt method with ignore_partials option](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/af4c4a974e038f971f3e63df1fb8dcda7c84a419)
+* [refactor: move GitHub issue implementation to generic requirements function](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/0a9db50a65ba38e5a12b1d624ddd7ceb1d821864)
+* [Add support for new tool types in Cline logging](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/faf791bf37739c0b85f13e34b0bf797ef234cdcb)
+* [feat: Add support for task progress and completion messages in Cline](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/5d0cce4e48ac4a273a4589b8c3364eab83721cfb)
+* [refactor: improve message formatting and add ellipsized text support](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/3d2bbe328fa02e06995674a3361e98e5fdc434ea)
+* [refactor: extract prompt execution logic and improve logging](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/a9045afec3e28fcf0d0e6245f1cb6dad2665acd3)
+* [Refactor agent implementation workflow with temporary directory and enhanced skill management](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/434c60afb8100d44846cf402a992ce18ecde001a)
+* [Add skills system and update project structure](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/5910a7180c6fde02080ed204bf4ce696397ed3e1)
+* [Update branch references from 'main' to 'github/main' in validation skill](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/0df2163f31491acd2d0004602de1e62135a3bcd1)
+* [refactor: migrate from custom CLI to Ruby script and integrate ai-agents](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/3134b08a29db129131d6768a5c698446ccac573e)
+* [Update TODO.md](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/5c89b80c124df8d370c909638f32214ee727ade1)
+
+## Changes for {model-name}
+### Patches
+
+* [feat: Add automated Pull Request comment handling system with GitHub API integration](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/629ddba789ef402797cd51715ae249a5e757c5cb)
+
+## Changes for {model}
+### Patches
+
+* [feat: Add automated Pull Request comment handling system with GitHub API integration](https://github.com/Muriel-Salvan/x-aeon_agents_skills/commit/629ddba789ef402797cd51715ae249a5e757c5cb)
+
 # [v1.0.17](https://github.com/Muriel-Salvan/x-aeon_agents_skills/compare/v1.0.16...v1.0.17) (2026-02-24 15:04:01)
 
 ### Patches

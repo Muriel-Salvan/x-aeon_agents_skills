@@ -17,13 +17,12 @@ When validating production quality, follow those steps.
 
 ### Create the validating-production-quality Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist named validating-production-quality Execution Checklist with all steps of this skill.
+- Before executing anything, create a checklist named validating-production-quality Execution Checklist with all steps of these instructions.
 - The validating-production-quality Execution Checklist must include all numbered steps explicitly.
-- The validating-production-quality Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the validating-production-quality Execution Checklist as completed.
+- After completing each step of these instructions, mark the item in the validating-production-quality Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
-- Never mark the skill as completed while any item from the validating-production-quality Execution Checklist remains open.
+- Never mark the task as completed while any item from the validating-production-quality Execution Checklist remains open.
 
 ### 1. Inform the user
 

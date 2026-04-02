@@ -15,13 +15,12 @@ When implementing a GitHub issue, follow those steps.
 
 ### Create the analyzing-github-issue Execution Checklist (MANDATORY)
 
-- Before executing anything, create a checklist named analyzing-github-issue Execution Checklist with all steps of this skill.
+- Before executing anything, create a checklist named analyzing-github-issue Execution Checklist with all steps of these instructions.
 - The analyzing-github-issue Execution Checklist must include all numbered steps explicitly.
-- The analyzing-github-issue Execution Checklist must be displayed to the user.
-- After completing each step of this skill, mark the item in the analyzing-github-issue Execution Checklist as completed.
+- After completing each step of these instructions, mark the item in the analyzing-github-issue Execution Checklist as completed.
 - Do not skip any item.
 - If an item cannot be executed, explicitly explain why.
-- Never mark the skill as completed while any item from the analyzing-github-issue Execution Checklist remains open.
+- Never mark the task as completed while any item from the analyzing-github-issue Execution Checklist remains open.
 
 ### 1. Inform the user
 
